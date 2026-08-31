@@ -888,28 +888,28 @@ try{(function(){
   const CLUSTERS = [
     // Frontal lobe — teal/green (top-right in lateral view)
     { cx: 0.52, cy:-0.36, sx:0.24, sy:0.22, count:72,
-      cols:['#00C9B1','#00E5CC','#06B6D4','#34D399','#10B981'] },
+      cols:['#1D4ED8','#2563EB','#38BDF8','#60A5FA','#93C5FD'] },
     // Superior parietal — cyan/light blue (top centre)
     { cx: 0.10, cy:-0.18, sx:0.22, sy:0.18, count:55,
-      cols:['#38BDF8','#7DD3FC','#BAE6FD','#60A5FA','#93C5FD'] },
+      cols:['#2563EB','#38BDF8','#7DD3FC','#60A5FA','#BFDBFE'] },
     // Occipital — purple/violet (back)
     { cx:-0.42, cy: 0.08, sx:0.20, sy:0.26, count:60,
-      cols:['#8B5CF6','#A78BFA','#C4B5FD','#7C3AED','#6D28D9'] },
+      cols:['#4338CA','#4F46E5','#6366F1','#818CF8','#A5B4FC'] },
     // Temporal — orange/red (bottom-front)
     { cx: 0.32, cy: 0.42, sx:0.22, sy:0.18, count:58,
-      cols:['#FB923C','#F97316','#FDBA74','#EF4444','#F87171'] },
+      cols:['#1E40AF','#1D4ED8','#2563EB','#38BDF8','#93C5FD'] },
     // Cerebellum — yellow/gold (bottom-back)
     { cx:-0.20, cy: 0.52, sx:0.18, sy:0.14, count:45,
-      cols:['#FACC15','#FDE047','#FCD34D','#F59E0B','#FBBF24'] },
+      cols:['#0EA5E9','#0284C7','#38BDF8','#7DD3FC','#BAE6FD'] },
     // Insular / deep — pink (centre-low)
     { cx: 0.10, cy: 0.20, sx:0.16, sy:0.14, count:35,
-      cols:['#F472B6','#EC4899','#FB7185','#F43F5E'] },
+      cols:['#6366F1','#818CF8','#A78BFA','#C4B5FD'] },
     // Prefrontal — teal accent (front tip)
     { cx: 0.66, cy:-0.10, sx:0.12, sy:0.16, count:30,
-      cols:['#00C9B1','#06B6D4','#0EA5E9','#38BDF8'] },
+      cols:['#06B6D4','#0EA5E9','#38BDF8','#7DD3FC'] },
     // Parieto-occipital — blue-purple bridge
     { cx:-0.12, cy:-0.06, sx:0.18, sy:0.14, count:28,
-      cols:['#818CF8','#6366F1','#A5B4FC','#8B5CF6'] },
+      cols:['#4338CA','#6366F1','#818CF8','#A5B4FC'] },
   ];
 
   // ── Particle system ──
@@ -919,9 +919,9 @@ try{(function(){
   // Knowledge-graph hub nodes — visible, labelled, connected
   // 14 of them, one per doc_caption
   const NODE_N   = 14;
-  const NODE_COLS = ['#00C9B1','#38BDF8','#8B5CF6','#FB923C','#FACC15',
-                     '#F472B6','#34D399','#F87171','#A78BFA','#60A5FA',
-                     '#FBBF24','#10B981','#818CF8','#00E5CC'];
+  const NODE_COLS = ['#38BDF8','#60A5FA','#818CF8','#2563EB','#93C5FD',
+                     '#A5B4FC','#06B6D4','#BFDBFE','#6366F1','#7DD3FC',
+                     '#1D4ED8','#0EA5E9','#A78BFA','#00E5CC'];
 
   function initParticles(){
     PARTICLES.length = 0;
@@ -1169,9 +1169,9 @@ try{(function(){
     };
     ctx.save();
     ctx.globalAlpha=.42;
-    ctx.strokeStyle='#8FE9E2';
+    ctx.strokeStyle='#76A9FF';
     ctx.lineWidth=1.15;
-    ctx.shadowColor='#00C9B1';
+    ctx.shadowColor='#2563EB';
     ctx.shadowBlur=8;
     drawBrainPath(OUTLINE,true);
     ctx.globalAlpha=.20;
@@ -1224,6 +1224,24 @@ try{(function(){
       const pp=tp3(n.x+dx, n.y+dy, n.z+dz);
       const depth=(pp.sc-0.5)*2;
       return{...pp, alpha:.4+depth*.6, sz:n.size*pulse*pp.sc, color:n.color, depth, node:n, idx:i};
+    });
+
+    // Long, soft signal rays echo the radial energy of a living neural brain.
+    TN.slice(0,NODE_N).forEach((n,i)=>{
+      const vx=n.sx-CX, vy=n.sy-CY;
+      const len=Math.hypot(vx,vy)||1;
+      const reach=1.28+Math.sin(now*.001+i)*.04;
+      ctx.save();
+      ctx.globalAlpha=.09+n.depth*.05;
+      ctx.strokeStyle=n.color;
+      ctx.lineWidth=.65;
+      ctx.shadowColor=n.color;
+      ctx.shadowBlur=7;
+      ctx.beginPath();
+      ctx.moveTo(n.sx,n.sy);
+      ctx.lineTo(CX+vx/len*len*reach,CY+vy/len*len*reach);
+      ctx.stroke();
+      ctx.restore();
     });
 
     // ── Connections ──

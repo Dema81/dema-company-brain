@@ -860,18 +860,15 @@ try{(function(){
   // Brain silhouette outline as a 2-D polygon (normalised, centred at 0,0)
   // x: -1=occipital(back), +1=frontal(front)
   // y: -1=top,              +1=bottom
-  // These 38 points define the outer boundary used to distribute particles.
+  // These points define a rounded, two-hemisphere boundary used to distribute particles.
   const OUTLINE = [
-    [ 0.60,-0.70],[ 0.72,-0.55],[ 0.78,-0.36],[ 0.76,-0.18],
-    [ 0.70,-0.02],[ 0.62, 0.06],[ 0.54,-0.02],[ 0.44,-0.10],
-    [ 0.30,-0.18],[ 0.14,-0.22],[-0.02,-0.24],[-0.18,-0.22],
-    [-0.34,-0.16],[-0.48,-0.06],[-0.58, 0.08],[-0.60, 0.24],
-    [-0.54, 0.40],[-0.44, 0.52],[-0.32, 0.62],[-0.18, 0.68],
-    [-0.06, 0.66],[ 0.04, 0.58],[ 0.06, 0.50],
-    // temporal notch back up
-    [ 0.10, 0.58],[ 0.24, 0.68],[ 0.40, 0.70],[ 0.54, 0.64],
-    [ 0.64, 0.52],[ 0.70, 0.36],[ 0.72, 0.18],[ 0.70, 0.00],
-    [ 0.68,-0.18],[ 0.66,-0.36],[ 0.64,-0.54],[ 0.60,-0.70]
+    [ 0.00,-0.48],[-0.10,-0.62],[-0.28,-0.72],[-0.48,-0.68],
+    [-0.64,-0.56],[-0.74,-0.38],[-0.76,-0.18],[-0.72, 0.04],
+    [-0.66, 0.24],[-0.54, 0.42],[-0.38, 0.56],[-0.20, 0.62],
+    [-0.06, 0.56],[ 0.00, 0.48],
+    [ 0.06, 0.56],[ 0.20, 0.62],[ 0.38, 0.56],[ 0.54, 0.42],
+    [ 0.66, 0.24],[ 0.72, 0.04],[ 0.76,-0.18],[ 0.74,-0.38],
+    [ 0.64,-0.56],[ 0.48,-0.68],[ 0.28,-0.72],[ 0.10,-0.62]
   ];
 
   // Point-in-polygon (ray-cast)
@@ -1156,9 +1153,16 @@ try{(function(){
     const brainPoint = ([x,y]) => tp3(x*brainR, y*brainR*.92, 0);
     const drawBrainPath = (points, close=false) => {
       ctx.beginPath();
-      points.forEach((point,i)=>{
+      const pathPoints=close ? points.concat([points[0]]) : points;
+      pathPoints.forEach((point,i)=>{
         const p=brainPoint(point);
-        if(i===0) ctx.moveTo(p.sx,p.sy); else ctx.lineTo(p.sx,p.sy);
+        if(i===0) ctx.moveTo(p.sx,p.sy);
+        else {
+          const prev=brainPoint(pathPoints[i-1]);
+          const midX=(prev.sx+p.sx)/2, midY=(prev.sy+p.sy)/2;
+          ctx.quadraticCurveTo(prev.sx,prev.sy,midX,midY);
+          if(i===pathPoints.length-1 && close) ctx.quadraticCurveTo(p.sx,p.sy,p.sx,p.sy);
+        }
       });
       if(close) ctx.closePath();
       ctx.stroke();

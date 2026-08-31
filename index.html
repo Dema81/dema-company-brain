@@ -1315,6 +1315,58 @@ const hmiObs=new IntersectionObserver(entries=>{
 },{threshold:.5});
 hmiObs.observe(document.querySelector('.hmi'));
 
+// ── MAILTO FALLBACK ──
+// Used when there is no backend (WEBHOOK_URL empty) or the request fails:
+// the lead is handed to the visitor's mail client, pre-filled.
+const LEAD_INBOX = 'g.gambuto@dema-solutions.com';
+const MAILTO_CTA = {
+  en:'Send your request by email', it:'Invia la richiesta via email',
+  fr:'Envoyer la demande par e-mail', es:'Enviar la solicitud por correo',
+  de:'Anfrage per E-Mail senden', pt:'Enviar o pedido por e-mail',
+  nl:'Verstuur je aanvraag per e-mail', no:'Send forespørselen på e-post',
+  fi:'Lähetä pyyntö sähköpostitse', sv:'Skicka förfrågan via e-post',
+  zh:'通过电子邮件发送申请'
+};
+const MAILTO_HINT = {
+  en:'Your email client will open with the message ready to send.',
+  it:'Si aprirà il tuo programma di posta con il messaggio già pronto.',
+  fr:"Votre messagerie va s'ouvrir avec le message prêt à envoyer.",
+  es:'Se abrirá tu cliente de correo con el mensaje listo para enviar.',
+  de:'Ihr E-Mail-Programm öffnet sich mit der fertigen Nachricht.',
+  pt:'O seu cliente de e-mail abrirá com a mensagem pronta a enviar.',
+  nl:'Je e-mailprogramma opent met het bericht klaar om te versturen.',
+  no:'E-postprogrammet ditt åpnes med meldingen klar til å sendes.',
+  fi:'Sähköpostiohjelmasi avautuu viesti valmiina lähetettäväksi.',
+  sv:'Ditt e-postprogram öppnas med meddelandet redo att skickas.',
+  zh:'您的邮件客户端将打开，邮件内容已填写完毕。'
+};
+
+function mailtoFallback(p){
+  const lang = MAILTO_CTA[currentLang] ? currentLang : 'en';
+  const subject = 'Company Brain waitlist - ' + (p.azienda || p.nome || '');
+  const body = ['Nome: ' + (p.nome||''),
+                'Azienda: ' + (p.azienda||''),
+                'Email: ' + (p.email||''),
+                'Settore: ' + (p.settore||''),
+                'Lingua: ' + (p.lang||lang), ''].join(String.fromCharCode(10));
+  const href = 'mailto:' + LEAD_INBOX + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  const box = document.getElementById('success-msg');
+  if(box && !document.getElementById('mailto-cta')){
+    const hint = document.createElement('p');
+    hint.style.cssText = 'color:var(--steel);font-size:.8rem;margin-top:16px;';
+    hint.textContent = MAILTO_HINT[lang];
+    const a = document.createElement('a');
+    a.id = 'mailto-cta';
+    a.href = href;
+    a.className = 'btn btn-primary';
+    a.style.cssText = 'margin-top:12px;text-decoration:none;';
+    a.textContent = MAILTO_CTA[lang];
+    box.appendChild(hint);
+    box.appendChild(a);
+  }
+  setTimeout(function(){ try{ window.location.href = href; }catch(e){} }, 700);
+}
+
 // ── GAUGE ──
 // ─────────────────────────────────────────────────────────────
 // n8n BACKEND INTEGRATION (Phase 2)
@@ -1380,12 +1432,13 @@ function bootPage(){
       fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
         .then(r=>r.json())
         .then(data=>{ if(typeof data.taken==='number') taken=data.taken; safeSet(SK,taken); updateGauge(taken); ok(); })
-        .catch(()=>{ taken++; safeSet(SK,taken); updateGauge(taken); ok(); });
+        .catch(()=>{ taken++; safeSet(SK,taken); updateGauge(taken); ok(); mailtoFallback(payload); });
     } else {
       taken++;
       safeSet(SK, taken);
       updateGauge(taken);
       ok();
+      mailtoFallback(payload);
     }
   });
 }

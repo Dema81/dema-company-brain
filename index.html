@@ -930,7 +930,9 @@ try{(function(){
     PARTICLES.length = 0;
     GRAPH_NODES.length = 0;
 
-    const R = 140 * SC; // brain radius scale
+    // Give the knowledge network more visual presence inside the dark bezel.
+    // Keep the canvas dimensions unchanged so the layout remains responsive.
+    const R = 203 * SC; // brain radius scale (145% of the original)
 
     // ── Spawn cloud particles per cluster ──
     CLUSTERS.forEach(cl => {

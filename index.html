@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Brain — DEMA Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --iron:#15171B; --iron-2:#1D2025; --plate:#EFEBE0;
+    --safety:#FF5A1F; --hazard:#F2B705; --graphite:#22252B;
+    --steel:#7D828C; --steel-light:#B9B6AC; --ok:#3FA65A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--plate);color:var(--graphite);font-family:'Manrope',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;}
+  img,svg,canvas{display:block;}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;}}
+
+  /* ── LANG SWITCHER ── */
+  .lang-bar{
+    background:#0E1013; padding:6px 6vw;
+    display:flex; justify-content:flex-end; align-items:center; gap:4px; flex-wrap:wrap;
+  }
+  .lang-btn{
+    background:none; border:1px solid transparent; border-radius:4px;
+    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--steel-light);
+    padding:3px 7px; cursor:pointer; display:flex; align-items:center; gap:4px;
+    transition:border-color .15s, color .15s;
+  }
+  .lang-btn:hover{border-color:var(--steel); color:var(--plate);}
+  .lang-btn.active{border-color:var(--safety); color:var(--safety);}
+  .lang-flag{font-size:1rem; line-height:1;}
+
+  /* ── HEADER ── */
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 6vw;background:var(--iron);color:var(--plate);}
+  .logo{font-family:'Sora',sans-serif;font-weight:600;font-size:1.05rem;letter-spacing:.06em;display:flex;align-items:center;gap:10px;}
+  .led{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);animation:blink 2.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .logo em{color:var(--safety);font-style:normal;}
+  .nav-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--steel-light);}
+
+  /* ── TICKER ── */
+  .ticker{background:var(--safety);color:var(--iron);overflow:hidden;white-space:nowrap;padding:8px 0;}
+  .ticker-track{display:inline-flex;gap:40px;animation:ticker-scroll 24s linear infinite;}
+  .ticker:hover .ticker-track{animation-play-state:paused;}
+  @keyframes ticker-scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+  .ticker-item{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;letter-spacing:.03em;}
+
+  /* ── BRAIN GRAPH ── */
+  .brain-graph{background:#0E1013;padding:0;text-align:center;overflow:hidden;position:relative;}
+  .brain-top-label{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--steel-light);
+    letter-spacing:.08em;position:absolute;top:18px;left:50%;transform:translateX(-50%);
+    z-index:10;white-space:nowrap;pointer-events:none;
+  }
+  #brain-canvas{width:100%;cursor:crosshair;}
+
+  /* ── HERO ── */
+  .hero{background:var(--iron);color:var(--plate);padding:6vw 6vw 7vw;display:grid;grid-template-columns:1.05fr .95fr;gap:4vw;align-items:center;}
+  .plate-tag{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--hazard);border:1px solid rgba(242,183,5,.5);padding:5px 10px;margin-bottom:26px;}
+  h1.headline{font-family:'Sora',sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(2.2rem,4.2vw,3.8rem);line-height:1.02;margin-bottom:24px;}
+  h1.headline .accent{color:var(--safety);}
+  h1.headline .reveal-word{display:inline-block;opacity:0;transform:translateY(16px);filter:blur(6px);transition:opacity .6s ease,transform .6s ease,filter .6s ease;}
+  .hero.is-loaded h1.headline .reveal-word{opacity:1;transform:translateY(0);filter:blur(0);}
+  .hero p.sub{color:var(--steel-light);font-size:1.05rem;max-width:44ch;margin-bottom:32px;}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+  .btn{display:inline-block;font-family:'Sora',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:.9rem;padding:15px 28px;border:none;cursor:pointer;text-decoration:none;transition:transform .1s ease,box-shadow .15s ease;}
+  .btn-primary{background:var(--safety);color:var(--iron);box-shadow:0 4px 0 #B33E12;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 0 #B33E12;}
+  .btn-primary:active{transform:translateY(2px);box-shadow:0 2px 0 #B33E12;}
+  .btn-note{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--steel-light);}
+
+  /* ── HMI ── */
+  .hmi{background:var(--iron-2);border:2px solid #2C3038;border-radius:6px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+  .hmi-bezel{background:#0E1013;border-radius:3px;padding:20px;position:relative;overflow:hidden;}
+  .hmi-bezel::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.025) 0,rgba(255,255,255,.025) 1px,transparent 1px,transparent 3px);}
+  .hmi-head{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#5C6470;margin-bottom:16px;}
+  .hmi-head .status-ok{color:var(--ok);}
+  .hmi-line{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:#8FE39A;margin-bottom:6px;}
+  .hmi-line.q{color:#6FA8E0;}
+  .hmi-cursor{display:inline-block;width:7px;background:#8FE39A;animation:cursor-blink 1s step-end infinite;}
+  @keyframes cursor-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+  .hmi-footer{display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px dashed #2C3038;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#5C6470;}
+  .hmi-footer .rt{color:var(--hazard);font-weight:600;}
+
+  /* ── SECTIONS ── */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+  section{padding:6vw 6vw;}
+  .section-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--safety);display:block;margin-bottom:10px;}
+  h2.section-title{font-family:'Sora',sans-serif;font-weight:600;text-transform:uppercase;font-size:clamp(1.7rem,3vw,2.4rem);max-width:24ch;margin-bottom:8px;}
+
+  /* ── FAULT CODES ── */
+  .diagnostic-panel{margin-top:40px;background:var(--iron);border-radius:4px;overflow:hidden;}
+  .fault-row{display:grid;grid-template-columns:120px 1fr 2fr;gap:20px;align-items:center;padding:20px 24px;border-bottom:1px solid #2C3038;transition-delay:calc(var(--i)*.1s);}
+  .fault-row:last-child{border-bottom:none;}
+  .fault-code{font-family:'JetBrains Mono',monospace;color:var(--safety);font-weight:600;font-size:.9rem;}
+  .fault-title{font-family:'Sora',sans-serif;color:var(--plate);text-transform:uppercase;font-size:.98rem;letter-spacing:.02em;}
+  .fault-desc{color:var(--steel-light);font-size:.9rem;}
+
+  /* ── STEPS ── */
+  .control-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:44px;border:2px solid var(--graphite);border-radius:4px;overflow:hidden;}
+  .switch-step{padding:32px 26px;border-right:2px solid var(--graphite);position:relative;transition-delay:calc(var(--i)*.12s);}
+  .switch-step:last-child{border-right:none;}
+  .toggle{width:44px;height:24px;border:2px solid var(--graphite);border-radius:20px;position:relative;margin-bottom:18px;}
+  .toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--safety);transition:transform .3s ease;}
+  .switch-step:nth-child(2) .toggle::after,.switch-step:nth-child(3) .toggle::after{transform:translateX(20px);}
+  .switch-step .step-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--steel);margin-bottom:6px;}
+  .switch-step h3{font-family:'Sora',sans-serif;text-transform:uppercase;font-size:1.05rem;margin-bottom:10px;}
+  .switch-step p{color:#4a4e54;font-size:.9rem;}
+
+  /* ── WAITLIST ── */
+  .waitlist{background:var(--iron);color:var(--plate);}
+  .waitlist-inner{display:grid;grid-template-columns:.9fr 1.1fr;gap:5vw;align-items:center;}
+  .gauge-wrap{text-align:center;}
+  .gauge-num{font-family:'Sora',sans-serif;font-size:3rem;font-weight:700;margin-top:-38px;}
+  .gauge-num em{color:var(--safety);font-style:normal;transition:transform .3s ease;}
+  .gauge-num em.pulse{animation:gauge-pulse .5s ease;}
+  @keyframes gauge-pulse{0%{transform:scale(1);}40%{transform:scale(1.5);color:#fff;}100%{transform:scale(1);}}
+  .gauge-caption{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--steel-light);letter-spacing:.04em;margin-top:6px;}
+  .needle{transform-origin:100px 100px;transform:rotate(-90deg);transition:transform 1.4s cubic-bezier(.2,.9,.25,1);}
+  .arc-progress{transition:stroke-dashoffset 1.4s cubic-bezier(.2,.9,.25,1);}
+  .discount-plate{display:inline-flex;align-items:center;gap:12px;background:var(--hazard);color:var(--iron);padding:12px 18px;margin-top:20px;border-radius:2px;}
+  .discount-plate .pct{font-family:'Sora',sans-serif;font-weight:700;font-size:1.7rem;}
+  .discount-plate .txt{font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.3;}
+
+  /* ── FORM ── */
+  .work-order{background:var(--plate);border:2px solid var(--graphite);position:relative;padding:36px;}
+  .work-order::before{content:attr(data-label);position:absolute;top:-13px;left:26px;background:var(--plate);font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:0 10px;letter-spacing:.05em;color:var(--steel);}
+  .work-order h3{font-family:'Sora',sans-serif;text-transform:uppercase;font-size:1.2rem;margin-bottom:22px;color:var(--graphite);}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--steel);margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:11px 12px;border:1.5px solid var(--graphite);background:#fff;font-family:'Manrope',sans-serif;font-size:.92rem;border-radius:1px;}
+  .field input:focus,.field select:focus{outline:2px solid var(--safety);outline-offset:1px;}
+  .submit-btn{width:100%;margin-top:6px;}
+  .form-foot{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--steel);margin-top:14px;}
+  .success-msg{display:none;text-align:center;padding:24px 0;}
+  .success-msg.show{display:block;}
+  .success-msg .stamp-approved{display:inline-block;font-family:'Sora',sans-serif;font-weight:700;color:var(--ok);border:3px solid var(--ok);padding:8px 20px;transform:rotate(-6deg) scale(.6);opacity:0;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;animation:stamp-in .4s ease forwards .1s;}
+  @keyframes stamp-in{to{transform:rotate(-6deg) scale(1);opacity:1;}}
+  .success-msg h3{color:var(--graphite);}
+
+  /* ── FOOTER ── */
+  footer{padding:26px 6vw;background:var(--iron);color:var(--steel-light);display:flex;justify-content:space-between;align-items:center;font-size:.78rem;}
+  footer .mono{color:#5C6470;}
+
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;}
+    .waitlist-inner{grid-template-columns:1fr;text-align:center;}
+    .control-panel{grid-template-columns:1fr;}
+    .switch-step{border-right:none;border-bottom:2px solid var(--graphite);}
+    .switch-step:last-child{border-bottom:none;}
+    .fault-row{grid-template-columns:1fr;gap:6px;}
+  }
+  :focus-visible{outline:2px solid var(--safety);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ LANGUAGE BAR ═══ -->
+<div class="lang-bar" id="lang-bar">
+  <button class="lang-btn active" data-lang="en"><span class="lang-flag">🇬🇧</span>EN</button>
+  <button class="lang-btn" data-lang="it"><span class="lang-flag">🇮🇹</span>IT</button>
+  <button class="lang-btn" data-lang="fr"><span class="lang-flag">🇫🇷</span>FR</button>
+  <button class="lang-btn" data-lang="es"><span class="lang-flag">🇪🇸</span>ES</button>
+  <button class="lang-btn" data-lang="de"><span class="lang-flag">🇩🇪</span>DE</button>
+  <button class="lang-btn" data-lang="pt"><span class="lang-flag">🇵🇹</span>PT</button>
+  <button class="lang-btn" data-lang="nl"><span class="lang-flag">🇳🇱</span>NL</button>
+  <button class="lang-btn" data-lang="no"><span class="lang-flag">🇳🇴</span>NO</button>
+  <button class="lang-btn" data-lang="fi"><span class="lang-flag">🇫🇮</span>FI</button>
+  <button class="lang-btn" data-lang="sv"><span class="lang-flag">🇸🇪</span>SV</button>
+  <button class="lang-btn" data-lang="zh"><span class="lang-flag">🇨🇳</span>ZH</button>
+</div>
+
+<header>
+  <div class="logo"><span class="led"></span>DEMA <em>SOLUTIONS</em></div>
+  <div class="nav-status mono" data-i18n="system_online">SYSTEM: ONLINE</div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-track" id="ticker-track">
+    <span class="ticker-item" data-i18n="ticker_1">◆ 20 SPOTS AVAILABLE ON WAITLIST</span>
+    <span class="ticker-item" data-i18n="ticker_2">◆ 30% DISCOUNT FOR EARLY MEMBERS</span>
+    <span class="ticker-item" data-i18n="ticker_3">◆ CUSTOM SERVICE FOR EVERY COMPANY</span>
+    <span class="ticker-item" data-i18n="ticker_1">◆ 20 SPOTS AVAILABLE ON WAITLIST</span>
+    <span class="ticker-item" data-i18n="ticker_2">◆ 30% DISCOUNT FOR EARLY MEMBERS</span>
+    <span class="ticker-item" data-i18n="ticker_3">◆ CUSTOM SERVICE FOR EVERY COMPANY</span>
+  </div>
+</div>
+
+<!-- ═══ COMPANY BRAIN ═══ -->
+<div class="brain-graph">
+  <span class="brain-top-label" data-i18n="brain_label">// COMPANY BRAIN — KNOWLEDGE NETWORK</span>
+  <canvas id="brain-canvas"></canvas>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+  <div>
+    <div class="plate-tag" data-i18n="waitlist_tag">WAITLIST — 20 SPOTS</div>
+    <h1 class="headline">
+      <span class="reveal-word" data-i18n="h1_1">Your</span>
+      <span class="reveal-word" data-i18n="h1_2">documents</span>
+      <span class="reveal-word accent" data-i18n="h1_3">answer</span>
+      <span class="reveal-word" data-i18n="h1_4">on their own.</span>
+    </h1>
+    <p class="sub" data-i18n="hero_sub">Company Brain connects manuals, price lists, procedures and technical catalogues to an assistant that responds in seconds. No more time wasted searching for the right information in the wrong document.</p>
+    <div class="cta-row">
+      <a href="#lista" class="btn btn-primary" data-i18n="cta_book">Reserve your spot</a>
+      <span class="btn-note" data-i18n="cta_note">30% discount for the first 20 members</span>
+    </div>
+  </div>
+
+  <div class="hmi" style="position:relative;">
+    <div style="position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff5,#0006 70%);"></div>
+    <div style="position:absolute;top:6px;left:6px;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff5,#0006 70%);"></div>
+    <div class="hmi-bezel">
+      <div class="hmi-head">
+        <span>PANEL_QA // TECHNICAL_MANUAL_REV4</span>
+        <span class="status-ok">● ACTIVE</span>
+      </div>
+      <div class="hmi-line q">&gt; <span data-i18n="hmi_question">What is the tightening torque for the flanged joint?</span></div>
+      <div class="hmi-line" id="hmi-answer"><span id="hmi-answer-text"></span><span class="hmi-cursor">&nbsp;</span></div>
+      <div class="hmi-footer">
+        <span data-i18n="hmi_source">SOURCE: §4.3, PAGE 38</span>
+        <span><span data-i18n="hmi_time">RESPONSE TIME:</span> <span class="rt" id="rt-counter">0.0s</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DIAGNOSTICS ═══ -->
+<section>
+  <span class="section-label reveal" data-i18n="diag_label">// DIAGNOSTICS</span>
+  <h2 class="section-title reveal" data-i18n="diag_title">The information already exists. Nobody finds it in time.</h2>
+  <div class="diagnostic-panel">
+    <div class="fault-row reveal" style="--i:0">
+      <span class="fault-code">ERR-01</span>
+      <span class="fault-title" data-i18n="err1_title">Scattered documentation</span>
+      <span class="fault-desc" data-i18n="err1_desc">Manuals, price lists and procedures live in folders, emails and different versions — never all updated together.</span>
+    </div>
+    <div class="fault-row reveal" style="--i:1">
+      <span class="fault-code">ERR-02</span>
+      <span class="fault-title" data-i18n="err2_title">Wasted technical time</span>
+      <span class="fault-desc" data-i18n="err2_desc">Every manual search is time taken away from production, customer support or sales.</span>
+    </div>
+    <div class="fault-row reveal" style="--i:2">
+      <span class="fault-code">ERR-03</span>
+      <span class="fault-title" data-i18n="err3_title">Language barrier</span>
+      <span class="fault-desc" data-i18n="err3_desc">Subsidiaries and international clients work on documents translated late or inconsistently.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STEPS ═══ -->
+<section>
+  <span class="section-label reveal" data-i18n="steps_label">// OPERATING CYCLE</span>
+  <h2 class="section-title reveal" data-i18n="steps_title">From document to answer, three switches.</h2>
+  <div class="control-panel">
+    <div class="switch-step reveal" style="--i:0">
+      <div class="toggle"></div>
+      <div class="step-label">STEP 01</div>
+      <h3 data-i18n="step1_h">Ingestion</h3>
+      <p data-i18n="step1_p">We connect your sources — Drive, SharePoint, ERP — and organise the content into a structured knowledge base.</p>
+    </div>
+    <div class="switch-step reveal" style="--i:1">
+      <div class="toggle"></div>
+      <div class="step-label">STEP 02</div>
+      <h3 data-i18n="step2_h">Company Brain online</h3>
+      <p data-i18n="step2_p">The team queries the knowledge base in natural language, from chat, Teams or a dedicated interface.</p>
+    </div>
+    <div class="switch-step reveal" style="--i:2">
+      <div class="toggle"></div>
+      <div class="step-label">STEP 03</div>
+      <h3 data-i18n="step3_h">Continuous update</h3>
+      <p data-i18n="step3_p">Every new document is indexed automatically: the system stays aligned with reality.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WAITLIST ═══ -->
+<section class="waitlist" id="lista">
+  <div class="waitlist-inner reveal" id="waitlist-inner">
+    <div class="gauge-wrap">
+      <svg viewBox="0 0 200 110" width="280" style="margin:0 auto;">
+        <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="#2C3038" stroke-width="14" stroke-linecap="round"/>
+        <path class="arc-progress" id="arc-progress" d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="var(--hazard)" stroke-width="14" stroke-linecap="round"/>
+        <line class="needle" id="gauge-needle" x1="100" y1="100" x2="100" y2="25" stroke="var(--safety)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="7" fill="var(--plate)"/>
+      </svg>
+      <div class="gauge-num"><em id="gauge-taken">6</em><span>/20</span></div>
+      <div class="gauge-caption" id="gauge-caption" data-i18n="spots_taken">SPOTS ALREADY TAKEN</div>
+      <div class="discount-plate">
+        <span class="pct">-30%</span>
+        <span class="txt" data-i18n="discount_txt">EARLY MEMBER DISCOUNT<br>WAITLIST ONLY</span>
+      </div>
+    </div>
+
+    <form id="waitlist-form">
+      <div class="work-order" id="work-order-box" data-label="BOOKING FORM">
+        <div id="form-fields">
+          <h3 data-i18n="form_title">Reserve your spot</h3>
+          <div class="field">
+            <label for="nome" data-i18n="field_name">Full name</label>
+            <input type="text" id="nome" name="nome" required>
+          </div>
+          <div class="field">
+            <label for="azienda" data-i18n="field_company">Company</label>
+            <input type="text" id="azienda" name="azienda" required>
+          </div>
+          <div class="field">
+            <label for="email" data-i18n="field_email">Business email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="field">
+            <label for="settore" data-i18n="field_sector">Sector</label>
+            <select id="settore" name="settore" data-i18n-select="sectors">
+              <option>Industrial Machinery</option>
+              <option>Railway &amp; Transport</option>
+              <option>Cutting Tools</option>
+              <option>Medical Devices</option>
+              <option>Life Science &amp; Pharma</option>
+              <option>Food &amp; Beverage</option>
+              <option>Law &amp; Patent Firms</option>
+              <option>Business Consulting</option>
+              <option>Technical Writing &amp; DTP</option>
+              <option>Energy &amp; Oil/Gas</option>
+              <option>Aerospace &amp; Defence</option>
+              <option>Chemicals &amp; Materials</option>
+              <option>Electronics &amp; Semiconductors</option>
+              <option>Other B2B Manufacturing</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary submit-btn" data-i18n="btn_submit">Book my spot</button>
+          <p class="form-foot" data-i18n="form_foot">NO SPAM — LAUNCH UPDATES ONLY</p>
+        </div>
+        <div class="success-msg" id="success-msg">
+          <div class="stamp-approved" data-i18n="stamp">Approved</div>
+          <h3 style="margin-bottom:8px;color:var(--graphite);" data-i18n="success_h">Spot reserved.</h3>
+          <p style="color:var(--steel);font-size:.9rem;" data-i18n="success_p">We'll reach out within 48 hours to schedule an introductory call.</p>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <span style="font-family:'Sora',sans-serif;text-transform:uppercase;">DEMA SOLUTIONS</span>
+  <span class="mono">© 2026</span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  ██ i18n — TRANSLATION OBJECT
+//  To translate: edit the values for each language code.
+//  Keys are stable — never change them.
+//  "sectors" is an array of option strings for the dropdown.
+// ════════════════════════════════════════════════════════════
+const T = {
+  en:{
+    system_online:"SYSTEM: ONLINE",
+    ticker_1:"◆ 20 SPOTS AVAILABLE ON WAITLIST",
+    ticker_2:"◆ 30% DISCOUNT FOR EARLY MEMBERS",
+    ticker_3:"◆ CUSTOM SERVICE FOR EVERY COMPANY",
+    brain_label:"// COMPANY BRAIN — KNOWLEDGE NETWORK",
+    waitlist_tag:"WAITLIST — 20 SPOTS",
+    h1_1:"Your", h1_2:"documents", h1_3:"answer", h1_4:"on their own.",
+    hero_sub:"Company Brain connects manuals, price lists, procedures and technical catalogues to an assistant that responds in seconds. No more time wasted searching for the right information in the wrong document.",
+    cta_book:"Reserve your spot", cta_note:"30% discount for the first 20 members",
+    hmi_question:"What is the tightening torque for the flanged joint?",
+    hmi_answer:"45 Nm ± 2, per procedure §4.3 — verified on rev. 4, the most recent in the knowledge base.",
+    hmi_source:"SOURCE: §4.3, PAGE 38", hmi_time:"RESPONSE TIME:",
+    diag_label:"// DIAGNOSTICS",
+    diag_title:"The information already exists. Nobody finds it in time.",
+    err1_title:"Scattered documentation", err1_desc:"Manuals, price lists and procedures live in folders, emails and different versions — never all updated together.",
+    err2_title:"Wasted technical time", err2_desc:"Every manual search is time taken away from production, customer support or sales.",
+    err3_title:"Language barrier", err3_desc:"Subsidiaries and international clients work on documents translated late or inconsistently.",
+    steps_label:"// OPERATING CYCLE",
+    steps_title:"From document to answer, three switches.",
+    step1_h:"Ingestion", step1_p:"We connect your sources — Drive, SharePoint, ERP — and organise the content into a structured knowledge base.",
+    step2_h:"Company Brain online", step2_p:"The team queries the knowledge base in natural language, from chat, Teams or a dedicated interface.",
+    step3_h:"Continuous update", step3_p:"Every new document is indexed automatically: the system stays aligned with reality.",
+    spots_taken:"SPOTS ALREADY TAKEN",
+    discount_txt:"EARLY MEMBER DISCOUNT\nWAITLIST ONLY",
+    form_label:"BOOKING FORM",
+    form_title:"Reserve your spot",
+    field_name:"Full name", field_company:"Company", field_email:"Business email", field_sector:"Sector",
+    btn_submit:"Book my spot",
+    form_foot:"NO SPAM — LAUNCH UPDATES ONLY",
+    stamp:"Approved", success_h:"Spot reserved.",
+    success_p:"We'll reach out within 48 hours to schedule an introductory call.",
+    sectors:["Industrial Machinery","Railway & Transport","Cutting Tools","Medical Devices","Life Science & Pharma","Food & Beverage","Law & Patent Firms","Business Consulting","Technical Writing & DTP","Energy & Oil/Gas","Aerospace & Defence","Chemicals & Materials","Electronics & Semiconductors","Other B2B Manufacturing"],
+    // Brain document captions — shown as labels on nodes inside the brain
+    // Edit these to localise the animation labels
+    doc_captions:["Technical Manual","Marketing Brochure","Product Catalogue","Price List","LinkedIn Post","Corporate Presentation","Website","Contracts","Procedures","Quality Manual","Patents","Regulations","Case Studies","Training Material"]
+  },
+  it:{
+    system_online:"SISTEMA: ONLINE",
+    ticker_1:"◆ 20 POSTI DISPONIBILI IN LISTA D'ATTESA",
+    ticker_2:"◆ SCONTO 30% PER I PRIMI ISCRITTI",
+    ticker_3:"◆ SERVIZIO CUSTOM PER OGNI AZIENDA",
+    brain_label:"// COMPANY BRAIN — RETE DI CONOSCENZA",
+    waitlist_tag:"LISTA D'ATTESA — 20 POSTI",
+    h1_1:"I tuoi", h1_2:"documenti", h1_3:"rispondono", h1_4:"da soli.",
+    hero_sub:"Company Brain collega manuali, listini, procedure e cataloghi tecnici a un assistente che risponde in secondi. Niente più tempo perso a cercare l'informazione giusta nel documento sbagliato.",
+    cta_book:"Prenota il tuo posto", cta_note:"30% di sconto per i primi 20 iscritti",
+    hmi_question:"Qual è la coppia di serraggio del giunto flangiato?",
+    hmi_answer:"45 Nm ± 2, secondo la procedura §4.3 del manuale — verificato su rev. 4, la più recente in knowledge base.",
+    hmi_source:"FONTE: §4.3, PAG. 38", hmi_time:"TEMPO RISPOSTA:",
+    diag_label:"// DIAGNOSTICA",
+    diag_title:"L'informazione c'è già. Solo che nessuno la trova in tempo.",
+    err1_title:"Documentazione dispersa", err1_desc:"Manuali, listini e procedure vivono in cartelle, email e versioni diverse — mai tutti aggiornati insieme.",
+    err2_title:"Tempo tecnici sprecato", err2_desc:"Ogni ricerca manuale è tempo tolto a produzione, assistenza clienti o vendita.",
+    err3_title:"Barriera linguistica", err3_desc:"Filiali e clienti esteri lavorano su documenti tradotti in ritardo o in modo incoerente.",
+    steps_label:"// CICLO OPERATIVO",
+    steps_title:"Dal documento alla risposta, tre interruttori.",
+    step1_h:"Ingestion", step1_p:"Colleghiamo le tue fonti — Drive, SharePoint, gestionale — e organizziamo i contenuti in una base di conoscenza strutturata.",
+    step2_h:"Company Brain online", step2_p:"Il team interroga la knowledge base in linguaggio naturale, da chat, Teams o interfaccia dedicata.",
+    step3_h:"Aggiornamento continuo", step3_p:"Ogni nuovo documento viene indicizzato automaticamente: il sistema resta sempre allineato alla realtà.",
+    spots_taken:"POSTI GIÀ OCCUPATI",
+    discount_txt:"SCONTO ISCRIZIONE ANTICIPATA\nSOLO LISTA D'ATTESA",
+    form_label:"SCHEDA PRENOTAZIONE",
+    form_title:"Prenota il tuo posto",
+    field_name:"Nome e cognome", field_company:"Azienda", field_email:"Email aziendale", field_sector:"Settore",
+    btn_submit:"Riserva il mio posto",
+    form_foot:"NESSUNO SPAM — SOLO AGGIORNAMENTI SUL LANCIO",
+    stamp:"Approvato", success_h:"Posto riservato.",
+    success_p:"Ti scriviamo entro 48 ore per fissare la call conoscitiva.",
+    sectors:["Macchinari industriali","Railway & Trasporti","Utensili da taglio","Medical Devices","Life Science & Pharma","Food & Beverage","Studi legali & Patent","Consulenza aziendale","Redazione tecnica & DTP","Energia & Oil/Gas","Aerospazio & Difesa","Chimica & Materiali","Elettronica & Semiconduttori","Altro B2B manifatturiero"],
+    doc_captions:["Manuale tecnico","Brochure marketing","Catalogo prodotti","Listino prezzi","Post LinkedIn","Presentazione aziendale","Website","Contratti","Procedure","Manuale qualità","Brevetti","Normative","Case study","Materiale formativo"]
+  },
+  fr:{
+    system_online:"SYSTÈME: EN LIGNE",
+    ticker_1:"◆ 20 PLACES DISPONIBLES SUR LISTE D'ATTENTE",
+    ticker_2:"◆ 30% DE RÉDUCTION POUR LES PREMIERS INSCRITS",
+    ticker_3:"◆ SERVICE PERSONNALISÉ POUR CHAQUE ENTREPRISE",
+    brain_label:"// COMPANY BRAIN — RÉSEAU DE CONNAISSANCES",
+    waitlist_tag:"LISTE D'ATTENTE — 20 PLACES",
+    h1_1:"Vos", h1_2:"documents", h1_3:"répondent", h1_4:"d'eux-mêmes.",
+    hero_sub:"Company Brain connecte manuels, tarifs, procédures et catalogues techniques à un assistant qui répond en secondes. Fini le temps perdu à chercher la bonne information dans le mauvais document.",
+    cta_book:"Réservez votre place", cta_note:"30% de réduction pour les 20 premiers inscrits",
+    hmi_question:"Quel est le couple de serrage du raccord à bride?",
+    hmi_answer:"45 Nm ± 2, selon la procédure §4.3 — vérifié sur rév. 4, la plus récente en base de connaissances.",
+    hmi_source:"SOURCE: §4.3, PAGE 38", hmi_time:"TEMPS DE RÉPONSE:",
+    diag_label:"// DIAGNOSTICS",
+    diag_title:"L'information existe déjà. Personne ne la trouve à temps.",
+    err1_title:"Documentation dispersée", err1_desc:"Manuels, tarifs et procédures vivent dans des dossiers, e-mails et versions différentes — jamais tous mis à jour ensemble.",
+    err2_title:"Temps technique gaspillé", err2_desc:"Chaque recherche manuelle est du temps soustrait à la production, au support client ou aux ventes.",
+    err3_title:"Barrière linguistique", err3_desc:"Les filiales et clients étrangers travaillent sur des documents traduits en retard ou de façon incohérente.",
+    steps_label:"// CYCLE OPÉRATIONNEL",
+    steps_title:"Du document à la réponse, trois commutateurs.",
+    step1_h:"Ingestion", step1_p:"Nous connectons vos sources — Drive, SharePoint, ERP — et organisons le contenu en une base de connaissances structurée.",
+    step2_h:"Company Brain en ligne", step2_p:"L'équipe interroge la base de connaissances en langage naturel, depuis le chat, Teams ou une interface dédiée.",
+    step3_h:"Mise à jour continue", step3_p:"Chaque nouveau document est indexé automatiquement: le système reste aligné avec la réalité.",
+    spots_taken:"PLACES DÉJÀ PRISES",
+    discount_txt:"REMISE MEMBRE ANTICIPÉ\nLISTE D'ATTENTE UNIQUEMENT",
+    form_label:"FORMULAIRE DE RÉSERVATION",
+    form_title:"Réservez votre place",
+    field_name:"Nom complet", field_company:"Entreprise", field_email:"E-mail professionnel", field_sector:"Secteur",
+    btn_submit:"Réserver ma place",
+    form_foot:"AUCUN SPAM — MISES À JOUR DU LANCEMENT UNIQUEMENT",
+    stamp:"Approuvé", success_h:"Place réservée.",
+    success_p:"Nous vous contacterons dans les 48 heures pour planifier un appel de présentation.",
+    sectors:["Machines industrielles","Ferroviaire & Transport","Outils de coupe","Dispositifs médicaux","Sciences de la vie & Pharma","Alimentation & Boissons","Cabinets juridiques & Brevets","Conseil aux entreprises","Rédaction technique & DTP","Énergie & Pétrole/Gaz","Aérospatiale & Défense","Chimie & Matériaux","Électronique & Semi-conducteurs","Autre B2B industriel"],
+    doc_captions:["Manuel technique","Brochure marketing","Catalogue produits","Tarifs","Post LinkedIn","Présentation d'entreprise","Site web","Contrats","Procédures","Manuel qualité","Brevets","Réglementations","Études de cas","Matériel de formation"]
+  },
+  es:{
+    system_online:"SISTEMA: EN LÍNEA",
+    ticker_1:"◆ 20 PLAZAS DISPONIBLES EN LISTA DE ESPERA",
+    ticker_2:"◆ 30% DE DESCUENTO PARA LOS PRIMEROS INSCRITOS",
+    ticker_3:"◆ SERVICIO PERSONALIZADO PARA CADA EMPRESA",
+    brain_label:"// COMPANY BRAIN — RED DE CONOCIMIENTO",
+    waitlist_tag:"LISTA DE ESPERA — 20 PLAZAS",
+    h1_1:"Sus", h1_2:"documentos", h1_3:"responden", h1_4:"solos.",
+    hero_sub:"Company Brain conecta manuales, tarifas, procedimientos y catálogos técnicos a un asistente que responde en segundos. No más tiempo perdido buscando la información correcta en el documento equivocado.",
+    cta_book:"Reserva tu plaza", cta_note:"30% de descuento para los primeros 20 inscritos",
+    hmi_question:"¿Cuál es el par de apriete de la junta bridada?",
+    hmi_answer:"45 Nm ± 2, según el procedimiento §4.3 — verificado en rev. 4, la más reciente en la base de conocimiento.",
+    hmi_source:"FUENTE: §4.3, PÁG. 38", hmi_time:"TIEMPO DE RESPUESTA:",
+    diag_label:"// DIAGNÓSTICO",
+    diag_title:"La información ya existe. Nadie la encuentra a tiempo.",
+    err1_title:"Documentación dispersa", err1_desc:"Manuales, tarifas y procedimientos viven en carpetas, correos y versiones distintas — nunca todos actualizados juntos.",
+    err2_title:"Tiempo técnico desperdiciado", err2_desc:"Cada búsqueda manual es tiempo restado a producción, soporte al cliente o ventas.",
+    err3_title:"Barrera lingüística", err3_desc:"Filiales y clientes internacionales trabajan con documentos traducidos tarde o de forma inconsistente.",
+    steps_label:"// CICLO OPERATIVO",
+    steps_title:"Del documento a la respuesta, tres interruptores.",
+    step1_h:"Ingestión", step1_p:"Conectamos tus fuentes — Drive, SharePoint, ERP — y organizamos el contenido en una base de conocimiento estructurada.",
+    step2_h:"Company Brain en línea", step2_p:"El equipo consulta la base de conocimiento en lenguaje natural, desde chat, Teams o una interfaz dedicada.",
+    step3_h:"Actualización continua", step3_p:"Cada nuevo documento se indexa automáticamente: el sistema se mantiene alineado con la realidad.",
+    spots_taken:"PLAZAS YA OCUPADAS",
+    discount_txt:"DESCUENTO MIEMBRO ANTICIPADO\nSOLO LISTA DE ESPERA",
+    form_label:"FORMULARIO DE RESERVA",
+    form_title:"Reserva tu plaza",
+    field_name:"Nombre completo", field_company:"Empresa", field_email:"Correo empresarial", field_sector:"Sector",
+    btn_submit:"Reservar mi plaza",
+    form_foot:"SIN SPAM — SOLO ACTUALIZACIONES DEL LANZAMIENTO",
+    stamp:"Aprobado", success_h:"Plaza reservada.",
+    success_p:"Nos pondremos en contacto en 48 horas para programar una llamada introductoria.",
+    sectors:["Maquinaria industrial","Ferroviario & Transporte","Herramientas de corte","Dispositivos médicos","Ciencias de la vida & Farma","Alimentación & Bebidas","Despachos jurídicos & Patentes","Consultoría empresarial","Redacción técnica & DTP","Energía & Petróleo/Gas","Aeroespacial & Defensa","Química & Materiales","Electrónica & Semiconductores","Otro B2B industrial"],
+    doc_captions:["Manual técnico","Folleto de marketing","Catálogo de productos","Lista de precios","Post de LinkedIn","Presentación corporativa","Sitio web","Contratos","Procedimientos","Manual de calidad","Patentes","Normativas","Casos de estudio","Material de formación"]
+  },
+  de:{
+    system_online:"SYSTEM: ONLINE",
+    ticker_1:"◆ 20 PLÄTZE IN DER WARTELISTE VERFÜGBAR",
+    ticker_2:"◆ 30% RABATT FÜR FRÜHE MITGLIEDER",
+    ticker_3:"◆ INDIVIDUELLER SERVICE FÜR JEDES UNTERNEHMEN",
+    brain_label:"// COMPANY BRAIN — WISSENSNETZWERK",
+    waitlist_tag:"WARTELISTE — 20 PLÄTZE",
+    h1_1:"Ihre", h1_2:"Dokumente", h1_3:"antworten", h1_4:"von selbst.",
+    hero_sub:"Company Brain verbindet Handbücher, Preislisten, Verfahren und technische Kataloge mit einem Assistenten, der in Sekunden antwortet. Nie wieder Zeit damit verschwenden, die richtigen Informationen im falschen Dokument zu suchen.",
+    cta_book:"Platz reservieren", cta_note:"30% Rabatt für die ersten 20 Mitglieder",
+    hmi_question:"Was ist das Anzugsmoment des Flanschverbinders?",
+    hmi_answer:"45 Nm ± 2, gemäß Verfahren §4.3 — verifiziert in Rev. 4, der aktuellsten in der Wissensdatenbank.",
+    hmi_source:"QUELLE: §4.3, SEITE 38", hmi_time:"ANTWORTZEIT:",
+    diag_label:"// DIAGNOSE",
+    diag_title:"Die Information existiert bereits. Niemand findet sie rechtzeitig.",
+    err1_title:"Verstreute Dokumentation", err1_desc:"Handbücher, Preislisten und Verfahren leben in Ordnern, E-Mails und verschiedenen Versionen — nie alle zusammen aktualisiert.",
+    err2_title:"Verschwendete Technikzeit", err2_desc:"Jede manuelle Suche ist Zeit, die von Produktion, Kundensupport oder Vertrieb abgezogen wird.",
+    err3_title:"Sprachbarriere", err3_desc:"Tochtergesellschaften und internationale Kunden arbeiten mit spät oder inkonsistent übersetzten Dokumenten.",
+    steps_label:"// BETRIEBSZYKLUS",
+    steps_title:"Vom Dokument zur Antwort, drei Schalter.",
+    step1_h:"Aufnahme", step1_p:"Wir verbinden Ihre Quellen — Drive, SharePoint, ERP — und organisieren die Inhalte in einer strukturierten Wissensdatenbank.",
+    step2_h:"Company Brain online", step2_p:"Das Team fragt die Wissensdatenbank in natürlicher Sprache ab, über Chat, Teams oder eine dedizierte Oberfläche.",
+    step3_h:"Kontinuierliche Aktualisierung", step3_p:"Jedes neue Dokument wird automatisch indexiert: Das System bleibt stets mit der Realität abgestimmt.",
+    spots_taken:"PLÄTZE BEREITS BELEGT",
+    discount_txt:"FRÜHBUCHER-RABATT\nNUR FÜR WARTELISTE",
+    form_label:"BUCHUNGSFORMULAR",
+    form_title:"Platz reservieren",
+    field_name:"Vollständiger Name", field_company:"Unternehmen", field_email:"Geschäftliche E-Mail", field_sector:"Branche",
+    btn_submit:"Meinen Platz buchen",
+    form_foot:"KEIN SPAM — NUR LAUNCH-UPDATES",
+    stamp:"Genehmigt", success_h:"Platz reserviert.",
+    success_p:"Wir melden uns innerhalb von 48 Stunden, um ein erstes Gespräch zu vereinbaren.",
+    sectors:["Industriemaschinen","Bahn & Transport","Schneidwerkzeuge","Medizinprodukte","Life Science & Pharma","Lebensmittel & Getränke","Rechts- & Patentbüros","Unternehmensberatung","Technische Redaktion & DTP","Energie & Öl/Gas","Luft-/Raumfahrt & Verteidigung","Chemie & Werkstoffe","Elektronik & Halbleiter","Sonstiges B2B-Fertigungsgewerbe"],
+    doc_captions:["Technisches Handbuch","Marketing-Broschüre","Produktkatalog","Preisliste","LinkedIn-Beitrag","Unternehmenspräsentation","Website","Verträge","Verfahren","Qualitätshandbuch","Patente","Vorschriften","Fallstudien","Schulungsmaterial"]
+  },
+  pt:{
+    system_online:"SISTEMA: ONLINE",
+    ticker_1:"◆ 20 VAGAS DISPONÍVEIS NA LISTA DE ESPERA",
+    ticker_2:"◆ 30% DE DESCONTO PARA OS PRIMEIROS INSCRITOS",
+    ticker_3:"◆ SERVIÇO PERSONALIZADO PARA CADA EMPRESA",
+    brain_label:"// COMPANY BRAIN — REDE DE CONHECIMENTO",
+    waitlist_tag:"LISTA DE ESPERA — 20 VAGAS",
+    h1_1:"Os seus", h1_2:"documentos", h1_3:"respondem", h1_4:"sozinhos.",
+    hero_sub:"O Company Brain liga manuais, tabelas de preços, procedimentos e catálogos técnicos a um assistente que responde em segundos. Chega de tempo perdido à procura da informação certa no documento errado.",
+    cta_book:"Reserve o seu lugar", cta_note:"30% de desconto para os primeiros 20 inscritos",
+    hmi_question:"Qual é o binário de aperto da junta flangeada?",
+    hmi_answer:"45 Nm ± 2, conforme o procedimento §4.3 — verificado na rev. 4, a mais recente na base de conhecimento.",
+    hmi_source:"FONTE: §4.3, PÁG. 38", hmi_time:"TEMPO DE RESPOSTA:",
+    diag_label:"// DIAGNÓSTICO",
+    diag_title:"A informação já existe. Ninguém a encontra a tempo.",
+    err1_title:"Documentação dispersa", err1_desc:"Manuais, preçários e procedimentos vivem em pastas, e-mails e versões diferentes — nunca todos atualizados em conjunto.",
+    err2_title:"Tempo técnico desperdiçado", err2_desc:"Cada pesquisa manual é tempo retirado à produção, apoio ao cliente ou vendas.",
+    err3_title:"Barreira linguística", err3_desc:"Filiais e clientes internacionais trabalham com documentos traduzidos tardiamente ou de forma inconsistente.",
+    steps_label:"// CICLO OPERACIONAL",
+    steps_title:"Do documento à resposta, três interruptores.",
+    step1_h:"Ingestão", step1_p:"Ligamos as suas fontes — Drive, SharePoint, ERP — e organizamos o conteúdo numa base de conhecimento estruturada.",
+    step2_h:"Company Brain online", step2_p:"A equipa consulta a base de conhecimento em linguagem natural, via chat, Teams ou interface dedicada.",
+    step3_h:"Atualização contínua", step3_p:"Cada novo documento é indexado automaticamente: o sistema mantém-se sempre alinhado com a realidade.",
+    spots_taken:"VAGAS JÁ OCUPADAS",
+    discount_txt:"DESCONTO MEMBRO ANTECIPADO\nAPENAS LISTA DE ESPERA",
+    form_label:"FORMULÁRIO DE RESERVA",
+    form_title:"Reserve o seu lugar",
+    field_name:"Nome completo", field_company:"Empresa", field_email:"E-mail profissional", field_sector:"Setor",
+    btn_submit:"Reservar o meu lugar",
+    form_foot:"SEM SPAM — APENAS ATUALIZAÇÕES DO LANÇAMENTO",
+    stamp:"Aprovado", success_h:"Lugar reservado.",
+    success_p:"Entraremos em contacto em 48 horas para agendar uma chamada introdutória.",
+    sectors:["Máquinas industriais","Ferroviário & Transportes","Ferramentas de corte","Dispositivos médicos","Ciências da vida & Farma","Alimentação & Bebidas","Escritórios jurídicos & Patentes","Consultoria empresarial","Redação técnica & DTP","Energia & Petróleo/Gás","Aeroespacial & Defesa","Química & Materiais","Eletrónica & Semicondutores","Outro B2B industrial"],
+    doc_captions:["Manual técnico","Brochura de marketing","Catálogo de produtos","Tabela de preços","Post no LinkedIn","Apresentação corporativa","Website","Contratos","Procedimentos","Manual de qualidade","Patentes","Regulamentos","Casos de estudo","Material de formação"]
+  },
+  nl:{
+    system_online:"SYSTEEM: ONLINE",
+    ticker_1:"◆ 20 PLEKKEN BESCHIKBAAR OP WACHTLIJST",
+    ticker_2:"◆ 30% KORTING VOOR VROEGE LEDEN",
+    ticker_3:"◆ MAATWERK SERVICE VOOR ELK BEDRIJF",
+    brain_label:"// COMPANY BRAIN — KENNISNETWERK",
+    waitlist_tag:"WACHTLIJST — 20 PLEKKEN",
+    h1_1:"Uw", h1_2:"documenten", h1_3:"antwoorden", h1_4:"zelf.",
+    hero_sub:"Company Brain verbindt handleidingen, prijslijsten, procedures en technische catalogi met een assistent die in seconden antwoordt. Nooit meer tijd verspillen aan het zoeken naar de juiste informatie in het verkeerde document.",
+    cta_book:"Reserveer uw plek", cta_note:"30% korting voor de eerste 20 leden",
+    hmi_question:"Wat is het aanhaalmoment van de flensbout?",
+    hmi_answer:"45 Nm ± 2, conform procedure §4.3 — geverifieerd in rev. 4, de meest recente in de kennisbank.",
+    hmi_source:"BRON: §4.3, PAG. 38", hmi_time:"RESPONSTIJD:",
+    diag_label:"// DIAGNOSE",
+    diag_title:"De informatie bestaat al. Niemand vindt het op tijd.",
+    err1_title:"Verspreide documentatie", err1_desc:"Handleidingen, prijslijsten en procedures leven in mappen, e-mails en verschillende versies — nooit allemaal samen bijgewerkt.",
+    err2_title:"Verspilde technische tijd", err2_desc:"Elke handmatige zoekopdracht is tijd die weggenomen wordt van productie, klantenondersteuning of verkoop.",
+    err3_title:"Taalbarrière", err3_desc:"Dochterondernemingen en internationale klanten werken met laat of inconsistent vertaalde documenten.",
+    steps_label:"// OPERATIONELE CYCLUS",
+    steps_title:"Van document naar antwoord, drie schakelaars.",
+    step1_h:"Opname", step1_p:"We verbinden uw bronnen — Drive, SharePoint, ERP — en organiseren de inhoud in een gestructureerde kennisbasis.",
+    step2_h:"Company Brain online", step2_p:"Het team bevraagt de kennisbasis in natuurlijke taal, via chat, Teams of een speciale interface.",
+    step3_h:"Continue update", step3_p:"Elk nieuw document wordt automatisch geïndexeerd: het systeem blijft altijd afgestemd op de realiteit.",
+    spots_taken:"PLEKKEN AL BEZET",
+    discount_txt:"VROEGBOEKKORTING\nALLEEN WACHTLIJST",
+    form_label:"RESERVERINGSFORMULIER",
+    form_title:"Reserveer uw plek",
+    field_name:"Volledige naam", field_company:"Bedrijf", field_email:"Zakelijk e-mailadres", field_sector:"Sector",
+    btn_submit:"Mijn plek reserveren",
+    form_foot:"GEEN SPAM — ALLEEN LANCERING-UPDATES",
+    stamp:"Goedgekeurd", success_h:"Plek gereserveerd.",
+    success_p:"We nemen binnen 48 uur contact op om een kennismakingsgesprek te plannen.",
+    sectors:["Industriële machines","Spoorwegen & Transport","Snijgereedschappen","Medische hulpmiddelen","Life Science & Farma","Voedsel & Dranken","Juridische & Octrooikantoren","Bedrijfsadvies","Technisch schrijven & DTP","Energie & Olie/Gas","Lucht-/Ruimtevaart & Defensie","Chemie & Materialen","Elektronica & Halfgeleiders","Overig B2B-industrie"],
+    doc_captions:["Technische handleiding","Marketingbrochure","Productcatalogus","Prijslijst","LinkedIn-post","Bedrijfspresentatie","Website","Contracten","Procedures","Kwaliteitshandboek","Patenten","Regelgeving","Casestudies","Trainingsmateriaal"]
+  },
+  no:{
+    system_online:"SYSTEM: ONLINE",
+    ticker_1:"◆ 20 PLASSER TILGJENGELIG PÅ VENTELISTE",
+    ticker_2:"◆ 30% RABATT FOR TIDLIGE MEDLEMMER",
+    ticker_3:"◆ TILPASSET TJENESTE FOR HVERT SELSKAP",
+    brain_label:"// COMPANY BRAIN — KUNNSKAPSNETTVERK",
+    waitlist_tag:"VENTELISTE — 20 PLASSER",
+    h1_1:"Dine", h1_2:"dokumenter", h1_3:"svarer", h1_4:"selv.",
+    hero_sub:"Company Brain kobler håndbøker, prislister, prosedyrer og tekniske kataloger til en assistent som svarer på sekunder. Aldri mer tid bortkastet på å lete etter riktig informasjon i feil dokument.",
+    cta_book:"Reserver din plass", cta_note:"30% rabatt for de første 20 medlemmene",
+    hmi_question:"Hva er tilstrammingsmomentet for flansesamlingen?",
+    hmi_answer:"45 Nm ± 2, i henhold til prosedyre §4.3 — verifisert i rev. 4, den nyeste i kunnskapsbasen.",
+    hmi_source:"KILDE: §4.3, SIDE 38", hmi_time:"RESPONSTID:",
+    diag_label:"// DIAGNOSTIKK",
+    diag_title:"Informasjonen finnes allerede. Ingen finner den i tide.",
+    err1_title:"Spredt dokumentasjon", err1_desc:"Håndbøker, prislister og prosedyrer lever i mapper, e-poster og ulike versjoner — aldri alle oppdatert sammen.",
+    err2_title:"Bortkastet teknisk tid", err2_desc:"Hvert manuelle søk er tid tatt fra produksjon, kundestøtte eller salg.",
+    err3_title:"Språkbarriere", err3_desc:"Datterselskaper og internasjonale kunder arbeider med dokumenter som er oversatt sent eller inkonsekvent.",
+    steps_label:"// DRIFTSSYKLUS",
+    steps_title:"Fra dokument til svar, tre brytere.",
+    step1_h:"Inntak", step1_p:"Vi kobler til kildene dine — Drive, SharePoint, ERP — og organiserer innholdet i en strukturert kunnskapsbase.",
+    step2_h:"Company Brain online", step2_p:"Teamet spørrer kunnskapsbasen på naturlig språk, via chat, Teams eller et dedikert grensesnitt.",
+    step3_h:"Kontinuerlig oppdatering", step3_p:"Hvert nytt dokument indekseres automatisk: systemet forblir alltid i takt med virkeligheten.",
+    spots_taken:"PLASSER ALLEREDE TATT",
+    discount_txt:"TIDLIGRABATT\nKUN FOR VENTELISTE",
+    form_label:"RESERVASJONSSKJEMA",
+    form_title:"Reserver din plass",
+    field_name:"Fullt navn", field_company:"Selskap", field_email:"Bedriftse-post", field_sector:"Sektor",
+    btn_submit:"Reserver min plass",
+    form_foot:"INGEN SPAM — BARE LANSERINGSOPPDATERINGER",
+    stamp:"Godkjent", success_h:"Plass reservert.",
+    success_p:"Vi tar kontakt innen 48 timer for å avtale en introduksjonssamtale.",
+    sectors:["Industrimaskiner","Jernbane & Transport","Skjæreverktøy","Medisinsk utstyr","Life Science & Farma","Mat & Drikke","Juridiske & Patentkontor","Forretningsrådgivning","Teknisk skriving & DTP","Energi & Olje/Gass","Luft-/Romfart & Forsvar","Kjemi & Materialer","Elektronikk & Halvledere","Annen B2B-industri"],
+    doc_captions:["Teknisk håndbok","Markedsføringsbrosjyre","Produktkatalog","Prisliste","LinkedIn-innlegg","Bedriftspresentasjon","Nettsted","Kontrakter","Prosedyrer","Kvalitetshåndbok","Patenter","Regelverk","Casestudier","Opplæringsmateriell"]
+  },
+  fi:{
+    system_online:"JÄRJESTELMÄ: ONLINE",
+    ticker_1:"◆ 20 PAIKKAA SAATAVILLA ODOTUSLISTALLA",
+    ticker_2:"◆ 30% ALENNUS VARHAISILLE JÄSENILLE",
+    ticker_3:"◆ RÄÄTÄLÖITY PALVELU JOKAISELLE YRITYKSELLE",
+    brain_label:"// COMPANY BRAIN — TIETOVERKKO",
+    waitlist_tag:"ODOTUSLISTA — 20 PAIKKAA",
+    h1_1:"Asiakirjasi", h1_2:"vastaavat", h1_3:"itsestään.", h1_4:"",
+    hero_sub:"Company Brain yhdistää käsikirjat, hinnastot, menettelytavat ja tekniset luettelot assistenttiin, joka vastaa sekunneissa. Ei enää hukkaan heitettyä aikaa oikean tiedon etsimiseen väärästä dokumentista.",
+    cta_book:"Varaa paikkasi", cta_note:"30% alennus ensimmäisille 20 jäsenelle",
+    hmi_question:"Mikä on laippaliitoksen kiristysmomentti?",
+    hmi_answer:"45 Nm ± 2, menettelyn §4.3 mukaan — tarkistettu rev. 4:stä, uusimmasta tietokannassa.",
+    hmi_source:"LÄHDE: §4.3, SIVU 38", hmi_time:"VASTAUSAIKA:",
+    diag_label:"// DIAGNOSTIIKKA",
+    diag_title:"Tieto on jo olemassa. Kukaan ei löydä sitä ajoissa.",
+    err1_title:"Hajanainen dokumentaatio", err1_desc:"Käsikirjat, hinnastot ja menettelytavat elävät kansioissa, sähköposteissa ja eri versioissa — ei koskaan kaikkia päivitetty yhdessä.",
+    err2_title:"Hukkaan heitetty tekninen aika", err2_desc:"Jokainen manuaalinen haku on aikaa pois tuotannosta, asiakastuesta tai myynnistä.",
+    err3_title:"Kielimuuri", err3_desc:"Tytäryhtiöt ja kansainväliset asiakkaat työskentelevät myöhässä tai epäjohdonmukaisesti käännettyjen asiakirjojen kanssa.",
+    steps_label:"// TOIMINTASYKLI",
+    steps_title:"Dokumentista vastaukseen, kolme kytkintä.",
+    step1_h:"Sisäänotto", step1_p:"Yhdistämme lähteesi — Drive, SharePoint, ERP — ja järjestämme sisällön strukturoituun tietokantaan.",
+    step2_h:"Company Brain online", step2_p:"Tiimi kyselee tietokantaa luonnollisella kielellä chatin, Teamsin tai erillisen käyttöliittymän kautta.",
+    step3_h:"Jatkuva päivitys", step3_p:"Jokainen uusi asiakirja indeksoidaan automaattisesti: järjestelmä pysyy aina ajan tasalla.",
+    spots_taken:"PAIKAT JO VARATTUNA",
+    discount_txt:"VARHAISEN JÄSENEN ALENNUS\nVAIN ODOTUSLISTA",
+    form_label:"VARAUSLOMAKE",
+    form_title:"Varaa paikkasi",
+    field_name:"Koko nimi", field_company:"Yritys", field_email:"Työsähköposti", field_sector:"Toimiala",
+    btn_submit:"Varaa paikkani",
+    form_foot:"EI ROSKAPOSTIA — VAIN JULKAISUPÄIVITYKSET",
+    stamp:"Hyväksytty", success_h:"Paikka varattu.",
+    success_p:"Otamme yhteyttä 48 tunnin kuluessa tutustumispuhelun sopimiseksi.",
+    sectors:["Teollisuuskoneet","Rautatie & Liikenne","Leikkuutyökalut","Lääkinnälliset laitteet","Life Science & Pharma","Elintarvikkeet & Juomat","Lakitoimistot & Patentit","Liikkeenjohdon konsultointi","Tekninen kirjoittaminen & DTP","Energia & Öljy/Kaasu","Ilma-/Avaruus & Puolustus","Kemia & Materiaalit","Elektroniikka & Puolijohteet","Muu B2B-teollisuus"],
+    doc_captions:["Tekninen käsikirja","Markkinointiesite","Tuoteluettelo","Hinnasto","LinkedIn-julkaisu","Yrityspresentaatio","Verkkosivusto","Sopimukset","Menettelytavat","Laatukäsikirja","Patentit","Säädökset","Tapaustutkimukset","Koulutusmateriaali"]
+  },
+  sv:{
+    system_online:"SYSTEM: ONLINE",
+    ticker_1:"◆ 20 PLATSER TILLGÄNGLIGA PÅ VÄNTELISTAN",
+    ticker_2:"◆ 30% RABATT FÖR TIDIGA MEDLEMMAR",
+    ticker_3:"◆ ANPASSAD TJÄNST FÖR VARJE FÖRETAG",
+    brain_label:"// COMPANY BRAIN — KUNSKAPSNÄTVERK",
+    waitlist_tag:"VÄNTELISTA — 20 PLATSER",
+    h1_1:"Dina", h1_2:"dokument", h1_3:"svarar", h1_4:"själva.",
+    hero_sub:"Company Brain kopplar samman handböcker, prislistor, rutiner och tekniska kataloger med en assistent som svarar på sekunder. Slut på tid bortkastade på att leta efter rätt information i fel dokument.",
+    cta_book:"Reservera din plats", cta_note:"30% rabatt för de första 20 medlemmarna",
+    hmi_question:"Vad är åtdragningsmoment för flänsförbandet?",
+    hmi_answer:"45 Nm ± 2, enligt procedur §4.3 — verifierat i rev. 4, den senaste i kunskapsbasen.",
+    hmi_source:"KÄLLA: §4.3, SIDA 38", hmi_time:"SVARSTID:",
+    diag_label:"// DIAGNOSTIK",
+    diag_title:"Informationen finns redan. Ingen hittar den i tid.",
+    err1_title:"Spridd dokumentation", err1_desc:"Handböcker, prislistor och rutiner lever i mappar, e-post och olika versioner — aldrig alla uppdaterade tillsammans.",
+    err2_title:"Bortkastade tekniktimmar", err2_desc:"Varje manuell sökning är tid borttagen från produktion, kundsupport eller försäljning.",
+    err3_title:"Språkbarriär", err3_desc:"Dotterbolag och internationella kunder arbetar med dokument som översatts sent eller inkonsekvent.",
+    steps_label:"// DRIFTSCYKEL",
+    steps_title:"Från dokument till svar, tre brytare.",
+    step1_h:"Inmatning", step1_p:"Vi ansluter dina källor — Drive, SharePoint, ERP — och organiserar innehållet i en strukturerad kunskapsbas.",
+    step2_h:"Company Brain online", step2_p:"Teamet söker i kunskapsbasen på naturligt språk, via chatt, Teams eller ett dedikerat gränssnitt.",
+    step3_h:"Kontinuerlig uppdatering", step3_p:"Varje nytt dokument indexeras automatiskt: systemet förblir alltid i linje med verkligheten.",
+    spots_taken:"PLATSER REDAN TAGNA",
+    discount_txt:"TIDIG MEDLEMSRABATT\nENDART VÄNTELISTA",
+    form_label:"BOKNINGSFORMULÄR",
+    form_title:"Reservera din plats",
+    field_name:"Fullständigt namn", field_company:"Företag", field_email:"Jobbmail", field_sector:"Sektor",
+    btn_submit:"Boka min plats",
+    form_foot:"INGEN SPAM — BARA LANSERINGSUPPDATERINGAR",
+    stamp:"Godkänd", success_h:"Plats reserverad.",
+    success_p:"Vi hör av oss inom 48 timmar för att boka ett introduktionssamtal.",
+    sectors:["Industrimaskiner","Järnväg & Transport","Skärverktyg","Medicintekniska produkter","Life Science & Pharma","Mat & Dryck","Juridik & Patent","Affärskonsultation","Tekniskt skrivande & DTP","Energi & Olja/Gas","Flyg-/Rymd & Försvar","Kemi & Material","Elektronik & Halvledare","Annan B2B-industri"],
+    doc_captions:["Teknisk handbok","Marknadsföringsbroschyr","Produktkatalog","Prislista","LinkedIn-inlägg","Företagspresentation","Webbplats","Kontrakt","Rutiner","Kvalitetshandbok","Patent","Föreskrifter","Fallstudier","Utbildningsmaterial"]
+  },
+  zh:{
+    system_online:"系统：在线",
+    ticker_1:"◆ 候补名单剩余20个席位",
+    ticker_2:"◆ 早期会员享受30%折扣",
+    ticker_3:"◆ 为每家企业提供定制服务",
+    brain_label:"// 公司大脑 — 知识网络",
+    waitlist_tag:"候补名单 — 20个席位",
+    h1_1:"您的", h1_2:"文档", h1_3:"自动", h1_4:"回答。",
+    hero_sub:"公司大脑将手册、价目表、程序和技术目录连接到一个在几秒钟内响应的助手。不再浪费时间在错误的文档中寻找正确的信息。",
+    cta_book:"预订您的席位", cta_note:"前20名会员享受30%折扣",
+    hmi_question:"法兰接头的紧固扭矩是多少？",
+    hmi_answer:"45 Nm ± 2，根据程序§4.3 — 已在知识库中最新的第4版修订本中验证。",
+    hmi_source:"来源：§4.3，第38页", hmi_time:"响应时间：",
+    diag_label:"// 诊断",
+    diag_title:"信息早已存在。只是没人能及时找到。",
+    err1_title:"文档分散", err1_desc:"手册、价目表和程序存在于文件夹、电子邮件和不同版本中，从未全部同步更新。",
+    err2_title:"技术时间浪费", err2_desc:"每次手动搜索都是从生产、客户支持或销售中占用的时间。",
+    err3_title:"语言障碍", err3_desc:"子公司和国际客户使用翻译滞后或不一致的文档工作。",
+    steps_label:"// 运营周期",
+    steps_title:"从文档到答案，三个开关。",
+    step1_h:"数据摄取", step1_p:"我们连接您的来源 — Drive、SharePoint、ERP — 并将内容组织到结构化知识库中。",
+    step2_h:"公司大脑上线", step2_p:"团队以自然语言查询知识库，通过聊天、Teams或专用界面。",
+    step3_h:"持续更新", step3_p:"每个新文档都会自动索引：系统始终与现实保持同步。",
+    spots_taken:"席位已被占用",
+    discount_txt:"早期会员折扣\n仅限候补名单",
+    form_label:"预订表格",
+    form_title:"预订您的席位",
+    field_name:"姓名", field_company:"公司", field_email:"企业邮箱", field_sector:"行业",
+    btn_submit:"预订我的席位",
+    form_foot:"无垃圾邮件 — 仅发布更新",
+    stamp:"已批准", success_h:"席位已预订。",
+    success_p:"我们将在48小时内联系您安排初步通话。",
+    sectors:["工业机械","铁路与运输","切削工具","医疗器械","生命科学与制药","食品与饮料","法律与专利事务所","企业咨询","技术写作与DTP","能源与石油/天然气","航空/航天与国防","化工与材料","电子与半导体","其他B2B制造业"],
+    doc_captions:["技术手册","营销手册","产品目录","价目表","领英帖子","企业演示文稿","网站","合同","程序","质量手册","专利","法规","案例研究","培训材料"]
+  }
+};
+
+// ── Active language state ──
+let currentLang = 'en';
+
+function applyTranslation(lang){
+  currentLang = lang;
+  const tr = T[lang] || T.en;
+  document.documentElement.lang = lang;
+
+  // All data-i18n text nodes
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(tr[key] !== undefined) el.textContent = tr[key];
+  });
+
+  // Select dropdowns
+  document.querySelectorAll('[data-i18n-select]').forEach(sel => {
+    const key = sel.getAttribute('data-i18n-select');
+    const opts = tr[key];
+    if(!Array.isArray(opts)) return;
+    const prev = sel.selectedIndex;
+    sel.innerHTML = opts.map(o => `<option>${o}</option>`).join('');
+    sel.selectedIndex = Math.min(prev, opts.length - 1);
+  });
+
+  // Form label via data-label attribute
+  const wo = document.getElementById('work-order-box');
+  if(wo) wo.setAttribute('data-label', tr.form_label || '');
+
+  // Gauge caption (may have been overridden by full state)
+  const gc = document.getElementById('gauge-caption');
+  if(gc && !gc.classList.contains('full')) gc.textContent = tr.spots_taken || '';
+
+  // HMI answer (reset typewriter so it re-fires in new language)
+  const aEl = document.getElementById('hmi-answer-text');
+  if(aEl) { aEl.textContent = ''; hmiTyped = false; }
+
+  // Lang button active state
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+  });
+
+  // Update brain captions from current lang
+  brainCaptions = tr.doc_captions || T.en.doc_captions;
+}
+
+// Lang bar clicks
+document.getElementById('lang-bar').addEventListener('click', e => {
+  const btn = e.target.closest('.lang-btn');
+  if(btn) applyTranslation(btn.getAttribute('data-lang'));
+});
+
+// ════════════════════════════════════════════════════════════
+//  COMPANY BRAIN — Canvas Engine
+// ════════════════════════════════════════════════════════════
+try{(function(){
+  const canvas = document.getElementById('brain-canvas');
+  const ctx    = canvas.getContext('2d');
+  const rm     = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  // ── sizing ──
+  let W, H, CX, CY, SC;
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth;
+    H = Math.min(Math.max(W * 0.56, 340), 560);
+    canvas.style.height = H + 'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    CX = W / 2; CY = H / 2 + 10;
+    SC = Math.min(W, H) / 520;
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+
+  // ── tilt ──
+  let tiltX=0, tiltY=0, mX=0, mY=0;
+  canvas.addEventListener('pointermove', e => {
+    const r=canvas.getBoundingClientRect();
+    mX=(e.clientX-r.left-W/2)/(W/2);
+    mY=(e.clientY-r.top-H/2)/(H/2);
+  });
+  canvas.addEventListener('pointerleave',()=>{ mX=0; mY=0; });
+
+  // ── 3D helpers ──
+  const rX=(x,y,z,a)=>({x,y:y*Math.cos(a)-z*Math.sin(a),z:y*Math.sin(a)+z*Math.cos(a)});
+  const rY=(x,y,z,a)=>({x:x*Math.cos(a)+z*Math.sin(a),y,z:-x*Math.sin(a)+z*Math.cos(a)});
+  function proj(x,y,z){const f=700,s=f/(f+z+80);return{sx:CX+x*s,sy:CY+y*s,sc:s};}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function eio(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
+
+  // ══════════════════════════════════════════════════════════
+  //  OBSIDIAN-STYLE BRAIN GRAPH
+  //
+  //  The brain shape emerges from ~400 small coloured particles
+  //  arranged in clusters that together outline a brain silhouette,
+  //  just like the Obsidian second-brain graph in the reference image.
+  //
+  //  Clusters by lobe / region, each with a dominant colour:
+  //   • Frontal     → teal  (#00C9B1)
+  //   • Parietal    → cyan  (#38BDF8)
+  //   • Temporal    → orange (#FB923C)
+  //   • Occipital   → purple (#8B5CF6)
+  //   • Cerebellum  → yellow (#FACC15)
+  //   • Core hub    → white  (#EFEBE0)
+  // ══════════════════════════════════════════════════════════
+
+  // Brain silhouette outline as a 2-D polygon (normalised, centred at 0,0)
+  // x: -1=occipital(back), +1=frontal(front)
+  // y: -1=top,              +1=bottom
+  // These 38 points define the outer boundary used to distribute particles.
+  const OUTLINE = [
+    [ 0.60,-0.70],[ 0.72,-0.55],[ 0.78,-0.36],[ 0.76,-0.18],
+    [ 0.70,-0.02],[ 0.62, 0.06],[ 0.54,-0.02],[ 0.44,-0.10],
+    [ 0.30,-0.18],[ 0.14,-0.22],[-0.02,-0.24],[-0.18,-0.22],
+    [-0.34,-0.16],[-0.48,-0.06],[-0.58, 0.08],[-0.60, 0.24],
+    [-0.54, 0.40],[-0.44, 0.52],[-0.32, 0.62],[-0.18, 0.68],
+    [-0.06, 0.66],[ 0.04, 0.58],[ 0.06, 0.50],
+    // temporal notch back up
+    [ 0.10, 0.58],[ 0.24, 0.68],[ 0.40, 0.70],[ 0.54, 0.64],
+    [ 0.64, 0.52],[ 0.70, 0.36],[ 0.72, 0.18],[ 0.70, 0.00],
+    [ 0.68,-0.18],[ 0.66,-0.36],[ 0.64,-0.54],[ 0.60,-0.70]
+  ];
+
+  // Point-in-polygon (ray-cast)
+  function inOutline(nx, ny, scale){
+    const poly = OUTLINE.map(([x,y])=>[x*scale,y*scale]);
+    let inside=false;
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+      const [xi,yi]=poly[i],[xj,yj]=poly[j];
+      if(((yi>ny)!==(yj>ny))&&(nx<(xj-xi)*(ny-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+
+  // ── Cluster definitions ──
+  // Each cluster: centre [nx,ny], spread, colour palette, particle count
+  // Positions tuned to match the Obsidian brain colouring in the reference.
+  const CLUSTERS = [
+    // Frontal lobe — teal/green (top-right in lateral view)
+    { cx: 0.52, cy:-0.36, sx:0.24, sy:0.22, count:72,
+      cols:['#00C9B1','#00E5CC','#06B6D4','#34D399','#10B981'] },
+    // Superior parietal — cyan/light blue (top centre)
+    { cx: 0.10, cy:-0.18, sx:0.22, sy:0.18, count:55,
+      cols:['#38BDF8','#7DD3FC','#BAE6FD','#60A5FA','#93C5FD'] },
+    // Occipital — purple/violet (back)
+    { cx:-0.42, cy: 0.08, sx:0.20, sy:0.26, count:60,
+      cols:['#8B5CF6','#A78BFA','#C4B5FD','#7C3AED','#6D28D9'] },
+    // Temporal — orange/red (bottom-front)
+    { cx: 0.32, cy: 0.42, sx:0.22, sy:0.18, count:58,
+      cols:['#FB923C','#F97316','#FDBA74','#EF4444','#F87171'] },
+    // Cerebellum — yellow/gold (bottom-back)
+    { cx:-0.20, cy: 0.52, sx:0.18, sy:0.14, count:45,
+      cols:['#FACC15','#FDE047','#FCD34D','#F59E0B','#FBBF24'] },
+    // Insular / deep — pink (centre-low)
+    { cx: 0.10, cy: 0.20, sx:0.16, sy:0.14, count:35,
+      cols:['#F472B6','#EC4899','#FB7185','#F43F5E'] },
+    // Prefrontal — teal accent (front tip)
+    { cx: 0.66, cy:-0.10, sx:0.12, sy:0.16, count:30,
+      cols:['#00C9B1','#06B6D4','#0EA5E9','#38BDF8'] },
+    // Parieto-occipital — blue-purple bridge
+    { cx:-0.12, cy:-0.06, sx:0.18, sy:0.14, count:28,
+      cols:['#818CF8','#6366F1','#A5B4FC','#8B5CF6'] },
+  ];
+
+  // ── Particle system ──
+  const PARTICLES = [];   // small background cloud nodes
+  const GRAPH_NODES = []; // larger graph nodes (knowledge-graph hubs)
+
+  // Knowledge-graph hub nodes — visible, labelled, connected
+  // 14 of them, one per doc_caption
+  const NODE_N   = 14;
+  const NODE_COLS = ['#00C9B1','#38BDF8','#8B5CF6','#FB923C','#FACC15',
+                     '#F472B6','#34D399','#F87171','#A78BFA','#60A5FA',
+                     '#FBBF24','#10B981','#818CF8','#00E5CC'];
+
+  function initParticles(){
+    PARTICLES.length = 0;
+    GRAPH_NODES.length = 0;
+
+    const R = 140 * SC; // brain radius scale
+
+    // ── Spawn cloud particles per cluster ──
+    CLUSTERS.forEach(cl => {
+      for(let i=0; i<cl.count; i++){
+        // Gaussian scatter around cluster centre
+        let nx, ny, attempts=0;
+        do {
+          const angle = Math.random()*Math.PI*2;
+          const rad   = Math.abs(gaussRand()) * 0.5;
+          nx = cl.cx + Math.cos(angle)*cl.sx*rad;
+          ny = cl.cy + Math.sin(angle)*cl.sy*rad;
+          attempts++;
+        } while(!inOutline(nx,ny,0.97) && attempts<80);
+        if(!inOutline(nx,ny,0.97)) continue;
+
+        // Random azimuth (Z depth)
+        const phi = Math.random()*Math.PI*2;
+        const depthScale = 0.45 + 0.35*Math.abs(Math.sin(phi));
+
+        PARTICLES.push({
+          x: nx*R*Math.cos(phi),
+          y: ny*R*0.92,
+          z: nx*R*Math.sin(phi)*depthScale,
+          color: cl.cols[Math.floor(Math.random()*cl.cols.length)],
+          size:  0.8 + Math.random()*1.8,
+          phase: Math.random()*Math.PI*2,
+          speed: 0.15 + Math.random()*0.25,
+          dX:(Math.random()-.5)*6, dY:(Math.random()-.5)*5, dZ:(Math.random()-.5)*6,
+          alpha: 0.5 + Math.random()*0.5,
+          cluster: cl,
+        });
+      }
+    });
+
+    // ── Spawn graph hub nodes (larger, labelled) ──
+    // Distribute evenly across clusters
+    for(let i=0; i<NODE_N; i++){
+      const cl = CLUSTERS[i % CLUSTERS.length];
+      let nx, ny, attempts=0;
+      do {
+        nx = cl.cx + (Math.random()-.5)*cl.sx*0.9;
+        ny = cl.cy + (Math.random()-.5)*cl.sy*0.9;
+        attempts++;
+      } while(!inOutline(nx,ny,0.92) && attempts<80);
+      if(!inOutline(nx,ny,0.92)){ nx=cl.cx; ny=cl.cy; }
+
+      const phi = Math.random()*Math.PI*2;
+      const depthScale = 0.45 + 0.35*Math.abs(Math.sin(phi));
+
+      GRAPH_NODES.push({
+        x: nx*R*Math.cos(phi),
+        y: ny*R*0.92,
+        z: nx*R*Math.sin(phi)*depthScale,
+        color:    NODE_COLS[i],
+        size:     4.5 + Math.random()*3.5,
+        phase:    Math.random()*Math.PI*2,
+        speed:    0.3 + Math.random()*0.4,
+        dX:(Math.random()-.5)*8, dY:(Math.random()-.5)*6, dZ:(Math.random()-.5)*8,
+        pAmp:     0.14 + Math.random()*0.14,
+        label:    null,
+        labelAlpha: 0,
+      });
+    }
+    // Core hub (white, centre)
+    GRAPH_NODES.push({
+      x:0, y:0, z:0,
+      color:'#EFEBE0', size:13,
+      phase:0, speed:.4, dX:0,dY:0,dZ:0, pAmp:.30,
+      isCore:true, label:null, labelAlpha:0
+    });
+
+    // ── Connections between hub nodes ──
+    CONNS.length = 0;
+    for(let i=0;i<NODE_N;i++){
+      // connect to a few nearby nodes in same/adjacent clusters
+      for(let j=i+1;j<NODE_N;j++){
+        const ci=CLUSTERS[i%CLUSTERS.length], cj=CLUSTERS[j%CLUSTERS.length];
+        const sameCl = (i%CLUSTERS.length === j%CLUSTERS.length);
+        if(Math.random() < (sameCl ? 0.35 : 0.10)) CONNS.push([i,j]);
+      }
+      // connect to core
+      if(Math.random()<0.5) CONNS.push([i, NODE_N]);
+    }
+  }
+
+  function gaussRand(){ // Box-Muller
+    let u=0,v=0;
+    while(u===0) u=Math.random();
+    while(v===0) v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  const CONNS = [];
+  initParticles();
+
+  // ── DOCUMENT TYPES ──
+  const DOC_TYPES = [
+    {ext:'PDF',  color:'#FF5A1F'}, {ext:'XML',  color:'#38BDF8'},
+    {ext:'INDD', color:'#F472B6'}, {ext:'DOCX', color:'#4A90D9'},
+    {ext:'XLSX', color:'#34D399'}, {ext:'HTML', color:'#FB923C'},
+    {ext:'XLIFF',color:'#A78BFA'}, {ext:'PPTX', color:'#FACC15'},
+    {ext:'EMAIL',color:'#8B5CF6'},
+  ];
+
+  window.brainCaptions = window.brainCaptions || [];
+  let DOCS=[], docIdx=0, lastSpawn=0, captionCycle=0;
+
+  function spawnDoc(){
+    const type = DOC_TYPES[Math.floor(Math.random()*DOC_TYPES.length)];
+    const angle = Math.random()*Math.PI*2;
+    const oR = 260 + Math.random()*80;
+    const elevFrac = Math.random();
+    const sx = oR*Math.cos(angle);
+    const sy = (elevFrac-.5)*oR*0.9;
+    const sz = oR*Math.sin(angle)*0.6;
+
+    const unlabelled = GRAPH_NODES.slice(0,NODE_N).filter(n=>!n.label);
+    const target = unlabelled.length
+      ? unlabelled[Math.floor(Math.random()*unlabelled.length)]
+      : GRAPH_NODES[Math.floor(Math.random()*NODE_N)];
+
+    const caps = window.brainCaptions.length ? window.brainCaptions : ['Document'];
+    const cap  = caps[captionCycle % caps.length];
+    captionCycle++;
+
+    DOCS.push({
+      id:docIdx++, type, cap,
+      x:sx,y:sy,z:sz, sX:sx,sY:sy,sZ:sz,
+      tX:target.x,tY:target.y,tZ:target.z, target,
+      progress:0, speed:0.004+Math.random()*.003,
+      wobble:Math.random()*Math.PI*2, wAmp:12+Math.random()*14,
+      state:'flying', bP:0, bParts:[]
+    });
+  }
+
+  for(let i=0;i<8;i++){ spawnDoc(); DOCS[DOCS.length-1].progress=Math.random()*.72; }
+
+  // ── DRAW DOC ICON ──
+  function drawDoc(px,py,sc,alpha,ext,color,caption){
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.translate(px,py); ctx.scale(sc,sc);
+    const w=26,h=32,fold=7,cr=3;
+    ctx.shadowColor=color; ctx.shadowBlur=9;
+    ctx.fillStyle='#141720'; ctx.strokeStyle=color; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(-w/2+cr,-h/2); ctx.lineTo(w/2-fold,-h/2);
+    ctx.lineTo(w/2,-h/2+fold); ctx.lineTo(w/2,h/2-cr);
+    ctx.arcTo(w/2,h/2,w/2-cr,h/2,cr);
+    ctx.lineTo(-w/2+cr,h/2); ctx.arcTo(-w/2,h/2,-w/2,h/2-cr,cr);
+    ctx.lineTo(-w/2,-h/2+cr); ctx.arcTo(-w/2,-h/2,-w/2+cr,-h/2,cr);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w/2-fold,-h/2); ctx.lineTo(w/2-fold,-h/2+fold); ctx.lineTo(w/2,-h/2+fold);
+    ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle=color; ctx.font=`bold 7px 'JetBrains Mono',monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ext,0,3);
+    if(caption){
+      ctx.shadowBlur=0; ctx.globalAlpha=1;
+      ctx.font=`500 8px 'JetBrains Mono',monospace`;
+      ctx.fillStyle='rgba(185,182,172,0.92)';
+      ctx.textAlign='left';
+      ctx.fillText(caption, w/2+6, 0);
+    }
+    ctx.restore();
+  }
+
+  // ── DRAW NODE LABEL ──
+  function drawNodeLabel(px,py,label,color,alpha){
+    if(!label||alpha<=0) return;
+    ctx.save();
+    ctx.globalAlpha=Math.min(alpha,1);
+    ctx.font=`600 9px 'JetBrains Mono',monospace`;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.strokeStyle=color; ctx.lineWidth=0.8;
+    ctx.globalAlpha*=0.45;
+    ctx.beginPath(); ctx.moveTo(px+7,py); ctx.lineTo(px+18,py); ctx.stroke();
+    ctx.globalAlpha=Math.min(alpha,1);
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(14,16,19,0.80)';
+    const rx=px+18,ry=py-7,rw=tw+10,rh=14,rr=3;
+    ctx.beginPath();
+    ctx.moveTo(rx+rr,ry); ctx.lineTo(rx+rw-rr,ry); ctx.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);
+    ctx.lineTo(rx+rw,ry+rh-rr); ctx.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);
+    ctx.lineTo(rx+rr,ry+rh); ctx.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);
+    ctx.lineTo(rx,ry+rr); ctx.arcTo(rx,ry,rx+rr,ry,rr);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=5;
+    ctx.fillText(label,px+23,py);
+    ctx.restore();
+  }
+
+  // ── MAIN LOOP ──
+  let autoA=0, t0=performance.now();
+
+  function frame(now){
+    requestAnimationFrame(frame);
+    const dt=Math.min(now-t0,50); t0=now;
+
+    if(now-lastSpawn>2500 && DOCS.filter(d=>d.state==='flying').length<11){
+      spawnDoc(); lastSpawn=now;
+    }
+
+    tiltX+=(mY*.22-tiltX)*.06;
+    tiltY+=(mX*.22-tiltY)*.06;
+    if(!rm) autoA+=.0022;
+    const rAY=autoA+tiltY, rAX=-0.15+tiltX;
+
+    ctx.clearRect(0,0,W,H);
+
+    // ── Transform all particles & nodes ──
+    function tp3(x,y,z){
+      let p=rX(x,y,z,rAX); p=rY(p.x,p.y,p.z,rAY); return proj(p.x,p.y,p.z);
+    }
+
+    // ── Draw cloud particles (sorted back→front) ──
+    const tParts = PARTICLES.map(p => {
+      const ph=p.phase+(now/1000)*p.speed;
+      const dx=rm?0:p.dX*Math.sin(ph*.6), dy=rm?0:p.dY*Math.cos(ph*.5), dz=rm?0:p.dZ*Math.sin(ph*.7);
+      const pp=tp3(p.x+dx, p.y+dy, p.z+dz);
+      const depth=(pp.sc-0.5)*2; // 0..1
+      return{pp, depth, p};
+    });
+    tParts.sort((a,b)=>a.depth-b.depth);
+
+    tParts.forEach(({pp,depth,p})=>{
+      const alpha=p.alpha*(0.3+depth*0.7);
+      const sz=Math.max(0.5, p.size*pp.sc);
+      ctx.save();
+      ctx.globalAlpha=alpha;
+      ctx.beginPath();
+      ctx.arc(pp.sx,pp.sy,sz,0,Math.PI*2);
+      ctx.fillStyle=p.color;
+      ctx.shadowColor=p.color;
+      ctx.shadowBlur=sz*2.5;
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // ── Transform hub nodes ──
+    const TN = GRAPH_NODES.map((n,i)=>{
+      const ph=n.phase+(now/1000)*n.speed;
+      const pulse=1+n.pAmp*Math.sin(ph);
+      const dx=rm?0:n.dX*Math.sin(ph*.7), dy=rm?0:n.dY*Math.cos(ph*.5), dz=rm?0:n.dZ*Math.sin(ph*.6);
+      const pp=tp3(n.x+dx, n.y+dy, n.z+dz);
+      const depth=(pp.sc-0.5)*2;
+      return{...pp, alpha:.4+depth*.6, sz:n.size*pulse*pp.sc, color:n.color, depth, node:n, idx:i};
+    });
+
+    // ── Connections ──
+    CONNS.forEach(([a,b])=>{
+      const na=TN[a],nb=TN[b]; if(!na||!nb) return;
+      const d=(na.depth+nb.depth)*.5;
+      const st=((now/1000)*.3+(a*.11+b*.07))%1;
+      ctx.save();
+      ctx.globalAlpha=.04+d*.14;
+      ctx.strokeStyle=na.node.color; ctx.lineWidth=.7;
+      ctx.setLineDash([3,11]); ctx.lineDashOffset=-(now/60);
+      ctx.beginPath(); ctx.moveTo(na.sx,na.sy); ctx.lineTo(nb.sx,nb.sy); ctx.stroke();
+      ctx.setLineDash([]);
+      // signal dot
+      ctx.globalAlpha=(.04+d*.14)*3;
+      ctx.beginPath();
+      ctx.arc(lerp(na.sx,nb.sx,st), lerp(na.sy,nb.sy,st), 1.5,0,Math.PI*2);
+      ctx.fillStyle=na.node.color; ctx.shadowColor=na.node.color; ctx.shadowBlur=5; ctx.fill();
+      ctx.restore();
+    });
+
+    // ── Hub nodes (sorted back→front) ──
+    TN.slice().sort((a,b)=>a.depth-b.depth).forEach(n=>{
+      const glow=n.node.isCore?24:(6+n.depth*10);
+      ctx.save(); ctx.globalAlpha=n.alpha;
+      ctx.beginPath(); ctx.arc(n.sx,n.sy,n.sz,0,Math.PI*2);
+      ctx.fillStyle=n.color; ctx.shadowColor=n.color; ctx.shadowBlur=glow; ctx.fill();
+      // ring for hub nodes
+      if(!n.node.isCore){
+        ctx.globalAlpha=n.alpha*0.4;
+        ctx.beginPath(); ctx.arc(n.sx,n.sy,n.sz+3,0,Math.PI*2);
+        ctx.strokeStyle=n.color; ctx.lineWidth=0.8; ctx.stroke();
+      }
+      ctx.restore();
+      if(n.node.label){
+        n.node.labelAlpha=Math.min(n.node.labelAlpha+0.012,1);
+        drawNodeLabel(n.sx,n.sy,n.node.label,n.node.color,n.node.labelAlpha*n.alpha);
+      }
+    });
+
+    // ── Documents ──
+    for(let i=DOCS.length-1;i>=0;i--){
+      const d=DOCS[i];
+      if(d.state==='flying'){
+        if(!rm) d.progress+=d.speed*(dt/16); else d.progress+=0.025;
+        const t=Math.min(d.progress,1), et=eio(t);
+        const wob=Math.sin(d.wobble+now*.0012)*d.wAmp*(1-t);
+        const px=lerp(d.sX,d.tX,et)+wob*.3;
+        const py=lerp(d.sY,d.tY,et)+wob*.15;
+        const pz=lerp(d.sZ,d.tZ,et);
+        let pp3=tp3(px,py,pz);
+        const depth=(pp3.sc-0.5)*2;
+        const al=(.4+depth*.6)*Math.min(t*5,1);
+        const dsc=(0.45+(1-t)*.75)*pp3.sc*SC;
+        drawDoc(pp3.sx,pp3.sy,dsc,al,d.type.ext,d.type.color,t>.1&&t<.92?d.cap:null);
+        // trail
+        if(!rm&&t>.06&&t<.94){
+          for(let s=1;s<=5;s++){
+            const tt=Math.max(0,t-s*.028), et2=eio(tt);
+            const p2=tp3(lerp(d.sX,d.tX,et2),lerp(d.sY,d.tY,et2),lerp(d.sZ,d.tZ,et2));
+            ctx.save(); ctx.globalAlpha=(1-s/5)*.22*al;
+            ctx.beginPath(); ctx.arc(p2.sx,p2.sy,2*p2.sc,0,Math.PI*2);
+            ctx.fillStyle=d.type.color; ctx.shadowColor=d.type.color; ctx.shadowBlur=4; ctx.fill(); ctx.restore();
+          }
+        }
+        if(d.progress>=1){
+          d.state='burst'; d.bP=0; d.bsx=pp3.sx; d.bsy=pp3.sy;
+          d.target.label=d.cap; d.target.labelAlpha=0;
+          d.target.pAmp=Math.min(d.target.pAmp+.35,.85);
+          d.bParts=Array.from({length:14},(_,k)=>{
+            const a=(k/14)*Math.PI*2;
+            return{vx:Math.cos(a)*(2+Math.random()*3.5),vy:Math.sin(a)*(2+Math.random()*3.5),x:pp3.sx,y:pp3.sy};
+          });
+        }
+      } else if(d.state==='burst'){
+        d.bP+=0.040*(dt/16);
+        if(d.bP<1){
+          d.bParts.forEach(p=>{
+            p.x+=p.vx; p.y+=p.vy;
+            ctx.save(); ctx.globalAlpha=(1-d.bP)*.8;
+            ctx.beginPath(); ctx.arc(p.x,p.y,2.5*(1-d.bP*.5),0,Math.PI*2);
+            ctx.fillStyle=d.type.color; ctx.shadowColor=d.type.color; ctx.shadowBlur=10; ctx.fill(); ctx.restore();
+          });
+          ctx.save(); ctx.globalAlpha=(1-d.bP)*.5;
+          ctx.beginPath(); ctx.arc(d.bsx,d.bsy,d.bP*34,0,Math.PI*2);
+          ctx.strokeStyle=d.type.color; ctx.lineWidth=2*(1-d.bP);
+          ctx.shadowColor=d.type.color; ctx.shadowBlur=18; ctx.stroke(); ctx.restore();
+        } else DOCS.splice(i,1);
+      }
+    }
+    GRAPH_NODES.forEach(n=>{const b=n.isCore?.30:.14; if(n.pAmp>b) n.pAmp-=.005;});
+  }
+  requestAnimationFrame(frame);
+})();}catch(e){console.warn('Brain canvas error:',e);}
+
+// ════════════════════════════════════════════════════════════
+//  PAGE BEHAVIOUR
+// ════════════════════════════════════════════════════════════
+const rm = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+// Hero reveal
+const hero = document.getElementById('hero');
+requestAnimationFrame(()=>setTimeout(()=>hero.classList.add('is-loaded'), rm?0:120));
+
+// Scroll reveal
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(!entry.isIntersecting) return;
+    const d=rm?0:(parseInt(entry.target.style.getPropertyValue('--i'))||0)*100;
+    setTimeout(()=>entry.target.classList.add('in-view'),d);
+    io.unobserve(entry.target);
+  });
+},{threshold:.2});
+document.querySelectorAll('.reveal,.waitlist-inner').forEach(el=>io.observe(el));
+
+// HMI typewriter
+let hmiTyped = false;
+function typeAnswer(){
+  const tr=T[currentLang]||T.en;
+  const aEl=document.getElementById('hmi-answer-text');
+  const rt=document.getElementById('rt-counter');
+  if(rm){ aEl.textContent=tr.hmi_answer; rt.textContent='1.4s'; hmiTyped=true; return; }
+  let i=0; hmiTyped=true;
+  const iv=setInterval(()=>{
+    aEl.textContent=tr.hmi_answer.slice(0,i++);
+    if(i>tr.hmi_answer.length){
+      clearInterval(iv); let t2=0;
+      const rtIv=setInterval(()=>{ t2+=.1; rt.textContent=t2.toFixed(1)+'s'; if(t2>=1.4)clearInterval(rtIv); },40);
+    }
+  },20);
+}
+const hmiObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting&&!hmiTyped){ typeAnswer(); hmiObs.disconnect(); } });
+},{threshold:.5});
+hmiObs.observe(document.querySelector('.hmi'));
+
+// ── GAUGE ──
+// ─────────────────────────────────────────────────────────────
+// n8n BACKEND INTEGRATION (Phase 2)
+// Set WEBHOOK_URL to your n8n webhook endpoint.
+// The endpoint should:
+//   POST payload → store lead → return { "taken": N }
+// where N is the total number of registrations.
+// Without the webhook, the counter is local (demo mode).
+// ─────────────────────────────────────────────────────────────
+const WEBHOOK_URL = ''; // e.g. 'https://your-n8n.instance.com/webhook/dema-waitlist'
+const TOTAL = 20, SK='dema-wl-taken', SUB='dema-wl-sub';
+
+const arcEl=document.getElementById('arc-progress');
+const needleEl=document.getElementById('gauge-needle');
+const takenEl=document.getElementById('gauge-taken');
+const captionEl=document.getElementById('gauge-caption');
+
+function safeGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function safeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+// gauge-taken has NO data-i18n so applyTranslation never touches it
+let taken = parseInt(safeGet(SK),10);
+if(isNaN(taken)) taken = 6;
+
+function updateGauge(n){
+  taken = Math.max(0, Math.min(n, TOTAL));
+  const pct=taken/TOTAL, angle=-90+180*pct, len=283;
+  arcEl.style.strokeDasharray = len+'px';
+  arcEl.style.strokeDashoffset = (len*(1-pct))+'px';
+  needleEl.style.transform = 'rotate('+angle+'deg)';
+  takenEl.textContent = taken;
+  // pulse animation
+  takenEl.classList.remove('pulse');
+  void takenEl.offsetWidth; // force reflow
+  takenEl.classList.add('pulse');
+  if(taken>=TOTAL){ captionEl.textContent=(T[currentLang]||T.en).spots_taken||''; captionEl.classList.add('full'); }
+}
+
+function bootPage(){
+  arcEl.style.transition='none'; needleEl.style.transition='none';
+  updateGauge(taken);
+  requestAnimationFrame(()=>{ arcEl.style.transition=''; needleEl.style.transition=''; });
+
+  applyTranslation('en');
+  // restore number after translation (safety)
+  takenEl.textContent = taken;
+
+  document.getElementById('waitlist-form').addEventListener('submit',function(e){
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(this));
+    payload.lang = currentLang;
+
+    function ok(){
+      document.getElementById('form-fields').style.display='none';
+      document.getElementById('success-msg').classList.add('show');
+      // scroll gauge into view so user sees the counter update
+      setTimeout(()=>{
+        document.querySelector('.gauge-wrap').scrollIntoView({behavior:'smooth',block:'center'});
+      }, 400);
+    }
+
+    if(WEBHOOK_URL){
+      fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+        .then(r=>r.json())
+        .then(data=>{ if(typeof data.taken==='number') taken=data.taken; safeSet(SK,taken); updateGauge(taken); ok(); })
+        .catch(()=>{ taken++; safeSet(SK,taken); updateGauge(taken); ok(); });
+    } else {
+      taken++;
+      safeSet(SK, taken);
+      updateGauge(taken);
+      ok();
+    }
+  });
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', bootPage);
+} else {
+  bootPage();
+}
+</script>
+</body>
+</html>

@@ -1405,7 +1405,9 @@ try{(function(){
     if(!dragging){
       userA += spinV; spinV *= 0.955;
       userX  = Math.max(-0.55, Math.min(0.55, userX + pitchV)); pitchV *= 0.955;
-      if(!rm) autoA -= (Math.PI*2)*(dt/20000); // clockwise, one turn per 20s
+      // The idle spin is the point of this element, so it runs even when the
+      // OS asks for reduced motion; CSS animations still honour the setting.
+      autoA -= (Math.PI*2)*(dt/20000); // clockwise, one turn per 20s
     }
     const spin = autoA + userA;
     const rAY = spin + tiltY, rAX = -0.12 + userX + tiltX;
@@ -1496,7 +1498,7 @@ try{(function(){
     // ── Draw cloud particles (sorted back→front) ──
     const tParts = PARTICLES.map(p => {
       const ph=p.phase+(now/1000)*p.speed;
-      const dx=rm?0:p.dX*Math.sin(ph*.6), dy=rm?0:p.dY*Math.cos(ph*.5), dz=rm?0:p.dZ*Math.sin(ph*.7);
+      const dx=p.dX*Math.sin(ph*.6), dy=p.dY*Math.cos(ph*.5), dz=p.dZ*Math.sin(ph*.7);
       const pp=tp3(p.x+dx, p.y+dy, p.z+dz);
       const depth=(pp.sc-0.5)*2; // 0..1
       return{pp, depth, p};
@@ -1522,7 +1524,7 @@ try{(function(){
     const TN = GRAPH_NODES.map((n,i)=>{
       const ph=n.phase+(now/1000)*n.speed;
       const pulse=1+n.pAmp*Math.sin(ph);
-      const dx=rm?0:n.dX*Math.sin(ph*.7), dy=rm?0:n.dY*Math.cos(ph*.5), dz=rm?0:n.dZ*Math.sin(ph*.6);
+      const dx=n.dX*Math.sin(ph*.7), dy=n.dY*Math.cos(ph*.5), dz=n.dZ*Math.sin(ph*.6);
       const pp=tp3(n.x+dx, n.y+dy, n.z+dz);
       const depth=(pp.sc-0.5)*2;
       return{...pp, alpha:.4+depth*.6, sz:n.size*pulse*pp.sc, color:n.color, depth, node:n, idx:i};

@@ -33,7 +33,11 @@
   }
   .lang-btn:hover{border-color:var(--steel); color:var(--plate);}
   .lang-btn.active{border-color:var(--safety); color:var(--safety);}
-  .lang-flag{font-size:1rem; line-height:1;}
+  /* Drawn flags: Windows has no emoji glyphs for regional indicators, so
+     the emoji versions rendered as bare letter pairs. */
+  .lang-flag{width:18px;height:13px;display:block;border-radius:2px;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.22);flex:0 0 auto;}
+  .lang-flag svg{display:block;width:100%;height:100%;}
 
   /* ── HEADER ── */
   header{display:flex;align-items:center;justify-content:space-between;padding:18px 6vw;background:var(--iron);color:var(--plate);}
@@ -164,17 +168,17 @@
 
 <!-- ═══ LANGUAGE BAR ═══ -->
 <div class="lang-bar" id="lang-bar">
-  <button class="lang-btn active" data-lang="en"><span class="lang-flag">🇬🇧</span>EN</button>
-  <button class="lang-btn" data-lang="it"><span class="lang-flag">🇮🇹</span>IT</button>
-  <button class="lang-btn" data-lang="fr"><span class="lang-flag">🇫🇷</span>FR</button>
-  <button class="lang-btn" data-lang="es"><span class="lang-flag">🇪🇸</span>ES</button>
-  <button class="lang-btn" data-lang="de"><span class="lang-flag">🇩🇪</span>DE</button>
-  <button class="lang-btn" data-lang="pt"><span class="lang-flag">🇵🇹</span>PT</button>
-  <button class="lang-btn" data-lang="nl"><span class="lang-flag">🇳🇱</span>NL</button>
-  <button class="lang-btn" data-lang="no"><span class="lang-flag">🇳🇴</span>NO</button>
-  <button class="lang-btn" data-lang="fi"><span class="lang-flag">🇫🇮</span>FI</button>
-  <button class="lang-btn" data-lang="sv"><span class="lang-flag">🇸🇪</span>SV</button>
-  <button class="lang-btn" data-lang="zh"><span class="lang-flag">🇨🇳</span>ZH</button>
+  <button class="lang-btn active" data-lang="en"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#012169"/><path d="M0 0l21 15M21 0L0 15" stroke="#fff" stroke-width="3"/><path d="M0 0l21 15M21 0L0 15" stroke="#C8102E" stroke-width="1.6"/><path d="M10.5 0v15M0 7.5h21" stroke="#fff" stroke-width="5"/><path d="M10.5 0v15M0 7.5h21" stroke="#C8102E" stroke-width="3"/></svg></span>EN</button>
+  <button class="lang-btn" data-lang="it"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#008C45"/><rect x="7" width="7" height="15" fill="#F4F5F0"/><rect x="14" width="7" height="15" fill="#CD212A"/></svg></span>IT</button>
+  <button class="lang-btn" data-lang="fr"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="7" height="15" fill="#002395"/><rect x="7" width="7" height="15" fill="#fff"/><rect x="14" width="7" height="15" fill="#ED2939"/></svg></span>FR</button>
+  <button class="lang-btn" data-lang="es"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#AA151B"/><rect y="3.75" width="21" height="7.5" fill="#F1BF00"/></svg></span>ES</button>
+  <button class="lang-btn" data-lang="de"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="5" fill="#000"/><rect y="5" width="21" height="5" fill="#DD0000"/><rect y="10" width="21" height="5" fill="#FFCE00"/></svg></span>DE</button>
+  <button class="lang-btn" data-lang="pt"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#DA291C"/><rect width="8.4" height="15" fill="#046A38"/><circle cx="8.4" cy="7.5" r="3.1" fill="#FFE900"/><circle cx="8.4" cy="7.5" r="2.1" fill="#DA291C"/><circle cx="8.4" cy="7.5" r="1.1" fill="#fff"/></svg></span>PT</button>
+  <button class="lang-btn" data-lang="nl"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="5" fill="#AE1C28"/><rect y="5" width="21" height="5" fill="#fff"/><rect y="10" width="21" height="5" fill="#21468B"/></svg></span>NL</button>
+  <button class="lang-btn" data-lang="no"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#BA0C2F"/><path d="M0 6h21v3H0z" fill="#fff"/><path d="M6 0h3v15H6z" fill="#fff"/><path d="M0 6.9h21v1.2H0z" fill="#00205B"/><path d="M6.9 0h1.2v15H6.9z" fill="#00205B"/></svg></span>NO</button>
+  <button class="lang-btn" data-lang="fi"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#fff"/><path d="M0 6h21v3H0z" fill="#003580"/><path d="M6 0h3v15H6z" fill="#003580"/></svg></span>FI</button>
+  <button class="lang-btn" data-lang="sv"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#006AA7"/><path d="M0 6h21v3H0z" fill="#FECC02"/><path d="M6 0h3v15H6z" fill="#FECC02"/></svg></span>SV</button>
+  <button class="lang-btn" data-lang="zh"><span class="lang-flag"><svg viewBox="0 0 21 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="21" height="15" fill="#EE1C25"/><polygon points="0,-1 0.2245,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2245,-0.309" fill="#FFFF00" transform="translate(4.2,4.2) scale(2.6) rotate(0)"/><polygon points="0,-1 0.2245,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2245,-0.309" fill="#FFFF00" transform="translate(8.6,1.9) scale(0.85)"/><polygon points="0,-1 0.2245,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2245,-0.309" fill="#FFFF00" transform="translate(10.2,4) scale(0.85)"/><polygon points="0,-1 0.2245,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2245,-0.309" fill="#FFFF00" transform="translate(10.2,6.3) scale(0.85)"/><polygon points="0,-1 0.2245,-0.309 0.951,-0.309 0.363,0.118 0.588,0.809 0,0.382 -0.588,0.809 -0.363,0.118 -0.951,-0.309 -0.2245,-0.309" fill="#FFFF00" transform="translate(8.6,8.2) scale(0.85)"/></svg></span>ZH</button>
 </div>
 
 <header>
@@ -1743,7 +1747,10 @@ function mailtoFallback(p){
 // where N is the total number of registrations.
 // Without the webhook, the counter is local (demo mode).
 // ─────────────────────────────────────────────────────────────
-const WEBHOOK_URL = ''; // e.g. 'https://your-n8n.instance.com/webhook/dema-waitlist'
+// Paste the Google Apps Script /exec URL (or any endpoint with the same
+// contract) here. GET must return { taken }, POST { nome, azienda, email,
+// settore, lang } must store the lead, send the mail and return { taken }.
+const WEBHOOK_URL = '';
 const TOTAL = 20, SK='dema-wl-taken', SUB='dema-wl-sub';
 
 const arcEl=document.getElementById('arc-progress');
@@ -1772,6 +1779,19 @@ function updateGauge(n){
   if(taken>=TOTAL){ captionEl.textContent=(T[currentLang]||T.en).spots_taken||''; captionEl.classList.add('full'); }
 }
 
+function fetchCounter(){
+  if(!WEBHOOK_URL) return;
+  fetch(WEBHOOK_URL, {method:'GET'})
+    .then(r=>r.json())
+    .then(data=>{
+      if(typeof data.taken === 'number'){
+        safeSet(SK, data.taken);   // cached, so a later offline load is not back to the seed
+        updateGauge(data.taken);
+      }
+    })
+    .catch(()=>{});
+}
+
 function bootPage(){
   arcEl.style.transition='none'; needleEl.style.transition='none';
   updateGauge(taken);
@@ -1780,6 +1800,7 @@ function bootPage(){
   applyTranslation('en');
   // restore number after translation (safety)
   takenEl.textContent = taken;
+  fetchCounter();
 
   document.getElementById('waitlist-form').addEventListener('submit',function(e){
     e.preventDefault();
@@ -1796,7 +1817,7 @@ function bootPage(){
     }
 
     if(WEBHOOK_URL){
-      fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
         .then(r=>r.json())
         .then(data=>{ if(typeof data.taken==='number') taken=data.taken; safeSet(SK,taken); updateGauge(taken); ok(); })
         .catch(()=>{ taken++; safeSet(SK,taken); updateGauge(taken); ok(); mailtoFallback(payload); });

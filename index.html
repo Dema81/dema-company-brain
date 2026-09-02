@@ -1377,7 +1377,7 @@ try{(function(){
         speed:    0.3 + Math.random()*0.4,
         dX:(Math.random()-.5)*8, dY:(Math.random()-.5)*6, dZ:(Math.random()-.5)*8,
         pAmp:     0.14 + Math.random()*0.14,
-        label:    null,
+        labelIdx: null,
         labelAlpha: 0,
       });
     }
@@ -1386,7 +1386,7 @@ try{(function(){
       x:0, y:0, z:0,
       color:'#EFEBE0', size:13,
       phase:0, speed:.4, dX:0,dY:0,dZ:0, pAmp:.30,
-      isCore:true, label:null, labelAlpha:0
+      isCore:true, labelIdx:null, labelAlpha:0
     });
 
     // ── Connections between hub nodes ──
@@ -1429,6 +1429,16 @@ try{(function(){
   window.brainCaptions = (window.brainCaptions && window.brainCaptions.length)
     ? window.brainCaptions
     : (T.en.doc_captions || []);
+
+  // Captions live on the canvas as an INDEX, never as a finished string. The
+  // visitor can switch language at any moment and every label already drawn
+  // has to follow, including the ones stuck on nodes from minutes ago — so the
+  // text is resolved at draw time, not at spawn time. All doc_captions lists
+  // are index-aligned across the eleven languages.
+  function capText(i){
+    const caps = window.brainCaptions;
+    return (caps && caps.length) ? caps[i % caps.length] : 'Document';
+  }
   let DOCS=[], docIdx=0, lastSpawn=0, captionCycle=0;
 
   function spawnDoc(){
@@ -1440,17 +1450,15 @@ try{(function(){
     const sy = (elevFrac-.5)*oR*0.9;
     const sz = oR*Math.sin(angle)*0.6;
 
-    const unlabelled = GRAPH_NODES.slice(0,NODE_N).filter(n=>!n.label);
+    const unlabelled = GRAPH_NODES.slice(0,NODE_N).filter(n=>n.labelIdx==null);
     const target = unlabelled.length
       ? unlabelled[Math.floor(Math.random()*unlabelled.length)]
       : GRAPH_NODES[Math.floor(Math.random()*NODE_N)];
 
-    const caps = window.brainCaptions.length ? window.brainCaptions : ['Document'];
-    const cap  = caps[captionCycle % caps.length];
-    captionCycle++;
+    const capIdx = captionCycle++;
 
     DOCS.push({
-      id:docIdx++, type, cap,
+      id:docIdx++, type, capIdx,
       x:sx,y:sy,z:sz, sX:sx,sY:sy,sZ:sz,
       tX:target.x,tY:target.y,tZ:target.z, target,
       progress:0, speed:0.004+Math.random()*.003,
@@ -1774,7 +1782,7 @@ try{(function(){
         ctx.strokeStyle=n.color; ctx.lineWidth=0.8; ctx.stroke();
       }
       ctx.restore();
-      if(n.node.label){
+      if(n.node.labelIdx!=null){
         n.node.labelAlpha=Math.min(n.node.labelAlpha+0.012,1);
         labelQueue.push(n);
       }
@@ -1782,7 +1790,7 @@ try{(function(){
     // Labels are drawn after every node so they sit on top, and nearest-first
     // so the closest label wins the slot when two of them want the same space.
     labelQueue.sort((a,b)=>b.depth-a.depth).forEach(n=>
-      drawNodeLabel(n.sx,n.sy,n.node.label,n.node.color,n.node.labelAlpha*n.alpha));
+      drawNodeLabel(n.sx,n.sy,capText(n.node.labelIdx),n.node.color,n.node.labelAlpha*n.alpha));
 
     // ── Documents ──
     for(let i=DOCS.length-1;i>=0;i--){
@@ -1798,7 +1806,7 @@ try{(function(){
         const depth=(pp3.sc-0.5)*2;
         const al=(.4+depth*.6)*Math.min(t*5,1);
         const dsc=(0.45+(1-t)*.75)*pp3.sc*SC;
-        drawDoc(pp3.sx,pp3.sy,dsc,al,d.type.ext,d.type.color,t>.1&&t<.92?d.cap:null);
+        drawDoc(pp3.sx,pp3.sy,dsc,al,d.type.ext,d.type.color,t>.1&&t<.92?capText(d.capIdx):null);
         // trail
         if(!rm&&t>.06&&t<.94){
           for(let s=1;s<=5;s++){
@@ -1811,7 +1819,7 @@ try{(function(){
         }
         if(d.progress>=1){
           d.state='burst'; d.bP=0; d.bsx=pp3.sx; d.bsy=pp3.sy;
-          d.target.label=d.cap; d.target.labelAlpha=0;
+          d.target.labelIdx=d.capIdx; d.target.labelAlpha=0;
           d.target.pAmp=Math.min(d.target.pAmp+.35,.85);
           d.bParts=Array.from({length:14},(_,k)=>{
             const a=(k/14)*Math.PI*2;

@@ -162,6 +162,83 @@
     .fault-row{grid-template-columns:1fr;gap:6px;}
   }
   :focus-visible{outline:2px solid var(--safety);outline-offset:2px;}
+
+  /* ══════════════════════════════════════════════════════════
+     CINEMATIC 3D SCROLL
+     Every rule here is additive: it overrides the flat versions
+     above, so removing this block restores the original page.
+     All motion is opt-out via prefers-reduced-motion at the end.
+     ══════════════════════════════════════════════════════════ */
+
+  /* `clip` behaves like `hidden` but does NOT turn the body into a
+     scroll container, which would kill the sticky header below. */
+  body{overflow-x:clip;}
+  html{scroll-padding-top:78px;}
+
+  /* Local perspective per scene. A single page-level perspective would
+     distort anything far from the page centre; scoping it to each
+     container keeps every element in its own believable camera. */
+  .brain-graph{perspective:1100px;}
+  .hero{perspective:1400px;}
+  .diagnostic-panel{perspective:1000px;}
+  .control-panel{perspective:1200px;}
+  .waitlist-inner{perspective:1200px;}
+
+  /* Scene depth — driven by JS, one custom property per scene. */
+  .cine-scene{transform:scale(var(--sc,1));opacity:var(--op,1);}
+
+  /* ── Sticky condensing header + scroll progress rail ── */
+  header{position:sticky;top:0;z-index:50;
+    transition:padding .45s cubic-bezier(.16,1,.3,1),background-color .45s ease,box-shadow .45s ease;}
+  header::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:100%;
+    background:var(--safety);transform:scaleX(var(--progress,0));transform-origin:0 50%;}
+  header.condensed{padding:11px 6vw;background-color:rgba(21,23,27,.88);
+    box-shadow:0 10px 34px rgba(0,0,0,.42);backdrop-filter:blur(12px);}
+
+  /* ── Opening shot: the brain recedes as you leave it ── */
+  #brain-canvas{transform:translate3d(0,var(--brain-y,0px),0) scale(var(--brain-s,1));
+    transform-origin:50% 42%;will-change:transform;}
+
+  /* ── Headline: words swing up out of the floor, staggered ── */
+  h1.headline .reveal-word{
+    transform:translate3d(0,26px,-90px) rotateX(-42deg);
+    transform-origin:50% 100%;
+    transition:opacity .75s cubic-bezier(.16,1,.3,1),
+               transform .95s cubic-bezier(.16,1,.3,1),
+               filter .75s ease;}
+  .hero.is-loaded h1.headline .reveal-word{transform:none;}
+  h1.headline .reveal-word:nth-child(1){transition-delay:.00s;}
+  h1.headline .reveal-word:nth-child(2){transition-delay:.09s;}
+  h1.headline .reveal-word:nth-child(3){transition-delay:.18s;}
+  h1.headline .reveal-word:nth-child(4){transition-delay:.27s;}
+
+  /* ── HMI panel: banks like a physical screen as it crosses frame ── */
+  .hmi{transform-style:preserve-3d;will-change:transform;
+    transform:rotateX(var(--hmi-rx,0deg)) rotateY(var(--hmi-ry,0deg))
+              translate3d(0,var(--hmi-y,0px),0);}
+
+  /* ── Reveal, rebuilt in 3D: rises from below the floor plane ── */
+  .reveal{opacity:0;filter:blur(7px);
+    transform:translate3d(0,44px,-130px) rotateX(-15deg) scale(.96);
+    transform-origin:50% 100%;
+    transition:opacity .9s cubic-bezier(.16,1,.3,1),
+               transform 1.05s cubic-bezier(.16,1,.3,1),
+               filter .9s ease;}
+  .reveal.in-view{opacity:1;filter:blur(0);transform:none;}
+
+  /* ── Gauge: floats with its own parallax ── */
+  .gauge-wrap svg{will-change:transform;
+    transform:translate3d(0,var(--gauge-y,0px),0) rotateX(var(--gauge-rx,0deg));}
+
+  /* ── Ticker: shears with scroll velocity, like a whip pan ── */
+  .ticker{transform:skewY(var(--vel-skew,0deg));}
+
+  /* Everything above is decoration — strip it all when motion is unwanted. */
+  @media(prefers-reduced-motion:reduce){
+    .cine-scene,#brain-canvas,.hmi,.gauge-wrap svg,.ticker{transform:none!important;opacity:1!important;}
+    .reveal{filter:none!important;transform:none!important;}
+    header{position:static;}
+  }
 </style>
 </head>
 <body>
@@ -797,7 +874,7 @@ function applyTranslation(lang){
   });
 
   // Update brain captions from current lang
-  brainCaptions = tr.doc_captions || T.en.doc_captions;
+  window.brainCaptions = tr.doc_captions || T.en.doc_captions;
 }
 
 // Lang bar clicks
@@ -1128,25 +1205,67 @@ try{(function(){
   }
 
   let BRAIN3D = [];
+
+  // ── Depth profile, driven by distance to the silhouette ──
+  // For the mirrored front and back shells to form a closed volume, z has to
+  // fall to 0 exactly ON the outline everywhere. A separable profile (a
+  // falloff in x times one in y) only reaches zero at the left and right
+  // extremes, which is why the dome used to stand open across the top and
+  // bottom. A per-angle radius is not enough either: the outline is concave
+  // around the temporal lobe and the stem, so a single direction can cross it
+  // more than once and the far crossing wins. Distance to the contour itself
+  // has neither blind spot — it is zero on the outline by construction,
+  // whatever the shape does.
+  let RIMPTS = null;
+  function buildRim(bx, by, sc, R){
+    RIMPTS = [];
+    flattenPath(BRAIN_ART[0], 4).forEach(poly => poly.forEach(pt => {
+      RIMPTS.push((pt[0]-bx)*sc/R, (pt[1]-by)*sc/(R*BRAIN_YR));  // flat x,y pairs
+    }));
+  }
+  function distToRim(u, v){
+    let best = Infinity;
+    for(let i=0;i<RIMPTS.length;i+=2){
+      const dx=u-RIMPTS[i], dy=v-RIMPTS[i+1];
+      const d=dx*dx+dy*dy;
+      if(d<best) best=d;
+    }
+    return Math.sqrt(best);
+  }
+
   function buildBrain3D(){
     BRAIN3D = [];
     const R  = brainFit().halfW;
     const sc = (2*R)/BRAIN_BOX.w;
     const bx = BRAIN_BOX.x + BRAIN_BOX.w/2, by = BRAIN_BOX.y + BRAIN_BOX.h/2;
     const D  = R*0.52;
+    buildRim(bx, by, sc, R);
+
+    // Pass 1: measure how deep inside the silhouette the artwork actually
+    // reaches, so the dome can be scaled to that instead of to a guess.
+    const polys = [];
+    let dMax = 0;
     BRAIN_ART.forEach((d, idx) => {
       const outer = idx===0;
       flattenPath(d, 4).forEach(poly => {
         if(poly.length<2) return;
-        const base = poly.map(pt => {
+        const pts = poly.map(pt => {
           const x=(pt[0]-bx)*sc, y=(pt[1]-by)*sc;
-          const u=Math.max(-1,Math.min(1,x/R)), v=Math.max(-1,Math.min(1,y/(R*BRAIN_YR)));
-          const z=D*Math.cos(u*Math.PI/2)*(0.70+0.30*Math.cos(v*Math.PI/2));
-          return [x,y,z];
+          const dist=distToRim(x/R, y/(R*BRAIN_YR));
+          if(dist>dMax) dMax=dist;
+          return [x, y, dist];
         });
-        BRAIN3D.push({ pts: base, outer });
-        BRAIN3D.push({ pts: base.map(q=>[q[0],q[1],-q[2]]), outer });
+        polys.push({ pts, outer });
       });
+    });
+    if(!dMax) dMax = 1;
+
+    // Pass 2: inflate. sin() gives a rounded crown that meets the rim cleanly.
+    polys.forEach(({ pts, outer }) => {
+      const base = pts.map(([x,y,dist]) =>
+        [x, y, D*Math.sin(Math.min(1, dist/dMax)*Math.PI/2)]);
+      BRAIN3D.push({ pts: base, outer });
+      BRAIN3D.push({ pts: base.map(q=>[q[0],q[1],-q[2]]), outer });
     });
   }
 
@@ -1304,7 +1423,12 @@ try{(function(){
     {ext:'EMAIL',color:'#8B5CF6'},
   ];
 
-  window.brainCaptions = window.brainCaptions || [];
+  // Seed from English: this IIFE runs before applyTranslation, and the first
+  // eight documents are spawned immediately below. Without a real list here
+  // they would all fall back to the generic "Document" and stay that way.
+  window.brainCaptions = (window.brainCaptions && window.brainCaptions.length)
+    ? window.brainCaptions
+    : (T.en.doc_captions || []);
   let DOCS=[], docIdx=0, lastSpawn=0, captionCycle=0;
 
   function spawnDoc(){
@@ -1358,38 +1482,100 @@ try{(function(){
     ctx.fillStyle=color; ctx.font=`bold 7px 'JetBrains Mono',monospace`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(ext,0,3);
-    if(caption){
-      ctx.shadowBlur=0; ctx.globalAlpha=1;
-      ctx.font=`500 8px 'JetBrains Mono',monospace`;
-      ctx.fillStyle='rgba(185,182,172,0.92)';
-      ctx.textAlign='left';
-      ctx.fillText(caption, w/2+6, 0);
-    }
     ctx.restore();
+    // The caption is drawn in screen space, not inside the scaled icon
+    // transform, so its size stays legible however far away the doc is and
+    // it can be measured against the other labels on the canvas.
+    if(caption) drawDocCaption(px + 15*sc, py, caption, alpha);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  LABEL PLACEMENT
+  //  Every caption on the canvas competes for the same space, so they are
+  //  placed through one book-keeper: each committed label records its
+  //  rectangle, and later labels look for a free slot instead of stacking
+  //  text on text. Nearest-to-camera gets first pick; anything that cannot
+  //  find room is skipped for that frame rather than drawn illegibly.
+  // ══════════════════════════════════════════════════════════
+  const LABEL_FONT   = `600 12px 'JetBrains Mono',monospace`;
+  const CAPTION_FONT = `500 11px 'JetBrains Mono',monospace`;
+  const LABEL_H = 20;
+  let LBOX = [];
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h);   ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r);     ctx.arcTo(x,y,x+r,y,r);
+    ctx.closePath();
+  }
+
+  // Walks outward from the node — first the natural side, then above and
+  // below in widening steps — and returns the first rectangle that is both
+  // on-canvas and clear of everything already placed. null means no room.
+  function placeLabel(sx, sy, tw, h){
+    const rw = tw + 16, GAP = 20;
+    const sides = (sx + GAP + rw > W - 6) ? [-1, 1] : [1, -1];
+    for(const dy of [0,-24,24,-48,48,-72,72]){
+      for(const s of sides){
+        const x = s > 0 ? sx + GAP : sx - GAP - rw;
+        const y = sy + dy - h/2;
+        if(x < 4 || x + rw > W - 4 || y < 2 || y + h > H - 2) continue;
+        const b = {x, y, w: rw, h, side: s};
+        let clear = true;
+        for(let i=0;i<LBOX.length;i++){
+          const p = LBOX[i];
+          if(b.x < p.x+p.w && b.x+b.w > p.x && b.y < p.y+p.h && b.y+b.h > p.y){ clear=false; break; }
+        }
+        if(clear) return b;
+      }
+    }
+    return null;
   }
 
   // ── DRAW NODE LABEL ──
   function drawNodeLabel(px,py,label,color,alpha){
     if(!label||alpha<=0) return;
     ctx.save();
-    ctx.globalAlpha=Math.min(alpha,1);
-    ctx.font=`600 9px 'JetBrains Mono',monospace`;
-    ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.strokeStyle=color; ctx.lineWidth=0.8;
-    ctx.globalAlpha*=0.45;
-    ctx.beginPath(); ctx.moveTo(px+7,py); ctx.lineTo(px+18,py); ctx.stroke();
-    ctx.globalAlpha=Math.min(alpha,1);
-    const tw=ctx.measureText(label).width;
-    ctx.fillStyle='rgba(14,16,19,0.80)';
-    const rx=px+18,ry=py-7,rw=tw+10,rh=14,rr=3;
+    ctx.font=LABEL_FONT;
+    const box=placeLabel(px,py,ctx.measureText(label).width,LABEL_H);
+    if(!box){ ctx.restore(); return; }
+    LBOX.push(box);
+    const a=Math.min(alpha,1), my=box.y+box.h/2;
+    // leader from the node to the nearest edge of the pill
+    ctx.globalAlpha=a*0.5; ctx.strokeStyle=color; ctx.lineWidth=1;
     ctx.beginPath();
-    ctx.moveTo(rx+rr,ry); ctx.lineTo(rx+rw-rr,ry); ctx.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);
-    ctx.lineTo(rx+rw,ry+rh-rr); ctx.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);
-    ctx.lineTo(rx+rr,ry+rh); ctx.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);
-    ctx.lineTo(rx,ry+rr); ctx.arcTo(rx,ry,rx+rr,ry,rr);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=5;
-    ctx.fillText(label,px+23,py);
+    ctx.moveTo(px+7*box.side, py);
+    ctx.lineTo(box.side>0 ? box.x : box.x+box.w, my);
+    ctx.stroke();
+    ctx.globalAlpha=a;
+    roundRect(box.x,box.y,box.w,box.h,4);
+    ctx.fillStyle='rgba(9,11,14,0.90)'; ctx.fill();
+    ctx.globalAlpha=a*0.5; ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+    ctx.globalAlpha=a;
+    ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=6;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(label, box.x+8, my+0.5);
+    ctx.restore();
+  }
+
+  // ── DRAW FLYING-DOC CAPTION ──
+  function drawDocCaption(px,py,text,alpha){
+    if(!text||alpha<=0) return;
+    ctx.save();
+    ctx.font=CAPTION_FONT;
+    const box=placeLabel(px,py,ctx.measureText(text).width,18);
+    if(!box){ ctx.restore(); return; }
+    LBOX.push(box);
+    const a=Math.min(alpha,1);
+    ctx.globalAlpha=a;
+    roundRect(box.x,box.y,box.w,box.h,4);
+    ctx.fillStyle='rgba(9,11,14,0.86)'; ctx.fill();
+    ctx.fillStyle='rgba(224,221,212,0.97)';
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(text, box.x+8, box.y+box.h/2+0.5);
     ctx.restore();
   }
 
@@ -1413,10 +1599,13 @@ try{(function(){
       // OS asks for reduced motion; CSS animations still honour the setting.
       autoA -= (Math.PI*2)*(dt/20000); // clockwise, one turn per 20s
     }
-    const spin = autoA + userA;
+    // The cinematic scroll engine feeds a damped angle in here, so scrolling
+    // the page also turns the brain. It is additive: drag and idle spin keep working.
+    const spin = autoA + userA + (window.__cineSpin || 0);
     const rAY = spin + tiltY, rAX = -0.12 + userX + tiltX;
 
     ctx.clearRect(0,0,W,H);
+    LBOX.length=0;   // label slots are claimed fresh every frame
 
     // ── Transform all particles & nodes ──
     function tp3(x,y,z){
@@ -1572,6 +1761,7 @@ try{(function(){
     });
 
     // ── Hub nodes (sorted back→front) ──
+    const labelQueue=[];
     TN.slice().sort((a,b)=>a.depth-b.depth).forEach(n=>{
       const glow=n.node.isCore?24:(6+n.depth*10);
       ctx.save(); ctx.globalAlpha=n.alpha;
@@ -1586,9 +1776,13 @@ try{(function(){
       ctx.restore();
       if(n.node.label){
         n.node.labelAlpha=Math.min(n.node.labelAlpha+0.012,1);
-        drawNodeLabel(n.sx,n.sy,n.node.label,n.node.color,n.node.labelAlpha*n.alpha);
+        labelQueue.push(n);
       }
     });
+    // Labels are drawn after every node so they sit on top, and nearest-first
+    // so the closest label wins the slot when two of them want the same space.
+    labelQueue.sort((a,b)=>b.depth-a.depth).forEach(n=>
+      drawNodeLabel(n.sx,n.sy,n.node.label,n.node.color,n.node.labelAlpha*n.alpha));
 
     // ── Documents ──
     for(let i=DOCS.length-1;i>=0;i--){
@@ -1836,6 +2030,110 @@ if(document.readyState==='loading'){
 } else {
   bootPage();
 }
+
+// ════════════════════════════════════════════════════════════
+//  CINEMATIC SCROLL ENGINE
+//
+//  Native scrolling is left untouched — nothing is hijacked, so the
+//  scrollbar, keyboard, anchors and mobile momentum all behave normally.
+//  Instead a single rAF loop reads scrollY, damps it, and writes CSS
+//  custom properties. The lag between the raw and damped value is what
+//  reads as "filmic": the page keeps moving for a beat after you stop.
+//
+//  One loop, GPU-only properties (transform / opacity), no layout reads
+//  outside the loop — this stays cheap even on the brain canvas page.
+// ════════════════════════════════════════════════════════════
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduce) return;
+
+  const lerp  = (a,b,t) => a + (b-a)*t;
+  const clamp = (v,a,b) => v<a ? a : v>b ? b : v;
+
+  const header    = document.querySelector('header');
+  const brainWrap = document.querySelector('.brain-graph');
+  const brain     = document.getElementById('brain-canvas');
+  const hmi       = document.querySelector('.hmi');
+  const gauge     = document.querySelector('.gauge-wrap svg');
+  const ticker    = document.querySelector('.ticker');
+
+  // Scenes are tagged from JS so the markup stays untouched.
+  const scenes = Array.from(document.querySelectorAll('.brain-graph, section'));
+  scenes.forEach(el => el.classList.add('cine-scene'));
+
+  let raw = window.scrollY;   // where the page actually is
+  let damp = raw;             // where the camera thinks it is
+  let vel = 0;                // damped scroll velocity, for the whip-pan shear
+  let condensed = null;
+
+  function frame(){
+    requestAnimationFrame(frame);
+
+    const y  = window.scrollY;
+    const vh = window.innerHeight;
+    const dy = y - raw;
+    raw = y;
+
+    damp = lerp(damp, y, 0.11);
+    vel  = lerp(vel, clamp(dy, -70, 70), 0.13);
+
+    // Progress rail across the bottom edge of the header.
+    const max = Math.max(1, document.documentElement.scrollHeight - vh);
+    header.style.setProperty('--progress', (y/max).toFixed(4));
+
+    const wantCondensed = y > 140;
+    if(wantCondensed !== condensed){
+      condensed = wantCondensed;
+      header.classList.toggle('condensed', condensed);
+    }
+
+    // ── Scene depth: each scene eases back and dims as it exits frame ──
+    for(let i=0; i<scenes.length; i++){
+      const el = scenes[i];
+      const r  = el.getBoundingClientRect();
+      if(r.bottom < -80 || r.top > vh + 80) continue;   // off camera, skip
+      const out = clamp(-r.top / (r.height || 1), 0, 1);
+      el.style.setProperty('--sc', (1 - out*0.055).toFixed(4));
+      el.style.setProperty('--op', (1 - out*0.55).toFixed(3));
+    }
+
+    // ── Opening shot: the brain pushes in and drifts as you leave it ──
+    if(brainWrap && brain){
+      const h = brainWrap.offsetHeight || 1;
+      const p = clamp(y / h, 0, 1);
+      brain.style.setProperty('--brain-y', (p * 90).toFixed(2) + 'px');
+      brain.style.setProperty('--brain-s', (1 + p * 0.18).toFixed(4));
+      // Feed the canvas engine: scrolling the page turns the brain.
+      window.__cineSpin = damp * 0.0016;
+    }
+
+    // ── HMI panel banks like a physical screen crossing the frame ──
+    if(hmi){
+      const r = hmi.getBoundingClientRect();
+      if(r.bottom > 0 && r.top < vh){
+        const c = clamp((r.top + r.height/2 - vh/2) / vh, -1, 1);
+        hmi.style.setProperty('--hmi-rx', (c * 6.5).toFixed(2) + 'deg');
+        hmi.style.setProperty('--hmi-ry', (c * -8 + vel * 0.05).toFixed(2) + 'deg');
+        hmi.style.setProperty('--hmi-y',  (c * -26).toFixed(1) + 'px');
+      }
+    }
+
+    // ── Gauge floats against the scroll ──
+    if(gauge){
+      const r = gauge.getBoundingClientRect();
+      if(r.bottom > 0 && r.top < vh){
+        const c = clamp((r.top + r.height/2 - vh/2) / vh, -1, 1);
+        gauge.style.setProperty('--gauge-y',  (c * -30).toFixed(1) + 'px');
+        gauge.style.setProperty('--gauge-rx', (c * 9).toFixed(2) + 'deg');
+      }
+    }
+
+    // ── Ticker shears with velocity ──
+    if(ticker) ticker.style.setProperty('--vel-skew', (vel * 0.03).toFixed(3) + 'deg');
+  }
+
+  requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>

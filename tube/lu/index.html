@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEMA Solutions – L'écosystème intelligent de traduction</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="https://www.dema-solutions.com/wp-content/uploads/2022/09/favicon.png" />
+  <style>
+    body {
+      background: linear-gradient(180deg, #f9fafb 0%, #eef2f7 100%);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      transition: all 0.32s ease;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.14);
+      color: white;
+    }
+
+    .card:hover h3,
+    .card:hover p,
+    .card:hover ul li,
+    .card:hover .icon-emoji {
+      color: white !important;
+    }
+
+    .pipe-icon {
+      width: 100px;
+      height: auto;
+      display: block;
+      margin: 0 auto 16px;
+    }
+
+    .card h3 {
+      min-height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card ul {
+      flex-grow: 1;
+    }
+
+    .icon-emoji {
+      font-size: 2.75rem;
+      line-height: 1;
+      display: block;
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+
+    .lang-switcher {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 220px;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body class="text-gray-800">
+  <!-- Language Switcher -->
+  <div class="lang-switcher">
+    <a href="../index.html" title="English" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/gb.png" alt="English" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../us/index.html" title="English (US)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/us.png" alt="English (US)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../au/index.html" title="English (AU)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/au.png" alt="English (AU)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../it/index.html" title="Italiano" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/it.png" alt="Italiano" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../de/index.html" title="Deutsch" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/de.png" alt="Deutsch" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../at/index.html" title="Deutsch (AT)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/at.png" alt="Deutsch (AT)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../ch/index.html" title="Deutsch (CH)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/ch.png" alt="Deutsch (CH)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../fr/index.html" title="Français" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/fr.png" alt="Français" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="./index.html" title="Français (LU)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/lu.png" alt="Français (LU)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../es/index.html" title="Español" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/es.png" alt="Español" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../nl/index.html" title="Nederlands" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/nl.png" alt="Nederlands" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../be/index.html" title="Vlaams (BE)" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/be.png" alt="Vlaams (BE)" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../dk/index.html" title="Dansk" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/dk.png" alt="Dansk" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../se/index.html" title="Svenska" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/se.png" alt="Svenska" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../no/index.html" title="Norsk" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/no.png" alt="Norsk" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../fi/index.html" title="Suomi" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/fi.png" alt="Suomi" style="border: 1px solid #ccc; display:block;">
+    </a>
+    <a href="../cn/index.html" title="中文" style="margin:0 4px 4px 0;">
+      <img src="https://flagcdn.com/24x18/cn.png" alt="中文" style="border: 1px solid #ccc; display:block;">
+    </a>
+  </div>
+
+  <!-- Header -->
+  <header class="text-center py-10">
+    <img
+      class="block mx-auto mb-2 w-48 max-w-full h-auto"
+      src="../images/logo_2.png"
+      alt="Company Logo"
+    />
+    <h2 class="text-xl text-gray-600">🌍 Écosystème technologique de traduction</h2>
+  </header>
+
+  <!-- Intro -->
+  <section class="text-center max-w-3xl mx-auto mb-10 px-4">
+    <h3 class="text-2xl font-semibold mb-2">💡 Choisissez la solution adaptée à votre flux de traduction 💡</h3>
+    <p class="text-gray-600">
+      DEMA Solutions garantit économies, qualité, cohérence et rapidité en un seul processus intégré.
+    </p>
+  </section>
+
+  <!-- Cards Section -->
+  <section class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto px-6 pb-20 items-stretch">
+
+    <!-- 1Memory -->
+    <div class="card bg-white rounded-2xl shadow p-6 border-t-4 border-teal-500 hover:bg-teal-600">
+      <div class="icon-emoji text-center">🧠</div>
+      <h3 class="text-2xl font-bold mb-2 text-teal-600 text-center">1MEMORY</h3>
+      <p class="text-sm text-gray-600 mb-6 italic text-center">Votre portail de mémoire de traduction centralisé et à votre marque</p>
+      <p class="text-sm font-bold text-gray-600 text-center mb-4">
+        Besoin de plusieurs devis en même temps ?<br>
+        1Memory est la solution parfaite pour vous !
+      </p>
+      <ul class="space-y-3 text-gray-700 text-sm">
+        <li>✅ Portail personnalisé à votre marque</li>
+        <li>✅ Téléversez tout type de fichier</li>
+        <li>✅ Moins de mots, moins de coûts, plus vite</li>
+        <li>✅ Vous déterminez le nombre de mots réel</li>
+        <li>✅ Lancez des appels d'offres entre agences</li>
+        <li>✅ Évaluez vos fournisseurs selon un même critère</li>
+        <li>✅ Attribuez le contrat au meilleur fournisseur</li>
+        <li>✅ Gardez le contrôle total sur vos fournisseurs</li>
+        <li>✅ Terminologie cohérente entre fournisseurs</li>
+        <li>✅ Pleine propriété de la mémoire et du glossaire</li>
+      </ul>
+      <p class="mt-6 text-sm text-gray-500">
+        💬 Service gratuit (pré/post-édition incluse) - découvrez comment l'utiliser sans frais !
+      </p>
+      <a href="mailto:g.gambuto@dema-solutions.com?subject=1MEMORY - INFO REQUEST" aria-label="Request 1Memory info">
+        <button class="mt-6 bg-white text-teal-700 hover:bg-gray-100 font-semibold px-6 py-2 rounded-full w-full transition">
+          Demander l'accès
+        </button>
+      </a>
+    </div>
+
+    <!-- TUBE -->
+    <div class="card bg-white rounded-2xl shadow p-6 border-t-4 border-green-500 hover:bg-green-600">
+      <img
+        src="../images/mario-super-mario.gif"
+        class="pipe-icon object-contain"
+        alt="TUBE Icon"
+      />
+      <h3 class="text-2xl font-bold mb-2 text-green-600 text-center">TUBE</h3>
+      <p class="text-sm text-gray-600 mb-6 italic text-center">
+        Traductions intelligentes &amp; livraison ultra-rapide
+      </p>
+      <p class="text-sm font-bold text-gray-600 text-center mb-4">
+        Pourquoi externaliser vos traductions quand vous pouvez les internaliser ?<br>
+        Soyez comme Mario : plongez dans le TUBE !
+      </p>
+      <ul class="space-y-3 text-gray-700 text-sm">
+        <li>✅ Votre propre plateforme de traduction</li>
+        <li>✅ Téléversez tout type de fichier</li>
+        <li>✅ Choisissez un nombre illimité de langues</li>
+        <li>✅ Pré-traduisez avec vos traductions précédentes</li>
+        <li>✅ IA intégrée pour le contenu restant</li>
+        <li>✅ Révision humaine pour une qualité premium</li>
+        <li>✅ Contrôle qualité terminologique</li>
+        <li>✅ Conçu pour tous types de contenus</li>
+        <li>✅ Intégration TAO et support technique</li>
+        <li>✅ Pleine propriété de la mémoire et du glossaire</li>
+      </ul>
+      <p class="mt-6 text-sm text-gray-500">
+        💬 Coût économique basé sur l'usage.
+      </p>
+      <a href="mailto:g.gambuto@dema-solutions.com?subject=TUBE - INFO REQUEST" aria-label="Request TUBE info">
+        <button class="mt-6 bg-white text-green-700 hover:bg-gray-100 font-semibold px-6 py-2 rounded-full w-full transition">
+          Essayer TUBE
+        </button>
+      </a>
+    </div>
+  </section>
+
+  <!-- Ecosystem Flow Section -->
+  <section class="bg-gradient-to-r from-teal-600 to-green-600 text-white py-16">
+    <div class="max-w-6xl mx-auto text-center px-6">
+      <h3 class="text-3xl font-bold mb-6">🌍 L'écosystème technologique de traduction DEMA</h3>
+      <p class="mb-10 text-lg opacity-90 whitespace-nowrap">
+        Un flux de travail fluide reliant la mémoire de traduction centralisée à une traduction interne rapide et de haute qualité.<br>
+        Pour garantir économies, qualité premium, rapidité, technologie de pointe et transparence totale.
+      </p>
+
+      <div class="flex flex-col md:flex-row items-center justify-center gap-6">
+        <div class="flex flex-col items-center">
+          <div class="text-5xl mb-2">🧠</div>
+          <p class="font-semibold">1MEMORY</p>
+          <p class="text-sm opacity-80 whitespace-nowrap">Portail centralisé de mémoires de traduction</p>
+        </div>
+
+        <div class="text-4xl md:text-5xl">➡️</div>
+
+        <div class="flex flex-col items-center">
+          <img
+            src="../images/mario-super-mario.gif"
+            class="pipe-icon object-contain"
+            alt="TUBE Icon"
+          />
+          <p class="font-semibold">TUBE</p>
+          <p class="text-sm opacity-80 whitespace-nowrap">Traduction intelligente &amp; livraison ultra-rapide</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center py-8 text-sm text-gray-500">
+    © 2025 DEMA Solutions —
+    <a href="https://www.dema-solutions.com" target="_blank" class="text-teal-600 hover:underline">www.dema-solutions.com</a>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: Sync /tube da Dema-translation-ecosystem-v2
+
+# Ricopia la landing TUBE dal repo sorgente dentro /tube di questo sito.
+# La root (Company Brain) non viene mai toccata: si scrive solo sotto tube/.
+on:
+  schedule:
+    - cron: '17 * * * *'   # ogni ora (GitHub puo' ritardare i cron di parecchi minuti)
+  workflow_dispatch:        # esecuzione manuale dalla tab Actions
+  repository_dispatch:
+    types: [sync-tube]      # trigger istantaneo dal repo sorgente, se un giorno lo colleghi
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-tube
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sito
+        uses: actions/checkout@v4
+
+      - name: Checkout sorgente TUBE
+        uses: actions/checkout@v4
+        with:
+          repository: Dema81/Dema-translation-ecosystem-v2
+          path: .tube-src
+
+      - name: Ricopia in tube/
+        run: |
+          set -euo pipefail
+          rm -rf .tube-src/.git .tube-src/.github
+          rm -rf tube
+          mkdir -p tube
+          cp -R .tube-src/. tube/
+          rm -rf .tube-src
+
+      - name: Commit se qualcosa e' cambiato
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- tube && git diff --cached --quiet -- tube && [ -z "$(git status --porcelain -- tube)" ]; then
+            echo "Nessuna modifica: /tube e' gia' allineato."
+            exit 0
+          fi
+          SRC_SHA=$(git ls-remote https://github.com/Dema81/Dema-translation-ecosystem-v2.git HEAD | cut -f1 | cut -c1-7)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A tube
+          git commit -m "Sync /tube con Dema-translation-ecosystem-v2 @ ${SRC_SHA}"
+          git push

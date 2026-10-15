@@ -1,4 +1,4 @@
-# DEMA Company Brain — Landing
+# DEMA Corporate Second Brain — Landing
 
 Single-file landing page (waitlist) served by GitHub Pages on https://ai-dema-solutions.com
 

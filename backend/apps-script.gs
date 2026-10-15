@@ -1,5 +1,5 @@
 /**
- * Company Brain — waitlist backend (Google Apps Script)
+ * Corporate Second Brain — waitlist backend (Google Apps Script)
  *
  * Deploy: Extensions > Apps Script from a Google Sheet, paste this file,
  * then Deploy > New deployment > Web app
@@ -64,10 +64,10 @@ function doPost(e) {
     MailApp.sendEmail({
       to: NOTIFY,
       replyTo: d.email || NOTIFY,
-      subject: 'Nuovo lead Company Brain — ' + (d.azienda || d.nome || ''),
+      subject: 'Nuovo lead Corporate Second Brain — ' + (d.azienda || d.nome || ''),
       htmlBody:
         '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#22252B">' +
-        '<h2 style="font-size:16px;text-transform:uppercase;letter-spacing:.04em">Nuovo lead — Company Brain</h2>' +
+        '<h2 style="font-size:16px;text-transform:uppercase;letter-spacing:.04em">Nuovo lead — Corporate Second Brain</h2>' +
         '<table cellpadding="6" cellspacing="0" style="border-collapse:collapse">' +
         row_('Nome', d.nome) + row_('Azienda', d.azienda) +
         '<tr><td style="color:#7D828C">Email</td><td><a href="mailto:' + (d.email || '') + '">' + (d.email || '') + '</a></td></tr>' +

@@ -1,7 +1,7 @@
 name: Sync /tube da Dema-translation-ecosystem-v2
 
 # Ricopia la landing TUBE dal repo sorgente dentro /tube di questo sito.
-# La root (Company Brain) non viene mai toccata: si scrive solo sotto tube/.
+# La root (Corporate Second Brain) non viene mai toccata: si scrive solo sotto tube/.
 on:
   schedule:
     - cron: '17 * * * *'   # ogni ora (GitHub puo' ritardare i cron di parecchi minuti)

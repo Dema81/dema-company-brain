@@ -124,6 +124,9 @@ function doPost(e) {
     MailApp.sendEmail({
       to: order.customer.email,
       name: SENDER_NAME,
+      // The account that sends is not the account that handles the job, so an
+      // answer has to be pointed at the desk rather than at the sending mailbox.
+      replyTo: DESK,
       subject: 'Your order ' + order.id + ' - ' + order.solution,
       htmlBody: customerBody(order, net, vat, gross),
       attachments: [pdf]

@@ -1,0 +1,1915 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quote Desk — DEMA Solutions</title>
+<meta name="description" content="Price a translation three ways — machine, machine checked by machine, machine signed off by a native specialist — and order it in a minute.">
+<link rel="canonical" href="https://ai-dema-solutions.com/quote/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700&amp;family=Figtree:wght@400;600&amp;family=IBM+Plex+Mono:wght@400&amp;display=swap">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   DIRECTION: "The well-kept board" (dense-tiles), dealt 2026-10-18, seed 1293022722.
+   Idea: on this page the translation job ticket becomes the tile. The board is a
+   desk seen from above; every tile carries one true thing — a count, a rate, a
+   clock, a stage, a price. No hero band, no card grid, no centred text.
+   Type: League Spartan 700 / Figtree.  Colour: black and crimson.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* DEMA Solutions: navy #1c244b with its blues. The house orange is deliberately
+     left out at the client's request. */
+  --bg: #131a38;
+  --surface: #1c244b;
+  --surface-2: #232c57;
+  --surface-3: #2a3463;
+  --ink: #ffffff;
+  --muted: #c9cee5;
+  --line: #39406a;
+  --accent: #34a9ee;
+  --accent-ink: #0b1026;
+  --accent-text: #8fd2f7;
+  --good: #7fd6a8;
+
+  --display: 'League Spartan', 'Segoe UI', system-ui, sans-serif;
+  --text: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+
+  --gap: 8px;
+  --radius: 0px;
+  --pad: 22px;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────────── the board */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--gap);
+  padding: 12px;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.tile {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  min-width: 0;
+  text-align: left;
+}
+
+.tile > :first-child { margin-top: 0; }
+.tile > :last-child { margin-bottom: 0; }
+
+.t-name { grid-column: span 5; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+.t-brief { grid-column: span 7; background: var(--surface-2); }
+.t-solutions { grid-column: 1 / -1; background: transparent; padding: 0; }
+.t-analysis { grid-column: 1 / -1; }
+.t-note { grid-column: span 7; color: var(--muted); font-size: var(--step-small); }
+.t-rate { grid-column: span 5; background: var(--accent); color: var(--accent-ink); font-size: var(--step-small); }
+
+/* ──────────────────────────────────────────────────────────── the name tile */
+
+.wordmark {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 1.6rem + 4.4vw, 5.2rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.wordmark mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0 .12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.logo-plate { background: #ffffff; padding: 12px 16px; align-self: flex-start; }
+.logo-plate img { display: block; width: auto; height: 34px; }
+
+.standfirst { font-size: var(--step-lead); line-height: 1.3; margin: 0; max-width: 26ch; }
+
+.pair {
+  font-family: var(--mono);
+  font-size: var(--step-small);
+  background: var(--bg);
+  padding: 6px 10px;
+  align-self: flex-start;
+}
+
+.name-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: var(--step-small); color: var(--muted); }
+
+.ghost-button {
+  font: inherit;
+  font-size: var(--step-small);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  min-height: 34px;
+  cursor: pointer;
+}
+
+.ghost-button:hover { border-color: var(--accent); color: var(--accent); background: rgba(52,169,238,.12); }
+
+/* ───────────────────────────────────────────────────────────── the job tile */
+
+.brief { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; grid-column: span 2; }
+.field.wide { grid-column: 1 / -1; }
+.field > header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 20px; }
+
+label, .field-label {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--step-small);
+  color: var(--muted);
+}
+
+.optional { font-family: var(--text); font-weight: 400; }
+
+input, select, textarea {
+  font: inherit;
+  font-size: var(--step-small);
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 11px;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+input:hover, select:hover, textarea:hover { border-color: var(--accent); }
+::placeholder { color: #949494; opacity: 1; }
+
+.count-row { display: flex; gap: 8px; }
+.count-row input { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.count-row button {
+  font: inherit;
+  font-size: var(--step-small);
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding-inline: 12px;
+  cursor: pointer;
+}
+
+.count-row button:hover { border-color: var(--accent); color: var(--accent); background: rgba(52,169,238,.12); }
+
+.link-button {
+  font-family: var(--text);
+  font-size: var(--step-small);
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 5px 7px 5px 10px;
+  font-size: var(--step-small);
+}
+
+.chip select {
+  width: auto;
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: var(--step-small);
+  background: var(--bg);
+  border-color: var(--line);
+}
+
+.chip code { font-family: var(--mono); color: var(--muted); }
+.chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; }
+.chip button:hover { color: var(--accent-text); }
+
+.layout-row { display: flex; gap: 10px; align-items: center; min-height: 42px; }
+.layout-row .toggle { display: inline-flex; align-items: center; gap: 8px; font-family: var(--text); font-size: var(--step-small); cursor: pointer; white-space: nowrap; }
+.layout-row input[type='checkbox'] { width: 16px; height: 16px; min-height: 16px; padding: 0; accent-color: var(--accent); cursor: pointer; }
+.layout-row input[type='number'] { width: 5.5rem; font-family: var(--mono); }
+
+.pages-field { display: inline-flex; align-items: center; gap: 8px; }
+.pages-field input { width: 5.5rem; font-family: var(--mono); }
+.pages-unit { font-size: var(--step-small); color: var(--muted); }
+.price-parts { font-family: var(--mono); font-size: var(--step-small); color: var(--muted); margin: 6px 0 14px; }
+.terms { grid-column: 1 / -1; font-size: var(--step-small); color: var(--muted); margin: 14px 0 0; }
+
+.hint { font-size: var(--step-small); color: var(--muted); margin: 0; }
+
+/* The prices are a snapshot, not a live readout. The brief can be edited freely and
+   nothing is re-priced until this button is pressed — so it is filled and reads
+   "Show prices" while the board is empty, and goes quiet, reading "Update prices",
+   once a quote is standing. Copied from the client's reference, translated.com. */
+.field.dtp { grid-column: span 4; }
+.field.submit { grid-column: span 2; justify-content: flex-start; }
+
+.price-button {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition: background .15s cubic-bezier(.32,.72,0,1), color .15s cubic-bezier(.32,.72,0,1);
+}
+
+.price-button.standing { background: transparent; color: var(--accent-text); }
+.price-button.standing:hover { background: rgba(52, 169, 238, .14); color: var(--accent); }
+.price-button:hover { background: var(--accent-text); }
+
+.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; }
+.hint strong { font-family: var(--mono); font-weight: 400; }
+
+.notice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: var(--step-small);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ─────────────────────────────────────── the plans, stepped like a bar chart */
+
+.solutions-head { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 10px 0 0; }
+.solutions-head h2 { font-family: var(--display); font-weight: 700; font-size: var(--step-head); line-height: 0.9; letter-spacing: -0.04em; margin: 0; }
+.solutions-head .status { font-family: var(--mono); font-size: var(--step-small); color: var(--muted); margin: 0; }
+
+.solutions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); align-items: end; }
+
+/* Each plan is literally bigger than the one below it. */
+.solution {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: var(--radius);
+  padding: 26px 24px 0;
+  min-height: 380px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.solution.step-2 { min-height: 470px; background: var(--surface-2); }
+.solution.unfeasible { opacity: 0.6; }
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--step-small);
+  padding: 5px 10px;
+}
+
+.solution h3 { font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem); line-height: 0.9; letter-spacing: -0.03em; margin: 0 0 6px; }
+.tagline { font-size: var(--step-small); margin: 0 0 20px; color: var(--muted); }
+
+.pipeline { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
+.pipeline li { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 10px; font-size: var(--step-small); }
+.step { font-family: var(--mono); font-size: var(--step-small); width: 20px; height: 20px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+.pipeline li.off { color: var(--muted); }
+.pipeline li.off .step { background: transparent; border: 1px solid currentColor; color: inherit; }
+.pipeline li.off span:last-child { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+/* The workflow drawing: the same pipeline, pictured. One panel per solution, each
+   its own width, all the same height, so the three sit on one line across the row. */
+.workflow {
+  display: block;
+  width: 100%;
+  height: clamp(190px, 15vw, 248px);
+  object-fit: contain;
+  object-position: center;
+  margin: 0 0 18px;
+}
+
+.throughput { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; font-family: var(--mono); font-size: var(--step-small); color: var(--muted); white-space: nowrap; }
+.meter { flex: 1 1 auto; height: 2px; background: var(--line); min-width: 2rem; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+
+.spacer { flex: 1 1 auto; min-height: 10px; }
+
+/* Hover answers on every tile and control: 150ms, one curve, no bounce. */
+.solution { transition: transform .15s cubic-bezier(.32,.72,0,1), box-shadow .15s cubic-bezier(.32,.72,0,1); }
+.solution:hover { transform: translateY(-4px); box-shadow: 0 10px 0 -4px var(--accent); }
+.chip:hover { outline: 1px solid var(--accent); }
+.link-button:hover { color: var(--accent); }
+.tile a:hover { color: var(--accent); }
+
+.delivery { font-size: var(--step-small); margin: 0 0 14px; color: var(--muted); }
+.delivery time { display: block; font-family: var(--display); font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
+
+.price { font-family: var(--display); font-weight: 700; font-size: clamp(2.4rem, 1.6rem + 2.4vw, 3.5rem); line-height: 0.88; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; margin: 0; }
+.per-word { font-family: var(--mono); font-size: var(--step-small); margin: 6px 0 0; color: var(--muted); }
+.saving { color: var(--good); }
+.delta { font-family: var(--mono); font-size: var(--step-small); margin: 8px 0 14px; color: var(--muted); }
+
+/* The bottom strip of every tile is the button. */
+.cta {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: left;
+  width: calc(100% + 48px);
+  margin: 0 -24px;
+  min-height: 64px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 24px;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-ink);
+  transition: filter .2s cubic-bezier(.32,.72,0,1);
+}
+
+.cta:hover { background: var(--accent-text); color: var(--accent-ink); }
+.cta[disabled] { background: var(--line); color: var(--muted); cursor: not-allowed; }
+
+.solution details { font-size: var(--step-small); margin: 0 0 16px; color: var(--muted); }
+.solution summary { cursor: pointer; font-family: var(--display); font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.solution details ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.maths { font-family: var(--mono); font-size: var(--step-small); margin-top: 10px; line-height: 1.6; }
+
+/* ────────────────────────────────────────────── the analysis, as a tile board */
+
+.analysis .empty { padding: 22px 12px; color: var(--muted); font-size: var(--step-small); }
+.analysis .empty strong { display: block; font-family: var(--display); color: var(--ink); font-size: 1rem; margin-bottom: 4px; }
+
+.analysis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.analysis { overflow-x: auto; }
+.analysis table { border-collapse: collapse; width: 100%; font-size: var(--step-small); min-width: 460px; }
+.analysis th, .analysis td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.analysis th { font-family: var(--display); font-weight: 700; color: var(--muted); }
+.analysis td.num, .analysis th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.analysis td.name { max-width: 24rem; overflow-wrap: anywhere; }
+.analysis td.name small { display: block; color: var(--muted); }
+.analysis tr.uncounted td { color: var(--muted); }
+.analysis tr.totals td { font-family: var(--display); font-weight: 700; border-bottom: 0; }
+.analysis tbody tr:hover td { background: var(--bg); }
+.analysis-note { font-size: var(--step-small); color: var(--muted); margin: 10px 0 0; }
+.analysis-note.warn { color: var(--accent-text); }
+
+/* ────────────────────────────────────────────────────── the checkout, in two
+   steps with the order summary standing beside them the whole way, the shape
+   the client's reference uses: project information, then billing, then done. */
+
+.t-checkout { grid-column: 1 / -1; }
+
+.checkout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; }
+.checkout-main { min-width: 0; }
+
+.checkout-step-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin: 0 0 20px;
+}
+
+.checkout-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.checkout-foot .price-button { width: auto; min-width: 190px; }
+
+.who { display: flex; gap: 10px; flex-wrap: wrap; }
+.who .toggle { background: var(--bg); padding: 9px 14px; }
+.who input[type="radio"],
+.consent input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.consent { align-items: flex-start; line-height: 1.4; }
+
+.order-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--step-small); }
+.order-files li { display: flex; justify-content: space-between; gap: 12px; background: var(--bg); padding: 8px 10px; }
+.order-files span { color: var(--muted); font-family: var(--mono); }
+
+/* The summary never moves: it is the one thing on screen that must stay true
+   from the first field to the last. */
+.order-summary {
+  background: var(--surface-2);
+  padding: 22px;
+  align-self: start;
+  position: sticky;
+  top: 12px;
+  font-size: var(--step-small);
+}
+
+.order-summary > header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.order-summary dl { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; margin: 0 0 16px; }
+.order-summary dt { color: var(--muted); }
+.order-summary dd { margin: 0; text-align: right; }
+
+.summary-line { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0; }
+.summary-line.total {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+.summary-note { color: var(--muted); margin: 14px 0 0; line-height: 1.45; }
+
+.ref { font-family: var(--mono); background: var(--bg); padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+@media (max-width: 1000px) {
+  .checkout { grid-template-columns: 1fr; }
+  .order-summary { position: static; }
+}
+
+.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; }
+
+/* While the new quote is on its way the cards keep their shape and only the
+   numbers go blank, the way the reference does it. */
+.solutions.pricing .delivery time,
+.solutions.pricing .price,
+.solutions.pricing .per-word,
+.solutions.pricing .price-parts,
+.solutions.pricing .delta {
+  color: transparent;
+  background: var(--surface-3);
+  animation: blank 900ms cubic-bezier(.32,.72,0,1) infinite alternate;
+}
+
+.solutions.pricing .cta { pointer-events: none; opacity: .55; }
+
+@keyframes blank { to { opacity: .4; } }
+
+.hint strong { font-family: var(--mono); font-weight: 400; }
+
+.notice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: var(--step-small);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ─────────────────────────────────────── the plans, stepped like a bar chart */
+
+.solutions-head { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 10px 0 0; }
+.solutions-head h2 { font-family: var(--display); font-weight: 700; font-size: var(--step-head); line-height: 0.9; letter-spacing: -0.04em; margin: 0; }
+.solutions-head .status { font-family: var(--mono); font-size: var(--step-small); color: var(--muted); margin: 0; }
+
+.solutions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); align-items: end; }
+
+/* Each plan is literally bigger than the one below it. */
+.solution {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: var(--radius);
+  padding: 26px 24px 0;
+  min-height: 380px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.solution.step-2 { min-height: 470px; background: var(--surface-2); }
+.solution.unfeasible { opacity: 0.6; }
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--step-small);
+  padding: 5px 10px;
+}
+
+.solution h3 { font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem); line-height: 0.9; letter-spacing: -0.03em; margin: 0 0 6px; }
+.tagline { font-size: var(--step-small); margin: 0 0 20px; color: var(--muted); }
+
+.pipeline { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
+.pipeline li { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 10px; font-size: var(--step-small); }
+.step { font-family: var(--mono); font-size: var(--step-small); width: 20px; height: 20px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+.pipeline li.off { color: var(--muted); }
+.pipeline li.off .step { background: transparent; border: 1px solid currentColor; color: inherit; }
+.pipeline li.off span:last-child { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+/* The workflow drawing: the same pipeline, pictured. One panel per solution, each
+   its own width, all the same height, so the three sit on one line across the row. */
+.workflow {
+  display: block;
+  width: 100%;
+  height: clamp(190px, 15vw, 248px);
+  object-fit: contain;
+  object-position: center;
+  margin: 0 0 18px;
+}
+
+.throughput { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; font-family: var(--mono); font-size: var(--step-small); color: var(--muted); white-space: nowrap; }
+.meter { flex: 1 1 auto; height: 2px; background: var(--line); min-width: 2rem; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+
+.spacer { flex: 1 1 auto; min-height: 10px; }
+
+/* Hover answers on every tile and control: 150ms, one curve, no bounce. */
+.solution { transition: transform .15s cubic-bezier(.32,.72,0,1), box-shadow .15s cubic-bezier(.32,.72,0,1); }
+.solution:hover { transform: translateY(-4px); box-shadow: 0 10px 0 -4px var(--accent); }
+.chip:hover { outline: 1px solid var(--accent); }
+.link-button:hover { color: var(--accent); }
+.tile a:hover { color: var(--accent); }
+
+.delivery { font-size: var(--step-small); margin: 0 0 14px; color: var(--muted); }
+.delivery time { display: block; font-family: var(--display); font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
+
+.price { font-family: var(--display); font-weight: 700; font-size: clamp(2.4rem, 1.6rem + 2.4vw, 3.5rem); line-height: 0.88; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; margin: 0; }
+.per-word { font-family: var(--mono); font-size: var(--step-small); margin: 6px 0 0; color: var(--muted); }
+.saving { color: var(--good); }
+.delta { font-family: var(--mono); font-size: var(--step-small); margin: 8px 0 14px; color: var(--muted); }
+
+/* The bottom strip of every tile is the button. */
+.cta {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: left;
+  width: calc(100% + 48px);
+  margin: 0 -24px;
+  min-height: 64px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 24px;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-ink);
+  transition: filter .2s cubic-bezier(.32,.72,0,1);
+}
+
+.cta:hover { background: var(--accent-text); color: var(--accent-ink); }
+.cta[disabled] { background: var(--line); color: var(--muted); cursor: not-allowed; }
+
+.solution details { font-size: var(--step-small); margin: 0 0 16px; color: var(--muted); }
+.solution summary { cursor: pointer; font-family: var(--display); font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.solution details ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.maths { font-family: var(--mono); font-size: var(--step-small); margin-top: 10px; line-height: 1.6; }
+
+/* ────────────────────────────────────────────── the analysis, as a tile board */
+
+.analysis .empty { padding: 22px 12px; color: var(--muted); font-size: var(--step-small); }
+.analysis .empty strong { display: block; font-family: var(--display); color: var(--ink); font-size: 1rem; margin-bottom: 4px; }
+
+.analysis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.analysis { overflow-x: auto; }
+.analysis table { border-collapse: collapse; width: 100%; font-size: var(--step-small); min-width: 460px; }
+.analysis th, .analysis td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.analysis th { font-family: var(--display); font-weight: 700; color: var(--muted); }
+.analysis td.num, .analysis th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.analysis td.name { max-width: 24rem; overflow-wrap: anywhere; }
+.analysis td.name small { display: block; color: var(--muted); }
+.analysis tr.uncounted td { color: var(--muted); }
+.analysis tr.totals td { font-family: var(--display); font-weight: 700; border-bottom: 0; }
+.analysis tbody tr:hover td { background: var(--bg); }
+.analysis-note { font-size: var(--step-small); color: var(--muted); margin: 10px 0 0; }
+.analysis-note.warn { color: var(--accent-text); }
+
+/* ───────────────────────────────────────────────────────────────── dialogs */
+
+dialog {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  width: min(540px, 92vw);
+}
+
+dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
+
+.dialog-body { padding: 26px; display: grid; gap: 18px; }
+.dialog-body h3 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 0.95; letter-spacing: -0.03em; margin: 0; }
+
+.summary-table { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: var(--step-small); margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.summary-table dt { color: var(--muted); }
+.summary-table dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.summary-table .total { font-family: var(--display); font-weight: 700; font-size: 1.2rem; }
+
+.dialog-body form { display: grid; gap: 14px; }
+.dialog-body .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.dialog-body textarea { resize: vertical; min-height: 72px; }
+
+.actions { display: flex; gap: 10px; justify-content: flex-end; }
+.actions button { font-family: var(--display); font-weight: 700; font-size: 1rem; border-radius: var(--radius); padding: 12px 20px; min-height: 46px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--ink); }
+.actions button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.actions button[disabled] { opacity: 0.6; cursor: progress; }
+
+.form-error { color: var(--accent-text); font-size: var(--step-small); margin: 0; }
+.confirmation { display: grid; gap: 12px; }
+.ref { font-family: var(--mono); background: var(--bg); padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+.footer-note { margin: 0; }
+.footer-note code { font-family: var(--mono); }
+
+/* ──────────────────────────────────────────────────────────────── queries */
+
+@media (max-width: 1000px) {
+  .t-name, .t-brief, .t-note, .t-rate { grid-column: 1 / -1; }
+  .brief { grid-template-columns: repeat(4, 1fr); }
+  .field.dtp, .field.submit { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .solutions { grid-template-columns: 1fr; align-items: stretch; }
+  .solution, .solution.step-2, .solution.step-3 { min-height: 0; }
+  .brief { grid-template-columns: repeat(2, 1fr); }
+  .field { grid-column: span 2; }
+  .dialog-body .two { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<main class="board">
+
+  <section class="tile t-name">
+    <div class="logo-plate"><img src="dema-logo.webp" alt="DEMA Solutions" width="359" height="120"></div>
+    <h1 class="wordmark">Quote<br><mark>Desk</mark></h1>
+    <p class="standfirst">One job, priced three ways: machine, machine checked by machine, machine signed off by a native specialist.</p>
+  </section>
+
+  <section class="tile t-brief" id="briefTile">
+    <form class="brief" id="brief" novalidate>
+      <div class="field wide">
+        <header><label for="project">Project name <span class="optional">(optional)</span></label></header>
+        <input id="project" name="project" type="text" maxlength="120" placeholder="Hydraulic press manual, rev. 4">
+      </div>
+
+      <div class="field">
+        <header><label for="source">From</label></header>
+        <select id="source" name="source"></select>
+      </div>
+
+      <div class="field">
+        <header>
+          <label for="target">Into</label>
+          <button type="button" class="link-button" id="addTarget">Add</button>
+        </header>
+        <select id="target" name="target"></select>
+      </div>
+
+      <div class="field">
+        <header><label for="words">Word count</label></header>
+        <div class="count-row">
+          <input id="words" name="words" type="number" min="1" step="1" value="1000" inputmode="numeric">
+          <button type="button" id="uploadButton">Count my files</button>
+          <input type="file" id="fileInput" multiple hidden>
+        </div>
+      </div>
+
+      <div class="field wide" id="extraTargetsField" hidden>
+        <header><span class="field-label">Also into</span></header>
+        <div class="chips" id="extraTargets"></div>
+      </div>
+
+      <div class="field">
+        <header><label for="subject">Subject</label></header>
+        <select id="subject" name="subject"></select>
+      </div>
+
+      <div class="field">
+        <header>
+          <label for="deadline">Needed by</label>
+          <button type="button" class="link-button" id="clearDeadline" hidden>Clear</button>
+        </header>
+        <input id="deadline" name="deadline" type="date">
+      </div>
+
+      <div class="field">
+        <header><label for="currency">Currency</label></header>
+        <select id="currency" name="currency"></select>
+      </div>
+
+      <div class="field dtp">
+        <header><span class="field-label">Desktop publishing <span class="optional">(optional)</span></span></header>
+        <div class="layout-row">
+          <label class="toggle" for="layout"><input type="checkbox" id="layout"> Lay out the translated files</label>
+          <span class="pages-field" id="pagesField" hidden>
+            <input id="pages" type="number" min="15" step="1" value="15" aria-label="Pages in the document">
+            <span class="pages-unit">pages</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="field submit">
+        <header aria-hidden="true"></header>
+        <button type="submit" class="price-button" id="priceButton">Show prices</button>
+      </div>
+
+      <p class="hint field wide" id="briefHint">Leave the date empty for the earliest delivery at list price.</p>
+      <p class="notice" id="briefError" hidden></p>
+    </form>
+  </section>
+
+  <div class="solutions-head" id="solutionsHead">
+    <h2>Three ways</h2>
+    <p class="status" id="quoteStatus"></p>
+  </div>
+
+  <section class="tile t-solutions" id="solutionsTile">
+    <div class="solutions" id="solutions"></div>
+    <p class="unpriced" id="unpriced">Fill in the brief, then press <strong>Show prices</strong>.</p>
+    <p class="terms">Dates are indicative and count working hours only, Monday to Friday 9:00&ndash;17:00 CET. The clock starts when payment is received, by bank transfer or card.</p>
+  </section>
+
+  <section class="tile t-analysis" id="analysisField" hidden>
+    <header class="analysis-head">
+      <span class="field-label">File analysis</span>
+      <button type="button" class="link-button" id="clearFiles">Clear</button>
+    </header>
+    <div class="analysis" id="analysis"></div>
+  </section>
+
+
+
+  <section class="tile t-checkout" id="checkout" hidden>
+    <div class="checkout">
+      <div class="checkout-main">
+  
+        <form class="checkout-step" id="detailsForm" novalidate>
+          <h2 class="checkout-step-title">Project information</h2>
+          <div class="brief">
+            <div class="field">
+              <header><label for="orderProject">Project name <span class="optional">(appears on the confirmation)</span></label></header>
+              <input id="orderProject" maxlength="120" placeholder="Hydraulic press manual, rev. 4">
+            </div>
+            <div class="field">
+              <header><label for="orderEmail">Email <span class="optional">(where the translation is sent)</span></label></header>
+              <input id="orderEmail" type="email" maxlength="160" autocomplete="email" placeholder="you@company.com">
+            </div>
+            <div class="field">
+              <header><label for="orderName">Your name</label></header>
+              <input id="orderName" maxlength="120" autocomplete="name">
+            </div>
+            <div class="field">
+              <header><label for="orderRef">Your reference <span class="optional">(optional)</span></label></header>
+              <input id="orderRef" maxlength="60" placeholder="PO number or project code">
+            </div>
+            <div class="field wide">
+              <header><label for="orderNote">Notes for the translator <span class="optional">(optional)</span></label></header>
+              <textarea id="orderNote" rows="4" placeholder="Context, audience, terms to keep in English"></textarea>
+            </div>
+            <div class="field wide" id="orderFilesField" hidden>
+              <header><span class="field-label">Your files</span></header>
+              <ul class="order-files" id="orderFiles"></ul>
+            </div>
+          </div>
+          <p class="notice" id="detailsError" hidden></p>
+          <div class="checkout-foot">
+            <button type="button" class="link-button" id="backToSolutions">&larr; Return to solution selection</button>
+            <button type="submit" class="price-button" id="toBilling">Continue</button>
+          </div>
+        </form>
+  
+        <form class="checkout-step" id="billingForm" novalidate hidden>
+          <h2 class="checkout-step-title">Billing information</h2>
+          <div class="brief">
+            <div class="field wide">
+              <header><span class="field-label">Who are you?</span></header>
+              <div class="who">
+                <label class="toggle"><input type="radio" name="who" value="individual" checked> Individual</label>
+                <label class="toggle"><input type="radio" name="who" value="company"> Company</label>
+              </div>
+            </div>
+        <div class="field">
+          <header><label for="billCompanyName">Company name</label></header>
+          <input id="billCompanyName" maxlength="160" autocomplete="organization">
+        </div>
+        <div class="field">
+          <header><label for="billName">First and last name</label></header>
+          <input id="billName" maxlength="120" autocomplete="name">
+        </div>
+        <div class="field">
+          <header><label for="billPhone">Telephone <span class="optional">(optional)</span></label></header>
+          <input id="billPhone" type="tel" maxlength="40" autocomplete="tel">
+        </div>
+        <div class="field wide">
+          <header><label for="billAddress1">Address (line 1)</label></header>
+          <input id="billAddress1" maxlength="160" autocomplete="address-line1">
+        </div>
+        <div class="field wide">
+          <header><label for="billAddress2">Address (line 2) <span class="optional">(optional)</span></label></header>
+          <input id="billAddress2" maxlength="160" autocomplete="address-line2">
+        </div>
+        <div class="field">
+          <header><label for="billCity">City</label></header>
+          <input id="billCity" maxlength="90" autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <header><label for="billPostal">ZIP code</label></header>
+          <input id="billPostal" maxlength="20" autocomplete="postal-code">
+        </div>
+        <div class="field">
+          <header><label for="billCountry">Country</label></header>
+          <select id="billCountry" autocomplete="country"></select>
+        </div>
+        <div class="field">
+          <header><label for="billVat">VAT number <span class="optional">(EU only)</span></label></header>
+          <input id="billVat" maxlength="30">
+        </div>
+            <div class="field wide">
+              <label class="toggle consent" for="billAccept">
+                <input type="checkbox" id="billAccept">
+                I have read and agree to the privacy policy and the conditions of sale.
+              </label>
+            </div>
+          </div>
+          <p class="notice" id="billingError" hidden></p>
+          <div class="checkout-foot">
+            <button type="button" class="link-button" id="backToDetails">&larr; Return to order details</button>
+            <button type="submit" class="price-button" id="submitOrder">Submit order</button>
+          </div>
+        </form>
+  
+        <div class="checkout-step" id="orderDone" hidden>
+          <h2 class="checkout-step-title">Order received</h2>
+          <p id="doneText"></p>
+          <div class="ref"><span id="doneRef"></span><button type="button" class="ghost-button" id="copyRef">Copy</button></div>
+          <p class="hint" id="doneMail"></p>
+          <div class="checkout-foot">
+            <button type="button" class="price-button" id="newQuote">Price another job</button>
+          </div>
+        </div>
+  
+      </div>
+  
+      <aside class="order-summary">
+        <header>
+          <span class="field-label">Order summary</span>
+          <button type="button" class="link-button" id="editQuote">Edit</button>
+        </header>
+        <dl id="summaryRows"></dl>
+        <p class="summary-line"><span>Total excluding VAT</span><strong id="summaryNet"></strong></p>
+        <p class="summary-line" id="summaryVatLine"><span id="summaryVatLabel">VAT</span><strong id="summaryVat"></strong></p>
+        <p class="summary-line total"><span>Total due</span><strong id="summaryTotal"></strong></p>
+        <p class="summary-note" id="summaryNote"></p>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+
+
+<script src="analysis.js"></script>
+<script>
+'use strict';
+
+/* ---------------------------------------------------------------- rate card */
+
+/* The AI stages cost the same in every language, so Basic and Good Enough run on one
+   flat rate. The human stage does not, and its rate is the client's printed card,
+   "Listino tecnico 2026": seven bands, €0.06 for the common European pairs up to €0.14.
+   Icelandic, Hindi and Vietnamese are not on the card and are quoted at its top band. */
+const LANGUAGES = [
+  ['en-GB', 'English (United Kingdom)', 0.06], ['en-US', 'English (United States)', 0.06],
+  ['fr-FR', 'French (France)', 0.06], ['it-IT', 'Italian (Italy)', 0.06],
+  ['es-ES', 'Spanish (Spain)', 0.06], ['es-419', 'Spanish (Latin America)', 0.06],
+  ['pt-BR', 'Portuguese (Brazil)', 0.07], ['pt-PT', 'Portuguese (Portugal)', 0.07],
+  ['de-DE', 'German (Germany)', 0.06], ['nl-NL', 'Dutch (Netherlands)', 0.07],
+  ['nl-BE', 'Flemish (Belgium)', 0.07], ['eu-ES', 'Basque (Spain)', 0.14],
+  ['ro-RO', 'Romanian (Romania)', 0.07], ['ru-RU', 'Russian (Russia)', 0.07],
+  ['pl-PL', 'Polish (Poland)', 0.07], ['cs-CZ', 'Czech (Czechia)', 0.09],
+  ['uk-UA', 'Ukrainian (Ukraine)', 0.1], ['tr-TR', 'Turkish (Turkey)', 0.1],
+  ['sk-SK', 'Slovak (Slovakia)', 0.09], ['bg-BG', 'Bulgarian (Bulgaria)', 0.07],
+  ['hr-HR', 'Croatian (Croatia)', 0.09], ['sr-RS', 'Serbian (Serbia)', 0.09],
+  ['bs-BA', 'Bosnian (Bosnia and Herzegovina)', 0.1], ['sq-AL', 'Albanian (Albania)', 0.1],
+  ['hu-HU', 'Hungarian (Hungary)', 0.09], ['el-GR', 'Greek (Greece)', 0.1],
+  ['sl-SI', 'Slovenian (Slovenia)', 0.09], ['et-EE', 'Estonian (Estonia)', 0.13],
+  ['lv-LV', 'Latvian (Latvia)', 0.13], ['lt-LT', 'Lithuanian (Lithuania)', 0.13],
+  ['ka-GE', 'Georgian (Georgia)', 0.13], ['da-DK', 'Danish (Denmark)', 0.1],
+  ['sv-SE', 'Swedish (Sweden)', 0.11], ['nb-NO', 'Norwegian (Norway)', 0.11],
+  ['fi-FI', 'Finnish (Finland)', 0.11], ['is-IS', 'Icelandic (Iceland)', 0.14],
+  ['hi-IN', 'Hindi (India)', 0.14], ['vi-VN', 'Vietnamese (Vietnam)', 0.14],
+  ['th-TH', 'Thai (Thailand)', 0.14], ['mt-MT', 'Maltese (Malta)', 0.13],
+  ['fa-IR', 'Persian (Iran)', 0.13], ['he-IL', 'Hebrew (Israel)', 0.13],
+  ['sw-KE', 'Swahili (Kenya)', 0.14], ['ko-KR', 'Korean (South Korea)', 0.14],
+  ['ja-JP', 'Japanese (Japan)', 0.14], ['zh-CN', 'Chinese (Simplified)', 0.14],
+  ['zh-TW', 'Chinese (Traditional)', 0.14], ['ar-SA', 'Arabic (Saudi Arabia)', 0.13]
+].map((row) => ({ code: row[0], name: row[1], professionalRate: row[2] }));
+
+/* The subject routes the job to the right specialist.
+   It does not change the price: the rate quoted is the rate charged. */
+const SUBJECTS = [
+  ['general', 'General / Standard'], ['mechanical', 'Mechanical / Manufacturing'],
+  ['legal', 'Legal / Contracts'], ['medical', 'Medical / Life sciences'],
+  ['marketing', 'Marketing / Advertising'], ['software', 'IT / Software'],
+  ['finance', 'Finance / Banking'], ['tourism', 'Tourism / Hospitality'], ['patent', 'Patents / IP']
+].map((row) => ({ code: row[0], name: row[1] }));
+
+const TIERS = [
+  { id: 'basic', name: 'Basic', tagline: 'Machine speed, subject-tuned.',
+    workflow: { image: 'tier-basic.webp', alt: 'AI Translator alone: the machine translates and returns the file.' },
+    stages: ['AI Translator'], rate: 0.02, workingHours: 4, floor: 5, badge: null,
+    description: 'Neural machine translation tuned on your subject area. Best for internal content, high volumes and first drafts.',
+    includes: ['Subject-tuned neural engine', 'Tags, placeholders and numbers preserved', 'Source formatting returned intact'] },
+  { id: 'good-enough', name: 'Good Enough', tagline: 'Checked before it reaches you.',
+    workflow: { image: 'tier-good-enough.webp', alt: 'AI Translator, then a Senior AI Reviewer re-reads the translation against the source.' },
+    stages: ['AI Translator', 'AI Revisor'], rate: 0.04, workingHours: 8, floor: 8, badge: 'Best Seller',
+    description: 'Everything in Basic, plus a second AI pass that re-reads the translation against the source for terminology, consistency, numbers and fluency.',
+    includes: ['Everything in Basic', 'Automated revision against the source', 'Numbers, units and dates verified'] },
+  { id: 'professional', name: 'Professional', tagline: 'Signed off by a native specialist.',
+    workflow: { image: 'tier-professional.webp', alt: 'AI Translator, Senior AI Reviewer, then a human translator signs the file off.' },
+    stages: ['AI Translator', 'AI Revisor', 'Human Translator'], rate: null, wordsPerDay: 2000, minimumWorkingHours: 8, floor: 12, badge: null,
+    description: 'Everything in Good Enough, then a specialised native translator reviews and signs off every segment. The rate follows the language pair: common European pairs cost least, rarer ones more.',
+    includes: ['Everything in Good Enough', 'Native specialist reviews every segment', 'Style and tone adapted to the market', 'Named translator and revision round included'] }
+];
+
+const VOLUME_BREAKS = [[50000, 0.15], [20000, 0.1], [5000, 0.05], [0, 0]];
+
+/* Desktop publishing on the translated files, charged per target language:
+   €15 covers a document of up to 15 pages, beyond that every page costs €1
+   (19 pages = €19). */
+const LAYOUT = { minimumCharge: 15, pagesIncluded: 15, perPage: 1, maxPages: 5000 };
+
+/* The rate card is quoted in euro. A published page cannot call a currency feed,
+   so the dollar view uses this fixed reference rate, stated under the prices.
+   European Central Bank reference rate, 16 October 2026. */
+const USD_PER_EUR = 1.1253;
+const USD_RATE_DATE = '16 October 2026';
+const CURRENCIES = [['EUR', '€', 1], ['USD', '$', USD_PER_EUR]]
+  .map((row) => ({ code: row[0], symbol: row[1], rate: row[2] }));
+
+const RUSH_CAP = 1.9, RUSH_SLOPE = 0.6, MIN_FEASIBLE = 0.45, DEADLINE_HOUR = 18, HOUR = 3600000;
+
+/* ------------------------------------------------------------------ engine */
+
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const lang = (code) => LANGUAGES.find((l) => l.code === code);
+const subjectOf = (code) => SUBJECTS.find((s) => s.code === code);
+const currencyOf = (code) => CURRENCIES.find((c) => c.code === code);
+const volumeDiscount = (words) => VOLUME_BREAKS.find((b) => words >= b[0])[1];
+
+const WORKING = { timeZone: 'Europe/Rome', startHour: 9, endHour: 17, hoursPerDay: 8 };
+
+  /* ---------------------------------------------------- working calendar */
+
+  const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  /** The wall-clock reading of an instant in the working time zone. */
+  function parts(date) {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: WORKING.timeZone,
+      hour12: false,
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const read = {};
+    for (const part of formatter.formatToParts(date)) read[part.type] = part.value;
+    return {
+      year: Number(read.year),
+      month: Number(read.month),
+      day: Number(read.day),
+      hour: Number(read.hour) % 24,
+      minute: Number(read.minute),
+      second: Number(read.second),
+      weekday: WEEKDAYS.indexOf(read.weekday)
+    };
+  }
+
+  /** How far ahead of UTC the working zone is at that instant. */
+  function offsetAt(date) {
+    const p = parts(date);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - date.getTime();
+  }
+
+  /** The instant a wall-clock reading names, daylight saving included. */
+  function instantOf(p) {
+    const guess = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute || 0, 0);
+    const corrected = guess - offsetAt(new Date(guess));
+    return new Date(guess - offsetAt(new Date(corrected)));
+  }
+
+  const isWeekend = (weekday) => weekday === 0 || weekday === 6;
+
+  /** 09:00 on the next day the desk is open. */
+  function nextWorkingMorning(p) {
+    let cursor = Date.UTC(p.year, p.month - 1, p.day);
+    for (let i = 0; i < 10; i++) {
+      cursor += 24 * 3600 * 1000;
+      if (!isWeekend(new Date(cursor).getUTCDay())) break;
+    }
+    const d = new Date(cursor);
+    return instantOf({
+      year: d.getUTCFullYear(),
+      month: d.getUTCMonth() + 1,
+      day: d.getUTCDate(),
+      hour: WORKING.startHour,
+      minute: 0
+    });
+  }
+
+  /**
+   * Add working hours to an instant, counting only Monday to Friday between
+   * WORKING.startHour and WORKING.endHour in the working time zone. An order
+   * placed on Friday at 20:00 that needs 4 hours lands on Monday at 13:00.
+   */
+  function addWorkingHours(start, hours) {
+    let cursor = new Date(start);
+    let remaining = Math.max(0, Math.round(hours * 60));
+    const open = WORKING.startHour * 60;
+    const close = WORKING.endHour * 60;
+
+    for (let guard = 0; guard < 2000; guard++) {
+      const p = parts(cursor);
+      const minuteOfDay = p.hour * 60 + p.minute;
+
+      if (isWeekend(p.weekday) || minuteOfDay >= close) {
+        cursor = nextWorkingMorning(p);
+        continue;
+      }
+      if (minuteOfDay < open) {
+        cursor = instantOf({ year: p.year, month: p.month, day: p.day, hour: WORKING.startHour, minute: 0 });
+        continue;
+      }
+      if (remaining === 0) return cursor;
+
+      const usable = Math.min(close - minuteOfDay, remaining);
+      cursor = new Date(cursor.getTime() + usable * 60000);
+      remaining -= usable;
+      if (remaining === 0) return cursor;
+      cursor = nextWorkingMorning(parts(cursor));
+    }
+    return cursor;
+  }
+
+  /**
+   * Working hours one tier needs for one language: the AI tiers are a fixed
+   * promise, the human tier runs at a daily word rate.
+   */
+  function workingHoursFor(tier, words) {
+    if (tier.workingHours) return tier.workingHours;
+    return Math.max(tier.minimumWorkingHours, (words / tier.wordsPerDay) * WORKING.hoursPerDay);
+  }
+
+  /** What the card says about how the date was reached. */
+  function deliveryRule(tier) {
+    if (tier.workingHours) return tier.workingHours + ' working hours';
+    return tier.wordsPerDay.toLocaleString('en-US') + ' words a working day';
+  }
+
+
+/** Desktop publishing for one target language, in euro. */
+function layoutCharge(pages) {
+  if (!pages || pages < 1) return 0;
+  return pages <= LAYOUT.pagesIncluded ? LAYOUT.minimumCharge : pages * LAYOUT.perPage;
+}
+
+/** The Professional rate comes from the target language; the AI tiers are flat. */
+const listRate = (tier, language) => (tier.rate === null ? language.professionalRate : tier.rate);
+
+function priceTier(input, tier, now) {
+  const subject = subjectOf(input.subject);
+  const currency = currencyOf(input.currency);
+  const discount = volumeDiscount(input.words);
+  const hours = workingHoursFor(tier, input.words);
+  const naturalMs = addWorkingHours(now, hours).getTime() - now.getTime();
+
+  let urgency = 1;
+  let feasible = true;
+  let eta = new Date(now.getTime() + naturalMs);
+
+  if (input.deadline) {
+    const due = new Date(input.deadline + 'T' + String(DEADLINE_HOUR).padStart(2, '0') + ':00:00');
+    const available = due.getTime() - now.getTime();
+    if (available > 0 && naturalMs / available > 1) {
+      urgency = round2(Math.min(RUSH_CAP, 1 + (naturalMs / available - 1) * RUSH_SLOPE));
+      feasible = available >= naturalMs * MIN_FEASIBLE;
+      eta = due;
+    }
+  }
+
+  const layoutPerLanguage = input.layout ? layoutCharge(input.pages) : 0;
+
+  const lines = input.targets.map((code) => {
+    const language = lang(code);
+    const netPerWordEur = listRate(tier, language) * (1 - discount) * urgency;
+    const computed = input.words * netPerWordEur;
+    const translationEur = Math.max(tier.floor, computed);
+    return {
+      language: language.name,
+      languageCode: language.code,
+      perWord: Math.round(netPerWordEur * currency.rate * 1000) / 1000,
+      translation: round2(translationEur * currency.rate),
+      layout: round2(layoutPerLanguage * currency.rate),
+      amount: round2((translationEur + layoutPerLanguage) * currency.rate),
+      minimumApplied: computed < tier.floor
+    };
+  });
+
+  const translationTotal = round2(lines.reduce((sum, l) => sum + l.translation, 0));
+  const layoutTotal = round2(layoutPerLanguage * input.targets.length * currency.rate);
+  const total = round2(translationTotal + layoutTotal);
+
+  return {
+    tier: tier.id, name: tier.name, tagline: tier.tagline, badge: tier.badge, stages: tier.stages,
+    description: tier.description, includes: tier.includes, workflow: tier.workflow,
+    currency: currency.code, total: total,
+    translationTotal: translationTotal, layoutTotal: layoutTotal,
+    workingHours: round2(hours), deliveryRule: deliveryRule(tier),
+    perWord: Math.round((translationTotal / (input.words * input.targets.length)) * 1000) / 1000,
+    eta: eta.toISOString(), feasible: feasible, lines: lines,
+    breakdown: {
+      rateSource: tier.rate === null ? 'language' : 'flat',
+      subject: subject.name,
+      discount: discount, urgency: urgency, floor: round2(tier.floor * currency.rate),
+      layout: {
+        requested: Boolean(input.layout),
+        pages: input.layout ? input.pages : 0,
+        perLanguage: round2(layoutPerLanguage * currency.rate),
+        total: layoutTotal
+      },
+      words: input.words, targetCount: input.targets.length
+    }
+  };
+}
+
+const quoteAll = (input, now) => ({
+  input: input,
+  generatedAt: now.toISOString(),
+  solutions: TIERS.map((t) => priceTier(input, t, now))
+});
+
+/* -------------------------------------------------------------- formatting */
+
+const $ = (id) => document.getElementById(id);
+const THEME_KEY = 'quote-desk-theme';
+
+function money(amount, currency, digits) {
+  const d = digits === undefined ? 2 : digits;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency', currency: currency, minimumFractionDigits: d, maximumFractionDigits: d
+    }).format(amount);
+  } catch (err) {
+    return currency + ' ' + amount.toFixed(d);
+  }
+}
+
+const when = (iso) => new Intl.DateTimeFormat(undefined,
+  { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+
+const shortWhen = (iso) => new Intl.DateTimeFormat(undefined,
+  { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+
+function fromNow(iso) {
+  const hours = (new Date(iso) - Date.now()) / HOUR;
+  if (hours < 1) return 'under an hour';
+  if (hours < 48) return Math.round(hours) + ' hours';
+  return Math.round(hours / 24) + ' days';
+}
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+});
+
+/* ------------------------------------------------------------------- state */
+
+const state = { extraTargets: [], quote: null, pending: null };
+
+/* ──────────────────────────────────────────────────────────── the order desk
+   This page is served as a static file, so it has no server of its own. The
+   order goes to a Google Apps Script web app, exactly the way the waitlist form
+   on the home page does: a text/plain POST, so the browser sends it without a
+   preflight the script cannot answer.
+
+   Paste the /exec URL below once the script is deployed. While it is empty —
+   and whenever the call fails — the order is handed to the visitor's own mail
+   client instead, pre-filled, so nobody is ever left with nowhere to send it. */
+const ORDERS_WEBHOOK = '';
+const ORDERS_INBOX = 'billing@dema-solutions.com';
+
+
+function fillSelects() {
+  const options = LANGUAGES.map((l) => '<option value="' + l.code + '">' + l.name + '</option>').join('');
+  $('source').innerHTML = options;
+  $('target').innerHTML = options;
+  $('source').value = 'en-GB';
+  $('target').value = 'fr-FR';
+  $('subject').innerHTML = SUBJECTS.map((s) => '<option value="' + s.code + '">' + s.name + '</option>').join('');
+  $('subject').value = 'mechanical';
+  $('currency').innerHTML = CURRENCIES.map((c) => '<option value="' + c.code + '">' + c.code + ' (' + c.symbol + ')</option>').join('');
+  $('currency').value = guessCurrency();
+  $('deadline').min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+}
+
+/** Euro is the list currency, and the default everywhere. */
+function guessCurrency() {
+  return 'EUR';
+}
+
+const brief = () => ({
+  source: $('source').value,
+  targets: [$('target').value].concat(state.extraTargets),
+  words: Math.floor(Number($('words').value)),
+  subject: $('subject').value,
+  deadline: $('deadline').value || null,
+  currency: $('currency').value,
+  layout: $('layout').checked,
+  pages: Math.floor(Number($('pages').value))
+});
+
+function renderExtraTargets() {
+  $('extraTargetsField').hidden = state.extraTargets.length === 0;
+  const taken = [$('source').value, $('target').value];
+  $('extraTargets').innerHTML = state.extraTargets.map((code, i) => {
+    const options = LANGUAGES
+      .filter((l) => l.code === code || (taken.indexOf(l.code) === -1 && state.extraTargets.indexOf(l.code) === -1))
+      .map((l) => '<option value="' + l.code + '"' + (l.code === code ? ' selected' : '') + '>' + l.name + '</option>')
+      .join('');
+    return '<span class="chip">' +
+      '<select data-extra="' + i + '" aria-label="Extra target language">' + options + '</select>' +
+      '<button type="button" data-remove="' + i + '" aria-label="Remove ' + lang(code).name + '">&times;</button>' +
+      '</span>';
+  }).join('');
+}
+
+/* --------------------------------------------------------------- rendering */
+
+function fail(message) {
+  $('briefError').hidden = false;
+  $('briefError').textContent = message;
+  $('quoteStatus').textContent = 'Not priced';
+}
+
+/**
+ * An edit does not re-price. It only keeps the brief's own controls honest —
+ * whatever is on the board stays until the button is pressed.
+ */
+function briefChanged() {
+  $('clearDeadline').hidden = !brief().deadline;
+}
+
+/** A quote is standing: the button goes quiet and the cards take the floor. */
+function standingQuote() {
+  const button = $('priceButton');
+  button.textContent = 'Update prices';
+  button.classList.add('standing');
+  $('unpriced').hidden = true;
+
+  const head = document.querySelector('.solutions-head');
+  if (!head) return;
+  const box = head.getBoundingClientRect();
+  if (box.top >= 0 && box.bottom <= window.innerHeight) return;
+  head.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function refresh() {
+  const input = brief();
+  $('clearDeadline').hidden = !input.deadline;
+
+  if (!input.words || input.words < 1) return fail('Enter how many words there are, or count a file.');
+  if (input.words > 2000000) return fail('For jobs above 2,000,000 words, talk to us directly.');
+  if (input.layout && (!input.pages || input.pages < 1)) return fail('Enter how many pages the document has.');
+  if (input.layout && input.pages > LAYOUT.maxPages) {
+    return fail('For documents above ' + LAYOUT.maxPages.toLocaleString() + ' pages, talk to us directly.');
+  }
+  if (input.targets.indexOf(input.source) !== -1) return fail('The source language is also in the target list. Pick a different target.');
+
+  $('briefError').hidden = true;
+  state.quote = quoteAll(input, new Date());
+  renderSolutions(state.quote);
+  standingQuote();
+
+  const note = $('rateNote');
+  if (note) note.textContent = input.currency === 'USD'
+    ? 'Dollar prices convert the euro rate card at €1 = $' + USD_PER_EUR.toFixed(4) +
+      ', the European Central Bank reference rate of ' + USD_RATE_DATE +
+      ', fixed in this page. We invoice in euro.'
+    : 'Delivery times are shown in your own time zone.';
+}
+
+function renderSolutions(quote) {
+  const totalWords = quote.input.words * quote.input.targets.length;
+  $('quoteStatus').textContent = totalWords.toLocaleString() + ' words · ' +
+    quote.input.targets.length + (quote.input.targets.length === 1 ? ' language' : ' languages');
+
+  // The longest pipeline is the ladder every card is drawn against, so the same
+  // stage sits on the same line in all three columns.
+  const ladder = quote.solutions[quote.solutions.length - 1].stages;
+  const cheapest = Math.min.apply(null, quote.solutions.map((s) => s.total));
+  const cheapestName = quote.solutions[0].name;
+
+  $('solutions').innerHTML = quote.solutions.map((s, idx) => {
+    const b = s.breakdown;
+    const included = {};
+    s.stages.forEach((stage) => { included[stage] = true; });
+    const stages = ladder.map((stage, i) =>
+      '<li class="' + (included[stage] ? 'on' : 'off') + '">' +
+      '<span class="step">' + (included[stage] ? i + 1 : '·') + '</span>' +
+      '<span>' + stage + '</span></li>').join('');
+
+
+    const gap = Math.round((s.total - cheapest) * 100) / 100;
+    const deltaChip = gap > 0
+      ? '<span class="delta">+' + money(gap, s.currency) + ' vs ' + cheapestName + '</span>'
+      : '<span class="delta lowest">lowest price</span>';
+
+    return '<article class="solution step-' + (idx + 1) + (s.feasible ? '' : ' unfeasible') + '">' +
+      (s.badge ? '<span class="badge">' + s.badge + '</span>' : '') +
+      '<h3>' + s.name + '</h3><p class="tagline">' + s.tagline + '</p>' +
+      '<ol class="pipeline">' + stages + '</ol>' +
+      (s.workflow ? '<img class="workflow" src="' + s.workflow.image + '" alt="' +
+        escapeHtml(s.workflow.alt) + '" loading="lazy" decoding="async">' : '') +
+      '<div class="spacer"></div>' +
+      '<p class="delivery">' + (s.feasible ? 'Delivered by' : 'Earliest possible') +
+      '<time datetime="' + s.eta + '">' + when(s.eta) + '</time>' +
+      (s.feasible ? s.deliveryRule : 'later than your date') + '</p>' +
+      // Intl already prints the currency; a second label would read "22,51 USD USD".
+      '<p class="price">' + money(s.total, s.currency) + '</p>' +
+      '<p class="per-word">' + money(s.perWord, s.currency, 3) + ' per word' +
+      (b.discount ? ' <span class="saving">· volume −' + Math.round(b.discount * 100) + '%</span>' : '') + '</p>' +
+      (b.layout.requested
+        ? '<p class="price-parts">' + money(s.translationTotal, s.currency) + ' words + ' +
+          money(s.layoutTotal, s.currency) + ' layout (' + b.layout.pages + ' pages)</p>'
+        : '') +
+      '<button type="button" class="cta" data-order="' + s.tier + '"' + (s.feasible ? '' : ' disabled') + '>' +
+      (s.feasible ? 'Order ' + s.name : 'Date too tight') + '</button>' +
+      '<details><summary>What you get</summary><p>' + s.description + '</p><ul>' +
+      s.includes.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
+      '</details></article>';
+  }).join('');
+
+  document.querySelectorAll('.meter i[data-share]').forEach((bar) => {
+    bar.style.width = bar.getAttribute('data-share') + '%';
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-order]'), (button) => {
+    button.addEventListener('click', () => openCheckout(button.getAttribute('data-order')));
+  });
+}
+
+/* ---------------------------------------------------------------- ordering */
+
+const row = (label, value) => '<dt>' + label + '</dt><dd>' + value + '</dd>';
+
+/* The checkout is two steps and a receipt, with the order summary standing
+   beside them the whole way. The step lives in the address bar, so Back works. */
+
+const STEPS = { 'project-details': 'detailsForm', billing: 'billingForm', done: 'orderDone' };
+
+/* The VAT rule, in the wording Dema Solutions' own invoices carry. */
+const EU = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+  'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
+  'SI', 'ES', 'SE'];
+const REVERSE_CHARGE = 'Oper. non soggetta a IVA art. 7-ter DPR 633/72 - REVERSE CHARGE';
+const NOT_A_COUNTRY = ['AQ', 'BV', 'HM', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ'];
+
+/** Every country the browser knows a name for, so the list cannot drift. */
+function countries() {
+  const names = new Intl.DisplayNames(['en'], { type: 'region' });
+  const list = [];
+  for (let a = 65; a <= 90; a++) {
+    for (let b = 65; b <= 90; b++) {
+      const code = String.fromCharCode(a, b);
+      if (NOT_A_COUNTRY.indexOf(code) !== -1) continue;
+      let name;
+      try { name = names.of(code); } catch (err) { continue; }
+      if (!name || name === code) continue;
+      list.push({ code: code, name: name });
+    }
+  }
+  return list.sort((x, y) => x.name.localeCompare(y.name, 'en'));
+}
+
+function fillCountries() {
+  $('billCountry').innerHTML = '<option value="">Choose a country</option>' +
+    countries().map((c) => '<option value="' + c.code + '">' + escapeHtml(c.name) + '</option>').join('');
+}
+
+function vatFor(net) {
+  const country = $('billCountry').value;
+  const company = $('billingForm').querySelector('input[name="who"]:checked').value === 'company';
+  const vatNumber = $('billVat').value.trim();
+  let due = false;
+  let reason = 'VAT is settled once the billing country is known.';
+
+  if (country === 'IT') {
+    due = true;
+  } else if (EU.indexOf(country) !== -1) {
+    due = !company || !vatNumber;
+    if (!due) reason = REVERSE_CHARGE;
+  } else if (country) {
+    reason = company ? REVERSE_CHARGE : 'Outside the European Union: Italian VAT does not apply.';
+  }
+  if (due) reason = 'VAT 22% applies.';
+
+  const vat = due ? Math.round(net * 0.22 * 100) / 100 : 0;
+  return { due: due, vat: vat, gross: Math.round((net + vat) * 100) / 100, reason: reason };
+}
+
+const summaryRow = (label, value) => '<dt>' + label + '</dt><dd>' + value + '</dd>';
+
+function openCheckout(tierId) {
+  const solution = state.quote.solutions.find((s) => s.tier === tierId);
+  if (!solution) return;
+  state.pending = { tier: tierId, solution: solution, input: state.quote.input };
+
+  $('orderProject').value = $('project').value.trim();
+  renderSummary();
+  renderOrderFiles();
+  $('detailsError').hidden = true;
+  $('billingError').hidden = true;
+  goToStep('project-details');
+  $('orderEmail').focus();
+}
+
+function showCheckout(on) {
+  ['briefTile', 'solutionsHead', 'solutionsTile'].forEach((id) => {
+    const el = $(id);
+    if (el) el.hidden = on;
+  });
+  if (on && $('analysisField')) $('analysisField').hidden = true;
+  $('checkout').hidden = !on;
+}
+
+function goToStep(name) {
+  if (location.hash !== '#step=' + name) location.hash = 'step=' + name;
+  else showStep(name);
+}
+
+function showStep(name) {
+  const step = STEPS[name];
+  if (!step || !state.pending) return closeCheckout();
+  showCheckout(true);
+  Object.keys(STEPS).forEach((key) => { $(STEPS[key]).hidden = STEPS[key] !== step; });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeCheckout() {
+  showCheckout(false);
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+
+function renderOrderFiles() {
+  const report = state.analysis;
+  const files = report && report.files ? report.files.filter((f) => f.supported) : [];
+  $('orderFilesField').hidden = files.length === 0;
+  $('orderFiles').innerHTML = files
+    .map((f) => '<li>' + escapeHtml(f.file) + '<span>' + f.words.toLocaleString() + ' words</span></li>')
+    .join('');
+}
+
+function renderSummary() {
+  if (!state.pending) return;
+  const s = state.pending.solution;
+  const input = state.pending.input;
+
+  $('summaryRows').innerHTML =
+    summaryRow('From', lang(input.source).name) +
+    summaryRow('Into', input.targets.map((c) => lang(c).name).join(', ')) +
+    summaryRow('Subject', s.breakdown.subject) +
+    summaryRow('Word count', (input.words * input.targets.length).toLocaleString() + ' words') +
+    summaryRow('Solution', s.name) +
+    summaryRow('Price per word', money(s.perWord, s.currency, 3)) +
+    (s.breakdown.layout.requested
+      ? summaryRow('Desktop publishing', s.breakdown.layout.pages + ' pages \u00b7 ' + money(s.layoutTotal, s.currency))
+      : '') +
+    summaryRow('Delivery', when(s.eta));
+
+  const charge = vatFor(s.total);
+  $('summaryNet').textContent = money(s.total, s.currency);
+  $('summaryVatLabel').textContent = charge.due ? 'VAT 22%' : 'VAT';
+  $('summaryVat').textContent = charge.due ? money(charge.vat, s.currency) : '\u2014';
+  $('summaryTotal').textContent = money(charge.gross, s.currency);
+  $('summaryNote').textContent = charge.reason;
+}
+
+function showStepError(id, message) {
+  const box = $(id);
+  box.hidden = false;
+  box.textContent = message;
+}
+
+function continueToBilling(event) {
+  event.preventDefault();
+  const email = $('orderEmail').value.trim();
+  const name = $('orderName').value.trim();
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return showStepError('detailsError', 'Enter an email address we can send the files to.');
+  }
+  if (name.length < 2) return showStepError('detailsError', 'Enter the name the order is for.');
+  $('detailsError').hidden = true;
+  if (!$('billName').value.trim()) $('billName').value = name;
+  goToStep('billing');
+}
+
+function billingPayload() {
+  const company = $('billingForm').querySelector('input[name="who"]:checked').value === 'company';
+  const option = $('billCountry').selectedOptions[0];
+  return {
+    company: company,
+    companyName: $('billCompanyName').value.trim().slice(0, 160),
+    name: $('billName').value.trim().slice(0, 120),
+    telephone: $('billPhone').value.trim().slice(0, 40),
+    address1: $('billAddress1').value.trim().slice(0, 160),
+    address2: $('billAddress2').value.trim().slice(0, 160),
+    city: $('billCity').value.trim().slice(0, 90),
+    postalCode: $('billPostal').value.trim().slice(0, 20),
+    country: $('billCountry').value,
+    countryName: option ? option.textContent : '',
+    vatNumber: $('billVat').value.trim().slice(0, 30),
+    acceptedAt: new Date().toISOString()
+  };
+}
+
+/** ORD-20261017-K7Q1 — date-stamped, with a short random suffix. */
+function reference(now) {
+  const stamp = String(now.getUTCFullYear()) +
+    String(now.getUTCMonth() + 1).padStart(2, '0') +
+    String(now.getUTCDate()).padStart(2, '0');
+  const alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const suffix = Array.prototype.map.call(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  return 'ORD-' + stamp + '-' + suffix;
+}
+
+async function submitOrder(event) {
+  event.preventDefault();
+  if (!state.pending) return;
+
+  const button = $('submitOrder');
+  const party = billingPayload();
+
+  if (party.company && party.companyName.length < 2) {
+    return showStepError('billingError', 'Enter the company name.');
+  }
+  if (!party.address1) return showStepError('billingError', 'Enter the billing address.');
+  if (!party.city) return showStepError('billingError', 'Enter the city.');
+  if (!party.postalCode) return showStepError('billingError', 'Enter the ZIP or postal code.');
+  if (!party.country) return showStepError('billingError', 'Choose the billing country.');
+  if (!$('billAccept').checked) {
+    return showStepError('billingError', 'Please accept the privacy policy and the conditions of sale.');
+  }
+
+  // Re-price at submit time, so a form left open never books a stale number.
+  const tier = TIERS.find((t) => t.id === state.pending.solution.tier);
+  const priced = priceTier(state.pending.input, tier, new Date());
+  if (!priced.feasible) {
+    return showStepError('billingError', 'That delivery date is now too tight for this solution. Pick a later date or a faster solution.');
+  }
+
+  const charge = vatFor(priced.total);
+  const now = new Date();
+  const email = $('orderEmail').value.trim();
+  const record = {
+    createdAt: now.toISOString(),
+    status: 'received',
+    project: $('orderProject').value.trim().slice(0, 120),
+    solution: priced.name,
+    tier: priced.tier,
+    stages: priced.stages,
+    source: lang(state.pending.input.source).name,
+    targets: state.pending.input.targets.map((c) => lang(c).name),
+    words: state.pending.input.words,
+    subject: subjectOf(state.pending.input.subject).name,
+    layout: state.pending.input.layout
+      ? { pages: state.pending.input.pages, amount: priced.layoutTotal }
+      : null,
+    total: priced.total,
+    net: priced.total,
+    vat: charge.vat,
+    gross: charge.gross,
+    vatTreatment: charge.reason,
+    currency: priced.currency,
+    eta: priced.eta,
+    customer: {
+      name: $('orderName').value.trim().slice(0, 120),
+      email: email,
+      reference: $('orderRef').value.trim().slice(0, 60),
+      note: $('orderNote').value.trim().slice(0, 1000)
+    },
+    billing: party
+  };
+  const id = reference(now);
+
+  button.disabled = true;
+  button.textContent = 'Placing\u2026';
+  $('billingError').hidden = true;
+
+  try {
+    const answer = await sendOrder(id, record);
+    showReceipt(id, record, answer);
+  } catch (err) {
+    // The desk could not be reached: hand the order to the customer's mail client
+    // rather than lose it, and say plainly that is what happened.
+    mailOrder(id, record);
+    showReceipt(id, record, { delivered: false });
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Submit order';
+  }
+}
+
+/** POST the order to the Apps Script desk. Throws when there is nowhere to send it. */
+async function sendOrder(id, record) {
+  if (!ORDERS_WEBHOOK) throw new Error('no desk configured');
+  const res = await fetch(ORDERS_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ id: id }, record))
+  });
+  const answer = await res.json();
+  if (!answer || answer.ok !== true) throw new Error(answer && answer.error ? answer.error : 'refused');
+  return { delivered: true };
+}
+
+/** The fallback: the whole order, written into the visitor's own mail client. */
+function mailOrder(id, record) {
+  const b = record.billing;
+  const lines = [
+    'Order ' + id,
+    '',
+    'Solution: ' + record.solution + ' (' + record.stages.join(' > ') + ')',
+    'Project: ' + (record.project || '-'),
+    'From: ' + record.source,
+    'Into: ' + record.targets.join(', '),
+    'Words: ' + (record.words * record.targets.length),
+    'Subject: ' + record.subject,
+    record.layout ? 'Desktop publishing: ' + record.layout.pages + ' pages per language' : 'Desktop publishing: no',
+    'Delivery: ' + when(record.eta),
+    '',
+    'Net: ' + money(record.net, record.currency),
+    'VAT: ' + (record.vat ? money(record.vat, record.currency) : 'none'),
+    'Total due: ' + money(record.gross, record.currency),
+    record.vatTreatment,
+    '',
+    'Name: ' + record.customer.name,
+    'Email: ' + record.customer.email,
+    'Reference: ' + (record.customer.reference || '-'),
+    'Notes for the translator: ' + (record.customer.note || '-'),
+    '',
+    'Billing',
+    b.company ? 'Company: ' + b.companyName : 'Individual',
+    'Name: ' + b.name,
+    'Address: ' + [b.address1, b.address2, b.postalCode, b.city, b.countryName].filter(Boolean).join(', '),
+    'VAT number: ' + (b.vatNumber || '-'),
+    'Telephone: ' + (b.telephone || '-')
+  ];
+  window.location.href = 'mailto:' + ORDERS_INBOX +
+    '?subject=' + encodeURIComponent('Order ' + id + ' - ' + record.solution) +
+    '&body=' + encodeURIComponent(lines.join('\n'));
+}
+
+function showReceipt(id, record, answer) {
+  $('doneRef').textContent = id;
+  $('doneText').textContent = record.solution + ' into ' + record.targets.join(', ') +
+    '. We deliver by ' + when(record.eta) + ' and send the files to ' + record.customer.email + '.';
+  $('doneMail').textContent = answer.delivered
+    ? 'The confirmation is on its way to ' + record.customer.email + ', with the order document attached.'
+    : 'Your mail client is opening with the order ready to send to ' + ORDERS_INBOX +
+      '. Send it and we have everything we need.';
+  goToStep('done');
+}
+
+/* ------------------------------------------------------------------- files */
+
+/**
+ * Open the chosen files, count their translatable text, and show the analysis.
+ * Nothing is uploaded: the counting runs on the bytes the browser already has.
+ */
+async function countFiles(files) {
+  $('analysisField').hidden = false;
+  $('analysis').innerHTML =
+    '<p class="analysis-note">Opening ' + files.length + (files.length === 1 ? ' file' : ' files') + '…</p>';
+
+  let report;
+  try {
+    report = await FileAnalysis.analyse(files);
+  } catch (err) {
+    $('analysis').innerHTML =
+      '<p class="analysis-note warn">Those files could not be analysed. Enter the word count by hand.</p>';
+    return;
+  }
+
+  if (report.total.words > 0) $('words').value = report.total.words;
+  if (report.total.pages > 0) $('pages').value = Math.max(15, report.total.pages);
+  renderAnalysis(report);
+  briefChanged();
+}
+
+function renderAnalysis(report) {
+  const t = report.total;
+  const rows = report.files.map((f) =>
+    '<tr' + (f.supported ? '' : ' class="uncounted"') + '>' +
+    '<td class="name">' + escapeHtml(f.file) + '<small>' + escapeHtml(f.kind) + '</small></td>' +
+    '<td class="num">' + (f.supported ? f.words.toLocaleString() : '—') + '</td>' +
+    '<td class="num">' + (f.supported ? f.segments.toLocaleString() : '—') + '</td>' +
+    '<td class="num">' + (f.supported ? f.repeatedSegments.toLocaleString() : '—') + '</td></tr>'
+  ).join('');
+
+  const notes = report.files.filter((f) => f.note).map((f) =>
+    '<p class="analysis-note warn">' + escapeHtml(f.file) + ': ' + escapeHtml(f.note) + '</p>'
+  ).join('');
+
+  $('analysis').innerHTML =
+    '<table><thead><tr><th>File</th><th class="num">Words</th><th class="num">Segments</th>' +
+    '<th class="num">Repeated</th><th class="num">Pages</th></tr></thead><tbody>' + rows +
+    '<tr class="totals"><td>Total</td><td class="num">' + t.words.toLocaleString() + '</td>' +
+    '<td class="num">' + t.segments.toLocaleString() + '</td>' +
+    '<td class="num">' + t.repeatedSegments.toLocaleString() + '</td>' +
+    '<td class="num">' + (t.pages ? t.pages.toLocaleString() : '\u2014') + '</td></tr></tbody></table>' +
+    '<p class="analysis-note">' + t.characters.toLocaleString() + ' characters, spaces excluded' +
+    (t.repeatedWords ? ' · ' + t.repeatedWords.toLocaleString() + ' words sit in repeated segments' : '') +
+    ' · counted in your browser, nothing was uploaded.</p>' + notes;
+}
+
+function clearFiles() {
+  $('fileInput').value = '';
+  $('analysis').innerHTML = '';
+  $('analysisField').hidden = true;
+}
+
+/* -------------------------------------------------------------------- wire */
+
+function selectRef() {
+  const range = document.createRange();
+  range.selectNodeContents($('doneRef'));
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function wire() {
+  ['source', 'target', 'subject', 'currency', 'deadline'].forEach((id) => $(id).addEventListener('change', briefChanged));
+  $('words').addEventListener('input', briefChanged);
+  $('pages').addEventListener('input', briefChanged);
+
+  $('layout').addEventListener('change', (event) => {
+    $('pagesField').hidden = !event.target.checked;
+    if (event.target.checked) $('pages').focus();
+    briefChanged();
+  });
+
+  $('addTarget').addEventListener('click', () => {
+    const taken = brief().targets.concat([$('source').value]);
+    const next = LANGUAGES.find((l) => taken.indexOf(l.code) === -1);
+    if (!next) return;
+    state.extraTargets.push(next.code);
+    renderExtraTargets();
+    briefChanged();
+  });
+
+  $('extraTargets').addEventListener('change', (event) => {
+    const index = event.target.getAttribute && event.target.getAttribute('data-extra');
+    if (index === null || index === undefined) return;
+    state.extraTargets[Number(index)] = event.target.value;
+    renderExtraTargets();
+    briefChanged();
+  });
+
+  $('extraTargets').addEventListener('click', (event) => {
+    const index = event.target.getAttribute && event.target.getAttribute('data-remove');
+    if (index === null || index === undefined) return;
+    state.extraTargets.splice(Number(index), 1);
+    renderExtraTargets();
+    briefChanged();
+  });
+
+  $('clearDeadline').addEventListener('click', () => { $('deadline').value = ''; briefChanged(); });
+  $('fileInput').accept = FileAnalysis.supportedExtensions().join(',');
+  $('uploadButton').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', (event) => {
+    const files = Array.prototype.slice.call(event.target.files);
+    if (files.length) countFiles(files);
+  });
+  $('clearFiles').addEventListener('click', clearFiles);
+
+  $('brief').addEventListener('submit', (event) => { event.preventDefault(); refresh(); });
+  
+  $('detailsForm').addEventListener('submit', continueToBilling);
+  $('billingForm').addEventListener('submit', submitOrder);
+  $('backToSolutions').addEventListener('click', closeCheckout);
+  $('editQuote').addEventListener('click', closeCheckout);
+  $('backToDetails').addEventListener('click', () => goToStep('project-details'));
+  $('newQuote').addEventListener('click', () => { state.pending = null; closeCheckout(); });
+
+  // The summary follows the billing block, because the country decides the VAT.
+  ['billCountry', 'billVat'].forEach((id) => $(id).addEventListener('change', renderSummary));
+  $('billVat').addEventListener('input', renderSummary);
+  $('billingForm').querySelectorAll('input[name="who"]').forEach((radio) =>
+    radio.addEventListener('change', () => {
+      $('billCompanyName').closest('.field').hidden = radio.value !== 'company';
+      renderSummary();
+    })
+  );
+  $('billCompanyName').closest('.field').hidden = true;
+
+  window.addEventListener('hashchange', () => {
+    const match = /^#step=([\w-]+)$/.exec(location.hash);
+    if (match) showStep(match[1]);
+    else closeCheckout();
+  });
+  $('copyRef').addEventListener('click', () => {
+    const button = $('copyRef');
+    const text = $('doneRef').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+      }, selectRef);
+    } else {
+      selectRef();
+    }
+  });
+}
+
+/* --------------------------------------------------------- store, if given */
+
+
+/* -------------------------------------------------------------------- boot */
+
+fillSelects();
+fillCountries();
+wire();
+renderExtraTargets();
+$('quoteStatus').textContent = 'Not priced yet';
+</script>
+
+</body>
+</html>

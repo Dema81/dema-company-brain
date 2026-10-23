@@ -25,6 +25,14 @@ var SHEET = 'orders';
 var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes
 var SENDER_NAME = 'DEMA Solutions';
 
+/* The address the customer sees. Apps Script sends as the account that deployed
+   it, so this only works once that address has been verified in Gmail under
+   Settings > Accounts > "Send mail as". Leave it empty until then: a `from` that
+   is not a verified alias makes the send fail, and an order must go out from the
+   Gmail address rather than not go out at all - so a failure here is retried
+   without it, and the desk is told. */
+var SENDER_FROM = '';
+
 /* Who is issuing the document — from Dema Solutions' own invoices. */
 var COMPANY = {
   name: 'Dema Solutions Srl',
@@ -121,7 +129,7 @@ function doPost(e) {
     record(order, net, vat, gross, repriced);
 
     var pdf = confirmationPdf(order, net, vat, gross);
-    MailApp.sendEmail({
+    var senderTrouble = send({
       to: order.customer.email,
       name: SENDER_NAME,
       // The account that sends is not the account that handles the job, so an
@@ -131,13 +139,13 @@ function doPost(e) {
       htmlBody: customerBody(order, net, vat, gross),
       attachments: [pdf]
     });
-    MailApp.sendEmail({
+    send({
       to: DESK,
       name: SENDER_NAME,
       replyTo: order.customer.email,
       subject: 'New order ' + order.id + ' - ' + order.solution + ' - ' +
         gross.toFixed(2) + ' ' + order.currency,
-      htmlBody: deskBody(order, net, vat, gross, repriced),
+      htmlBody: deskBody(order, net, vat, gross, repriced, senderTrouble),
       attachments: [pdf]
     });
 
@@ -150,6 +158,27 @@ function doPost(e) {
     } catch (ignored) {}
     return json({ ok: false, error: String(err) });
   }
+}
+
+/**
+ * Send one message from SENDER_FROM when that address is a verified alias, and
+ * fall back to the deploying account when it is not: an order must not fail to
+ * reach anyone over a from-address. Returns why it fell back, or null.
+ */
+function send(options) {
+  if (SENDER_FROM) {
+    try {
+      options.from = SENDER_FROM;
+      MailApp.sendEmail(options);
+      return null;
+    } catch (err) {
+      delete options.from;
+      MailApp.sendEmail(options);
+      return SENDER_FROM + ' is not a verified alias on the sending account (' + err + ')';
+    }
+  }
+  MailApp.sendEmail(options);
+  return null;
 }
 
 function json(payload) {
@@ -332,7 +361,7 @@ function customerBody(order, net, vat, gross) {
     '<p>Any question, answer this email and it reaches the desk handling the job.</p>');
 }
 
-function deskBody(order, net, vat, gross, repriced) {
+function deskBody(order, net, vat, gross, repriced, senderTrouble) {
   var b = order.billing || {};
   var rows = [
     ['Reference', order.id],
@@ -359,6 +388,9 @@ function deskBody(order, net, vat, gross, repriced) {
   ];
   if (repriced) {
     rows.unshift(['Check this', 'the page sent a total below the list price; the list price was used']);
+  }
+  if (senderTrouble) {
+    rows.unshift(['Check this', senderTrouble]);
   }
   return shell('New order · ' + order.id, table(rows));
 }

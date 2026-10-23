@@ -894,6 +894,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
             </div>
           </div>
           <p class="notice" id="billingError" hidden></p>
+          <p class="hint" id="placingNote" hidden>Recording your order, one moment… this takes a few seconds.</p>
           <div class="checkout-foot">
             <button type="button" class="link-button" id="backToDetails">&larr; Return to order details</button>
             <button type="submit" class="price-button" id="submitOrder">Submit order</button>
@@ -1672,6 +1673,7 @@ async function submitOrder(event) {
   button.disabled = true;
   button.textContent = 'Placing\u2026';
   $('billingError').hidden = true;
+  $('placingNote').hidden = false;
 
   try {
     const answer = await sendOrder(id, record);
@@ -1684,6 +1686,7 @@ async function submitOrder(event) {
   } finally {
     button.disabled = false;
     button.textContent = 'Submit order';
+    $('placingNote').hidden = true;
   }
 }
 

@@ -22,7 +22,7 @@
  */
 
 var SHEET = 'orders';
-var DESK = 'billing@dema-solutions.com';   // where the desk's copy goes
+var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes
 var SENDER_NAME = 'DEMA Solutions';
 
 /* Who is issuing the document — from Dema Solutions' own invoices. */

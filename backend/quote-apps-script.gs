@@ -25,13 +25,29 @@ var SHEET = 'orders';
 var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes
 var SENDER_NAME = 'DEMA Solutions';
 
-/* The address the customer sees. Apps Script sends as the account that deployed
-   it, so this only works once that address has been verified in Gmail under
-   Settings > Accounts > "Send mail as". Leave it empty until then: a `from` that
-   is not a verified alias makes the send fail, and an order must go out from the
-   Gmail address rather than not go out at all - so a failure here is retried
-   without it, and the desk is told. */
-var SENDER_FROM = '';
+/*
+ * Who the confirmation comes from.
+ *
+ * Apps Script sends as the account that deployed it, which is a Gmail address -
+ * poor on a document a client reads. Gmail can send as another address only
+ * through that address's own SMTP, and Microsoft 365 refuses the basic
+ * authentication that needs (535 5.7.3), so that door is shut.
+ *
+ * So when a Brevo API key is present the mail goes through Brevo instead, from
+ * the address below, on a domain authenticated there. Without a key nothing
+ * changes: it goes out through Gmail as before. The key is **not** kept in this
+ * file - it lives in Project Settings > Script properties, under BREVO_API_KEY,
+ * so it is never in the repository.
+ */
+var SENDER_FROM = 'g.gambuto@dema-solutions.com';
+
+function brevoKey() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('BREVO_API_KEY') || '';
+  } catch (err) {
+    return '';
+  }
+}
 
 /* Who is issuing the document — from Dema Solutions' own invoices. */
 var COMPANY = {
@@ -161,24 +177,52 @@ function doPost(e) {
 }
 
 /**
- * Send one message from SENDER_FROM when that address is a verified alias, and
- * fall back to the deploying account when it is not: an order must not fail to
- * reach anyone over a from-address. Returns why it fell back, or null.
+ * Send one message: through Brevo when a key is configured, otherwise through
+ * Gmail. Either way an order never fails to reach anyone over a sender address -
+ * a refusal falls back to Gmail and says so, and the desk is told.
+ *
+ * @returns {string|null} why it fell back, or null when all was well
  */
 function send(options) {
-  if (SENDER_FROM) {
-    try {
-      options.from = SENDER_FROM;
-      MailApp.sendEmail(options);
-      return null;
-    } catch (err) {
-      delete options.from;
-      MailApp.sendEmail(options);
-      return SENDER_FROM + ' is not a verified alias on the sending account (' + err + ')';
-    }
+  var key = brevoKey();
+  if (!key) {
+    MailApp.sendEmail(options);
+    return null;
   }
-  MailApp.sendEmail(options);
-  return null;
+  try {
+    brevoSend(key, options);
+    return null;
+  } catch (err) {
+    MailApp.sendEmail(options);
+    return 'Brevo refused the message, so it went out from the Gmail account instead (' + err + ')';
+  }
+}
+
+/** One transactional message through Brevo's API. */
+function brevoSend(key, options) {
+  var attachments = (options.attachments || []).map(function (blob) {
+    return { name: blob.getName(), content: Utilities.base64Encode(blob.getBytes()) };
+  });
+  var payload = {
+    sender: { email: SENDER_FROM, name: options.name || SENDER_NAME },
+    to: [{ email: options.to }],
+    subject: options.subject,
+    htmlContent: options.htmlBody
+  };
+  if (options.replyTo) payload.replyTo = { email: options.replyTo };
+  if (attachments.length) payload.attachment = attachments;
+
+  var res = UrlFetchApp.fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'api-key': key },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  var code = res.getResponseCode();
+  if (code < 200 || code >= 300) {
+    throw new Error('HTTP ' + code + ' ' + res.getContentText().slice(0, 300));
+  }
 }
 
 function json(payload) {

@@ -798,6 +798,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
     <div class="solutions" id="solutions"></div>
     <p class="unpriced" id="unpriced">Fill in the brief, then press <strong>Show prices</strong>.</p>
     <p class="terms">Dates are indicative and count working hours only, Monday to Friday 9:00&ndash;17:00 CET. The clock starts when payment is received, by bank transfer or card.</p>
+    <p class="terms" id="rateNote" hidden></p>
   </section>
 
   <section class="tile t-analysis" id="analysisField" hidden>
@@ -1365,12 +1366,19 @@ function refresh() {
   renderSolutions(state.quote);
   standingQuote();
 
+  /* Quoting in a currency the card is not written in means saying at what rate,
+     and as of when: the customer cannot check the sum otherwise. In euro there
+     is nothing to disclose, so the line is not there at all. */
   const note = $('rateNote');
-  if (note) note.textContent = input.currency === 'USD'
-    ? 'Dollar prices convert the euro rate card at €1 = $' + USD_PER_EUR.toFixed(4) +
-      ', the European Central Bank reference rate of ' + USD_RATE_DATE +
-      ', fixed in this page. We invoice in euro.'
-    : 'Delivery times are shown in your own time zone.';
+  if (note) {
+    const inDollars = input.currency === 'USD';
+    note.hidden = !inDollars;
+    note.textContent = inDollars
+      ? 'Dollar prices convert the euro rate card at €1 = $' + USD_PER_EUR.toFixed(4) +
+        ', the European Central Bank reference rate of ' + USD_RATE_DATE +
+        ', fixed in this page. We invoice in euro.'
+      : '';
+  }
 }
 
 function renderSolutions(quote) {

@@ -54,10 +54,26 @@ function libraryFolder() {
 /** The folder of one order, made the first time it is asked for. */
 function orderFolder(id, customerName) {
   var library = libraryFolder();
-  var existing = library.getFoldersByName(id);
-  if (existing.hasNext()) return existing.next();
-  var folder = library.createFolder(id);
-  folder.setDescription((customerName || '') + ' — ' + new Date().toISOString());
+
+  /* Found by the reference it starts with, never by the whole name: the name
+     also carries the customer and the date, and the uploads that arrive after
+     the order know only the reference. */
+  var walk = library.getFolders();
+  while (walk.hasNext()) {
+    var found = walk.next();
+    if (found.getName().indexOf(id) === 0) return found;
+  }
+
+  /* "ORD-20261024-AB12 - Mara Bianchi - 2026-10-24": the reference first so
+     the folders sort and search by it, then who it is for and the day it
+     arrived, so the desk can read the list of folders without opening them. */
+  var who = String(customerName || '').replace(/[^A-Za-z0-9 .'À-ɏ-]/g, ' ')
+    .replace(/\s+/g, ' ').trim().slice(0, 60);
+  var day = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var name = [id, who, day].filter(function (part) { return part; }).join(' - ');
+
+  var folder = library.createFolder(name);
+  folder.setDescription('Quote Desk order ' + id + ', received ' + new Date().toISOString());
   return folder;
 }
 var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes

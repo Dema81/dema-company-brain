@@ -49,6 +49,32 @@ function brevoKey() {
   }
 }
 
+/*
+ * The token the back office reads orders with.
+ *
+ * It lives in Project Settings > Script properties under ADMIN_TOKEN, never in
+ * this repository. With no token set the reading endpoint stays shut, so a
+ * half-finished deployment cannot hand the order book to the open internet.
+ */
+function adminToken() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN') || '';
+  } catch (err) {
+    return '';
+  }
+}
+
+/** Compare without leaking the answer through how long it took. */
+function sameToken(given) {
+  var want = adminToken();
+  if (!want || !given || given.length !== want.length) return false;
+  var diff = 0;
+  for (var i = 0; i < want.length; i++) {
+    diff |= want.charCodeAt(i) ^ given.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 /* Who is issuing the document — from Dema Solutions' own invoices. */
 var COMPANY = {
   name: 'Dema Solutions Srl',
@@ -129,6 +155,20 @@ function doGet() {
 function doPost(e) {
   try {
     var order = JSON.parse(e.postData.contents);
+
+    /*
+     * The same /exec serves two callers. The quote page posts an order and has
+     * no action; the back office posts {action: 'orders', token} and gets the
+     * book back. The token travels in the body on purpose: a query string ends
+     * up in browser history and in referrers, and Apps Script cannot read a
+     * custom header (a custom header would force a CORS preflight, and the web
+     * app answers no OPTIONS).
+     */
+    if (order.action === 'orders') {
+      if (!sameToken(order.token)) return json({ ok: false, error: 'refused' });
+      return json({ ok: true, headers: HEADERS, orders: orders() });
+    }
+
     if (!order.id || !order.customer || !order.customer.email) {
       return json({ ok: false, error: 'incomplete order' });
     }
@@ -254,6 +294,28 @@ function record(order, net, vat, gross, repriced) {
     order.vatTreatment || '', repriced ? 'yes' : '', order.customer.reference || '',
     order.customer.note || ''
   ]);
+}
+
+/**
+ * The order book, newest first, as rows in the order of HEADERS.
+ *
+ * Dates come back as ISO strings so the back office can format them in the
+ * reader's own locale; everything else is handed over as the sheet holds it.
+ */
+function orders() {
+  var book = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = book.getSheetByName(SHEET);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length).getValues();
+  var out = [];
+  for (var i = rows.length - 1; i >= 0; i--) {
+    out.push(rows[i].map(function (cell) {
+      if (Object.prototype.toString.call(cell) === '[object Date]') return cell.toISOString();
+      return cell;
+    }));
+  }
+  return out;
 }
 
 /* ──────────────────────────────────────────────────────────── the paperwork */

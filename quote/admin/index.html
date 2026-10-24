@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Back office — Quote Desk</title>
+<meta name="description" content="The order book behind ai-dema-solutions.com/quote: every request, who it is for, what it is worth and when it is due.">
+<link rel="icon" href="../dema-logo.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700&amp;family=Figtree:wght@400;600&amp;family=IBM+Plex+Mono:wght@400&amp;display=swap">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   Back office — the same board as the desk, read instead of filled.
+
+   The look is the desk's, token for token: dense tiles, square corners, text
+   top-left, DEMA's navy with the house orange deliberately left out. If the
+   desk's palette moves, move these with it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #131a38;
+  --surface: #1c244b;
+  --surface-2: #232c57;
+  --surface-3: #2a3463;
+  --ink: #ffffff;
+  --muted: #c9cee5;
+  --line: #39406a;
+  --accent: #34a9ee;
+  --accent-ink: #0b1026;
+  --accent-text: #8fd2f7;
+  --good: #7fd6a8;
+  --warn: #f2c66a;
+  --alarm: #ffb4a8;
+
+  --display: 'League Spartan', 'Segoe UI', system-ui, sans-serif;
+  --text: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
+
+  --gap: 8px;
+  --radius: 0px;
+  --pad: 22px;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The parts of the page the browser draws belong to the board too. */
+::placeholder { color: #8b94b8; opacity: 1; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+input, select { caret-color: var(--accent); }
+:root { scrollbar-color: var(--line) var(--bg); }
+
+/*
+ * Hidden from the eye, kept for a screen reader.
+ *
+ * It is absolutely positioned, so it needs a positioned ancestor — without one
+ * it is laid out against the document and a copy sitting in a wide scrolling
+ * table drags the whole page sideways. Hence the two `position: relative`
+ * below: they are load-bearing, not decoration.
+ */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+th, .gate form { position: relative; }
+
+.board {
+  display: grid;
+  /* minmax(0, 1fr), not 1fr: a bare 1fr is minmax(auto, 1fr), so the wide table
+     stretches its column and the whole page scrolls sideways instead of the
+     table scrolling inside its own tile. */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+  padding: 12px;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.tile {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  min-width: 0;
+  grid-column: span 12;
+}
+
+.tile.quiet { background: var(--surface-2); }
+
+/* ───────────────────────────────────────────────────────────────── the head */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.plate {
+  background: #ffffff;
+  border-radius: 2px;
+  padding: 10px 14px;
+  display: inline-flex;
+}
+
+.plate img { display: block; height: 30px; width: auto; }
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--step-head);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+}
+
+.lede { color: var(--muted); margin: 0; max-width: 78ch; }
+
+.tools { display: flex; flex-wrap: wrap; gap: var(--gap); }
+
+button {
+  font: inherit;
+  font-size: var(--step-small);
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); color: var(--accent-text); }
+button.filled { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.filled:hover { color: var(--accent-ink); filter: brightness(1.08); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ───────────────────────────────────────────────────────────────── the gate */
+
+.gate { max-width: 560px; }
+
+label {
+  display: block;
+  font-size: var(--step-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input, select {
+  font: inherit;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 11px 13px;
+}
+
+.gate form { display: flex; flex-direction: column; gap: 12px; }
+.gate input { font-family: var(--mono); }
+
+.note { font-size: var(--step-small); color: var(--muted); margin: 0; max-width: 78ch; }
+.note.bad { color: var(--alarm); }
+
+/* ─────────────────────────────────────────────────────────────── the counts */
+
+.stat { grid-column: span 3; }
+
+.stat .k {
+  font-size: var(--step-small);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+.stat .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--step-lead);
+  line-height: 1.25;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.stat .v span { display: block; }
+.stat .v small { display: block; font-size: var(--step-small); color: var(--muted); font-family: var(--text); }
+
+/* ──────────────────────────────────────────────────────────────── the sieve */
+
+.sieve { display: flex; flex-wrap: wrap; gap: var(--gap); align-items: flex-end; }
+.sieve .field { flex: 1 1 240px; min-width: 0; }
+/* Wide enough that a select shows its chosen option whole: at 210px Chrome
+   clipped "Received, newest first" mid-word. */
+.sieve .field.narrow { flex: 0 1 240px; }
+
+.tally {
+  font-size: var(--step-small);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 11px 6px;
+}
+
+/* ───────────────────────────────────────────────────────────────── the book */
+
+.scroll { overflow-x: auto; }
+
+table { border-collapse: collapse; width: 100%; font-size: var(--step-small); }
+
+th {
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px 10px 0;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+tbody tr:hover > td { background: var(--surface-2); }
+
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.strong { font-weight: 600; }
+.ref { font-family: var(--mono); white-space: nowrap; }
+.sub { color: var(--muted); display: block; }
+.pair { white-space: nowrap; }
+.late { color: var(--warn); }
+
+.flag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  padding: 2px 7px;
+  margin-top: 5px;
+}
+
+.open {
+  border: 1px solid var(--line);
+  padding: 5px 10px;
+  background: var(--surface-3);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.detail > td { background: var(--surface-2); padding: 18px 18px 18px 0; }
+
+.pairs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 22px;
+  margin: 0;
+}
+
+.pairs > div { min-width: 0; }
+
+.pairs dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pairs dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+
+.empty { color: var(--muted); padding: 18px 0; }
+
+footer {
+  grid-column: span 12;
+  color: var(--muted);
+  font-size: var(--step-small);
+  padding: 4px 12px 24px;
+  max-width: 78ch;
+}
+
+@media (max-width: 1100px) {
+  .stat { grid-column: span 6; }
+}
+
+@media (max-width: 640px) {
+  .stat { grid-column: span 12; }
+  :root { --pad: 16px; }
+}
+</style>
+</head>
+<body>
+
+<main class="board">
+
+  <section class="tile">
+    <div class="masthead">
+      <div>
+        <span class="plate"><img src="../dema-logo.webp" alt="DEMA Solutions" width="120" height="30"></span>
+        <h1>Back office</h1>
+        <p class="lede">Every request that came through the quote desk — who it is for, what it
+          is worth, and when it is due.</p>
+      </div>
+      <div class="tools" id="tools" hidden>
+        <button type="button" id="refresh" class="filled">Refresh</button>
+        <button type="button" id="csv">Download CSV</button>
+        <button type="button" id="forget">Sign out</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- The gate. There is no account: one shared token, kept in this browser. -->
+  <section class="tile gate" id="gate" hidden>
+    <form id="gate-form" autocomplete="off">
+      <!-- A password field with nothing to name it is worse for a screen reader
+           and for a password manager, which then saves the token under no name
+           at all. There is one account here, so it is named, and hidden. -->
+      <label for="who" class="sr">Account</label>
+      <input type="text" id="who" class="sr" value="Quote Desk back office"
+             autocomplete="username" readonly tabindex="-1">
+      <div>
+        <label for="token">Desk token</label>
+        <input type="password" id="token" name="token" required autocomplete="current-password"
+               spellcheck="false" placeholder="paste the token">
+      </div>
+      <p class="note" id="gate-note">The token is kept in this browser only, and never goes into
+        the address bar. Ask the desk for it.</p>
+      <button type="submit" class="filled" id="gate-go">Open the book</button>
+    </form>
+  </section>
+
+  <section class="tile stat" id="stat-orders" hidden>
+    <p class="k">Orders</p>
+    <p class="v" id="v-orders">—</p>
+  </section>
+
+  <section class="tile stat" id="stat-month" hidden>
+    <p class="k">This month</p>
+    <p class="v" id="v-month">—</p>
+  </section>
+
+  <section class="tile stat" id="stat-billed" hidden>
+    <p class="k">Billed, VAT included</p>
+    <p class="v" id="v-billed">—</p>
+  </section>
+
+  <section class="tile stat" id="stat-due" hidden>
+    <p class="k">Due within 7 days</p>
+    <p class="v" id="v-due">—</p>
+  </section>
+
+  <section class="tile quiet" id="sieve-tile" hidden>
+    <div class="sieve">
+      <div class="field">
+        <label for="q">Search</label>
+        <input type="search" id="q" placeholder="customer, project, reference, language, country">
+      </div>
+      <div class="field narrow">
+        <label for="solution">Solution</label>
+        <select id="solution"><option value="">All</option></select>
+      </div>
+      <div class="field narrow">
+        <label for="sort">Order by</label>
+        <select id="sort">
+          <option value="received">Received, newest</option>
+          <option value="delivery">Delivery, soonest</option>
+          <option value="total">Total, largest</option>
+        </select>
+      </div>
+      <p class="tally" id="tally"></p>
+    </div>
+  </section>
+
+  <section class="tile" id="book-tile" hidden>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Received</th>
+            <th>Reference</th>
+            <th>Customer</th>
+            <th>Project</th>
+            <th>Solution</th>
+            <th>Pair</th>
+            <th>Words</th>
+            <th>Delivery</th>
+            <th>Total</th>
+            <th><span class="sr">Detail</span></th>
+          </tr>
+        </thead>
+        <tbody id="book"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+
+</main>
+
+<script>
+'use strict';
+
+/* The same web app the quote page posts its orders to; here it is read. */
+var ORDERS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbxkQZuUjzsYWSpCs0DFl9gvUvT9sJkN2rIdePy2pZ9xpeRDRyhBVH6zQQUyTmhH143Rjw/exec';
+
+var STORE = 'quote-desk-admin-token';
+
+function $(id) { return document.getElementById(id); }
+
+/* localStorage throws in a private window with site data blocked, and the book
+   must still open there — the token is simply asked for again every time. */
+function remembered() {
+  try { return window.localStorage.getItem(STORE) || ''; } catch (err) { return ''; }
+}
+
+function remember(value) {
+  try { window.localStorage.setItem(STORE, value); } catch (err) {}
+}
+
+function forget() {
+  try { window.localStorage.removeItem(STORE); } catch (err) {}
+}
+
+/* ───────────────────────────────────────────────────────────── what is held */
+
+var state = { token: '', headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
+
+/*
+ * Read the sheet.
+ *
+ * text/plain keeps this a simple request, so the browser asks for no preflight —
+ * the web app answers no OPTIONS. The token goes in the body, never the URL,
+ * because a query string ends up in history and in referrers.
+ */
+function fetchOrders(token) {
+  return fetch(ORDERS_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'orders', token: token })
+  }).then(function (res) {
+    if (!res.ok) throw new Error('the desk answered ' + res.status);
+    return res.json();
+  }).then(function (answer) {
+    if (!answer || answer.ok !== true) {
+      var refused = !!(answer && answer.error === 'refused');
+      var err = new Error(refused
+        ? 'That token was refused.'
+        : 'The desk refused the read: ' + ((answer && answer.error) || 'no reason given'));
+      err.refused = refused;
+      throw err;
+    }
+    return answer;
+  });
+}
+
+/** Column positions by name, so a new column in the sheet cannot shift the page. */
+function indexOf(headers) {
+  var map = {};
+  headers.forEach(function (name, i) { map[name] = i; });
+  return map;
+}
+
+function cell(row, name) {
+  var i = state.index[name];
+  if (i === undefined) return '';
+  var value = row[i];
+  return value === undefined || value === null ? '' : value;
+}
+
+/* ─────────────────────────────────────────────────────────────── the format */
+
+function escapeHtml(value) {
+  return String(value)
+    .split('&').join('&amp;')
+    .split('<').join('&lt;')
+    .split('>').join('&gt;')
+    .split('"').join('&quot;');
+}
+
+function money(amount, currency) {
+  var n = Number(amount);
+  if (!isFinite(n)) return '';
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: currency || 'EUR',
+      currencyDisplay: 'code'
+    }).format(n);
+  } catch (err) {
+    return n.toFixed(2) + ' ' + (currency || 'EUR');
+  }
+}
+
+function thousands(n) {
+  var v = Number(n);
+  if (!isFinite(v)) return '';
+  return new Intl.NumberFormat('en-GB').format(v);
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  var d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function shortDate(value) {
+  var d = parseDate(value);
+  if (!d) return '';
+  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(d);
+}
+
+function stamp(value) {
+  var d = parseDate(value);
+  if (!d) return '';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+  }).format(d);
+}
+
+/** Whole days from today, so "in 3 days" does not turn over on the hour. */
+function daysOut(value) {
+  var d = parseDate(value);
+  if (!d) return null;
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var then = new Date(d.getTime());
+  then.setHours(0, 0, 0, 0);
+  return Math.round((then - today) / 86400000);
+}
+
+function dueWords(value) {
+  var n = daysOut(value);
+  if (n === null) return '';
+  if (n === 0) return 'today';
+  if (n === 1) return 'tomorrow';
+  if (n === -1) return 'yesterday';
+  if (n < 0) return (-n) + ' days ago';
+  return 'in ' + n + ' days';
+}
+
+/* ─────────────────────────────────────────────────────────────── the counts */
+
+function paintCounts(rows) {
+  $('v-orders').textContent = thousands(rows.length);
+
+  var now = new Date();
+  var month = 0;
+  rows.forEach(function (row) {
+    var d = parseDate(cell(row, 'Received'));
+    if (d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) month++;
+  });
+  $('v-month').textContent = thousands(month);
+
+  /* Currencies are never added together: a job is taken in the one it was
+     quoted in, and a made-up conversion in a back office is worse than two lines. */
+  var totals = {};
+  rows.forEach(function (row) {
+    var code = String(cell(row, 'Currency') || 'EUR');
+    var n = Number(cell(row, 'Total'));
+    if (!isFinite(n)) return;
+    totals[code] = (totals[code] || 0) + n;
+  });
+  var codes = Object.keys(totals).sort();
+  $('v-billed').innerHTML = codes.length
+    ? codes.map(function (code) {
+        return '<span>' + escapeHtml(money(totals[code], code)) + '</span>';
+      }).join('')
+    : '—';
+
+  var due = 0;
+  var late = 0;
+  rows.forEach(function (row) {
+    var n = daysOut(cell(row, 'Delivery'));
+    if (n === null) return;
+    if (n < 0) late++;
+    else if (n <= 7) due++;
+  });
+  $('v-due').innerHTML = escapeHtml(thousands(due)) +
+    (late ? '<small>' + escapeHtml(thousands(late)) + ' past their date</small>' : '');
+}
+
+/* ─────────────────────────────────────────────────────────────── the sieve */
+
+function fillSolutions(rows) {
+  var seen = {};
+  rows.forEach(function (row) {
+    var s = String(cell(row, 'Solution') || '').trim();
+    if (s) seen[s] = true;
+  });
+  var chosen = $('solution').value;
+  $('solution').innerHTML = '<option value="">All</option>' +
+    Object.keys(seen).sort().map(function (s) {
+      return '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>';
+    }).join('');
+  if (chosen && seen[chosen]) $('solution').value = chosen;
+}
+
+function sieve() {
+  var q = $('q').value.trim().toLowerCase();
+  var solution = $('solution').value;
+
+  var rows = state.rows.filter(function (row) {
+    if (solution && String(cell(row, 'Solution')) !== solution) return false;
+    if (!q) return true;
+    return row.some(function (value) {
+      return String(value === null || value === undefined ? '' : value).toLowerCase().indexOf(q) !== -1;
+    });
+  });
+
+  var by = $('sort').value;
+  if (by === 'delivery') {
+    rows = rows.slice().sort(function (a, b) {
+      var da = parseDate(cell(a, 'Delivery'));
+      var db = parseDate(cell(b, 'Delivery'));
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+  } else if (by === 'total') {
+    rows = rows.slice().sort(function (a, b) {
+      return (Number(cell(b, 'Total')) || 0) - (Number(cell(a, 'Total')) || 0);
+    });
+  }
+  /* 'received' is the order the desk hands them over in: newest first. */
+
+  return rows;
+}
+
+/* ───────────────────────────────────────────────────────────────── the book */
+
+var DETAIL = ['Email', 'Company', 'Country', 'VAT number', 'Subject', 'Desktop publishing',
+  'Net', 'VAT', 'VAT treatment', 'Reference (customer)', 'Notes'];
+
+var COLUMNS = 10;
+
+function detailRow(row) {
+  var parts = DETAIL.map(function (name) {
+    var value = cell(row, name);
+    if (name === 'Net' || name === 'VAT') value = money(value, cell(row, 'Currency'));
+    if (value === '') return '';
+    return '<div><dt>' + escapeHtml(name) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
+  }).filter(Boolean).join('');
+
+  return '<tr class="detail"><td colspan="' + COLUMNS + '"><dl class="pairs">' +
+    (parts || '<div><dd class="empty">Nothing further was recorded.</dd></div>') +
+    '</dl></td></tr>';
+}
+
+function paintBook(rows) {
+  var body = $('book');
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="' + COLUMNS + '" class="empty">' +
+      (state.rows.length ? 'No order matches that.' : 'No orders yet.') + '</td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map(function (row) {
+    var ref = String(cell(row, 'Reference'));
+    var days = daysOut(cell(row, 'Delivery'));
+    var company = String(cell(row, 'Company'));
+    var open = state.openRef === ref;
+    var out = '';
+
+    out += '<tr>';
+    out += '<td class="num">' + escapeHtml(stamp(cell(row, 'Received'))) + '</td>';
+    out += '<td class="ref">' + escapeHtml(ref) +
+      (String(cell(row, 'Re-priced')) ? '<span class="flag">re-priced</span>' : '') + '</td>';
+    out += '<td><span class="strong">' + escapeHtml(cell(row, 'Customer')) + '</span>' +
+      (company && company !== 'individual'
+        ? '<span class="sub">' + escapeHtml(company) + '</span>' : '') + '</td>';
+    out += '<td>' + escapeHtml(cell(row, 'Project')) + '</td>';
+    out += '<td>' + escapeHtml(cell(row, 'Solution')) + '</td>';
+    out += '<td class="pair">' + escapeHtml(cell(row, 'From')) + ' &rarr; ' +
+      escapeHtml(cell(row, 'Into')) + '</td>';
+    out += '<td class="num">' + escapeHtml(thousands(cell(row, 'Words'))) + '</td>';
+    out += '<td class="num' + (days !== null && days < 0 ? ' late' : '') + '">' +
+      escapeHtml(shortDate(cell(row, 'Delivery'))) +
+      '<span class="sub">' + escapeHtml(dueWords(cell(row, 'Delivery'))) + '</span></td>';
+    out += '<td class="num strong">' +
+      escapeHtml(money(cell(row, 'Total'), cell(row, 'Currency'))) + '</td>';
+    out += '<td><button type="button" class="open" data-ref="' + escapeHtml(ref) +
+      '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+      (open ? 'Close' : 'Open') + '</button></td>';
+    out += '</tr>';
+
+    if (open) out += detailRow(row);
+    return out;
+  }).join('');
+}
+
+function paint() {
+  var rows = sieve();
+  paintCounts(state.rows);
+  paintBook(rows);
+  $('tally').textContent = rows.length === state.rows.length
+    ? thousands(rows.length) + ' shown'
+    : thousands(rows.length) + ' of ' + thousands(state.rows.length) + ' shown';
+  $('foot').textContent = 'Read ' + stamp(state.loadedAt) +
+    '. The book is the Quote Desk orders sheet; this page only reads it.';
+}
+
+/* ────────────────────────────────────────────────────────────────── the CSV */
+
+/*
+ * Semicolons, and a byte-order mark: Excel in an Italian locale takes a comma
+ * file as one single column, and without the mark it mis-reads the accents.
+ */
+function csv() {
+  var rows = sieve();
+  var quote = function (value) {
+    var s = String(value === null || value === undefined ? '' : value);
+    return '"' + s.split('"').join('""') + '"';
+  };
+
+  var lines = [state.headers.map(quote).join(';')];
+  rows.forEach(function (row) {
+    lines.push(state.headers.map(function (name) { return quote(cell(row, name)); }).join(';'));
+  });
+
+  var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'quote-desk-orders-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ────────────────────────────────────────────────────── opening and shutting */
+
+var SHOWN = ['tools', 'stat-orders', 'stat-month', 'stat-billed', 'stat-due',
+  'sieve-tile', 'book-tile'];
+
+function show(open) {
+  SHOWN.forEach(function (id) { $(id).hidden = !open; });
+  $('gate').hidden = open;
+  if (!open) $('foot').textContent = '';
+}
+
+function trouble(message) {
+  var note = $('gate-note');
+  note.textContent = message;
+  note.className = 'note bad';
+}
+
+function load(token, fromGate) {
+  var button = fromGate ? $('gate-go') : $('refresh');
+  var was = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Reading…';
+
+  return fetchOrders(token).then(function (answer) {
+    state.token = token;
+    state.headers = answer.headers || [];
+    state.index = indexOf(state.headers);
+    state.rows = answer.orders || [];
+    state.loadedAt = new Date().toISOString();
+    remember(token);
+    fillSolutions(state.rows);
+    show(true);
+    paint();
+  }).catch(function (err) {
+    var why = String(err && err.message ? err.message : err);
+    if (err && err.refused) {
+      /* A stale token must not leave the page stuck on a spinner at every
+         reload: drop it and ask again. */
+      forget();
+      state.token = '';
+      show(false);
+      trouble(why + ' Ask the desk for the current one.');
+    } else if (fromGate) {
+      trouble(why);
+    } else {
+      $('foot').textContent = 'Could not read the book: ' + why +
+        '. What is on screen was read ' + stamp(state.loadedAt) + '.';
+    }
+  }).then(function () {
+    button.disabled = false;
+    button.textContent = was;
+  });
+}
+
+$('gate-form').addEventListener('submit', function (event) {
+  event.preventDefault();
+  var token = $('token').value.trim();
+  if (!token) return;
+  $('gate-note').className = 'note';
+  $('gate-note').textContent =
+    'The token is kept in this browser only, and never goes into the address bar.';
+  load(token, true);
+});
+
+$('refresh').addEventListener('click', function () { load(state.token, false); });
+$('csv').addEventListener('click', csv);
+
+$('forget').addEventListener('click', function () {
+  forget();
+  state = { token: '', headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
+  $('token').value = '';
+  show(false);
+});
+
+$('q').addEventListener('input', paint);
+$('solution').addEventListener('change', paint);
+$('sort').addEventListener('change', paint);
+
+/* One row open at a time: the detail is wide, and two open rows push the money
+   column off the screen on a laptop. */
+$('book').addEventListener('click', function (event) {
+  var button = event.target.closest ? event.target.closest('.open') : null;
+  if (!button) return;
+  var ref = button.getAttribute('data-ref');
+  state.openRef = state.openRef === ref ? null : ref;
+  paint();
+});
+
+/* ───────────────────────────────────────────────────────────────── the boot */
+
+(function boot() {
+  var token = remembered();
+  if (token) {
+    $('token').value = token;
+    load(token, true);
+  } else {
+    show(false);
+  }
+})();
+</script>
+</body>
+</html>

@@ -485,10 +485,20 @@ function fetchOrders(token) {
     return res.json();
   }).then(function (answer) {
     if (!answer || answer.ok !== true) {
-      var refused = !!(answer && answer.error === 'refused');
-      var err = new Error(refused
-        ? 'That token was refused.'
-        : 'The desk refused the read: ' + ((answer && answer.error) || 'no reason given'));
+      var why = (answer && answer.error) || '';
+      var refused = why === 'refused';
+      /* The old deployment knows no action, so it reads this as an order and
+         finds it incomplete. That is the one answer worth translating: it means
+         the script was edited but never redeployed as a new version. */
+      var message;
+      if (refused) message = 'That token was refused.';
+      else if (why === 'incomplete order') {
+        message = 'The web app is still running its previous version, which cannot hand ' +
+          'over the book. In the Apps Script project: Deploy › Manage deployments › ' +
+          'pencil › New version.';
+      } else message = 'The desk refused the read: ' + (why || 'no reason given');
+
+      var err = new Error(message);
       err.refused = refused;
       throw err;
     }

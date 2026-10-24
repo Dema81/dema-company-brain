@@ -208,6 +208,7 @@ function doPost(e) {
     }
 
     if (order.action === 'upload') return json(receiveFile(order));
+    if (order.action === 'status') return json(orderStatus(order));
 
     if (!order.id || !order.customer || !order.customer.email) {
       return json({ ok: false, error: 'incomplete order' });
@@ -315,6 +316,142 @@ function json(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+/* --------------------------------------------------------------- the status */
+
+/**
+ * What one customer may know about one order.
+ *
+ * The reference alone is not enough: it is printed on a confirmation that may
+ * be forwarded, and sequential references are easy to guess at. The email has
+ * to match the row as well, and only the handful of fields the customer
+ * already knows come back - never the billing block, never another order.
+ *
+ * A wrong pair is answered exactly as an unknown one, so this cannot be used
+ * to find out which references exist.
+ */
+function orderStatus(req) {
+  var id = String(req.id || '').trim();
+  var email = String(req.email || '').trim().toLowerCase();
+  if (!id || !email) return { ok: false, error: 'not found' };
+
+  var row = findOrderRow(id);
+  if (!row) return { ok: false, error: 'not found' };
+
+  var at = function (name) { return row[HEADERS.indexOf(name)]; };
+  if (String(at('Email')).trim().toLowerCase() !== email) return { ok: false, error: 'not found' };
+
+  var iso = function (value) {
+    return Object.prototype.toString.call(value) === '[object Date]' ? value.toISOString() : '';
+  };
+
+  return {
+    ok: true,
+    order: {
+      reference: id,
+      status: String(at('Status') || ''),
+      received: iso(at('Received')),
+      delivery: iso(at('Delivery')),
+      project: String(at('Project') || ''),
+      solution: String(at('Solution') || ''),
+      from: String(at('From') || ''),
+      into: String(at('Into') || ''),
+      words: Number(at('Words')) || 0,
+      total: Number(at('Total')) || 0,
+      currency: String(at('Currency') || 'EUR')
+    }
+  };
+}
+
+/* ------------------------------------------------------------- the delivery */
+
+var DELIVERY_FOLDER = 'delivery';
+var MAIL_ATTACHMENT_LIMIT = 24 * 1024 * 1024;   // MailApp refuses much above 25MB
+
+/**
+ * A menu in the sheet, because the desk lives in the sheet.
+ *
+ * Runs on open; the first time, open the script editor and run onOpen by hand
+ * once to authorise it.
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Quote Desk')
+    .addItem('Deliver the selected order', 'deliverSelected')
+    .addToUi();
+}
+
+/**
+ * Send the finished translation to the customer and mark the order delivered.
+ *
+ * The desk puts the finished files in a "delivery" folder inside the order's
+ * own folder, picks any cell on that order's row, and runs this. The files are
+ * attached rather than shared by link: the order folder also holds the
+ * customer's own documents and the confirmation, and nothing here should
+ * quietly make those readable by anyone holding a URL.
+ */
+function deliverSelected() {
+  var ui = SpreadsheetApp.getUi();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  if (sheet.getName() !== SHEET) {
+    ui.alert('Open the "' + SHEET + '" sheet and select a row on the order first.');
+    return;
+  }
+
+  var rowIndex = sheet.getActiveRange().getRow();
+  if (rowIndex < 2) { ui.alert('Select a row on an order, not the heading.'); return; }
+
+  var row = sheet.getRange(rowIndex, 1, 1, HEADERS.length).getValues()[0];
+  var at = function (name) { return row[HEADERS.indexOf(name)]; };
+  var id = String(at('Reference'));
+  var email = String(at('Email'));
+  if (!id || !email) { ui.alert('That row carries no reference or no email.'); return; }
+
+  var folder = orderFolder(id, '');
+  var out = folder.getFoldersByName(DELIVERY_FOLDER);
+  if (!out.hasNext()) {
+    ui.alert('Put the finished files in a "' + DELIVERY_FOLDER + '" folder inside ' +
+      id + ' first.' + String.fromCharCode(10, 10) + folder.getUrl());
+    return;
+  }
+
+  var files = [];
+  var bytes = 0;
+  var walk = out.next().getFiles();
+  while (walk.hasNext()) {
+    var file = walk.next();
+    bytes += file.getSize();
+    files.push(file.getBlob());
+  }
+  if (!files.length) { ui.alert('That delivery folder is empty.'); return; }
+  if (bytes > MAIL_ATTACHMENT_LIMIT) {
+    ui.alert('Those files come to ' + Math.round(bytes / 1048576) + ' MB, too much for one ' +
+      'email. Send them from Drive and set the status by hand.');
+    return;
+  }
+
+  var answer = ui.alert('Send ' + files.length + ' file(s) to ' + email + ' for ' + id + '?',
+    ui.ButtonSet.YES_NO);
+  if (answer !== ui.Button.YES) return;
+
+  send({
+    to: email,
+    name: SENDER_NAME,
+    replyTo: DESK,
+    subject: 'Your translation is ready - ' + id,
+    htmlBody: shell('Your translation is ready',
+      '<p>' + escape(String(at('First name'))) + ',</p>' +
+      '<p>the translation of <strong>' + escape(String(at('Project') || id)) + '</strong> ' +
+      'from ' + escape(String(at('From'))) + ' into ' + escape(String(at('Into'))) +
+      ' is attached.</p>' +
+      '<p>Thank you for working with us.</p>'),
+    attachments: files
+  });
+
+  sheet.getRange(rowIndex, HEADERS.indexOf('Status') + 1).setValue('Delivered');
+  ui.alert('Sent to ' + email + ', and the order is marked delivered.');
+}
+
 
 /* ------------------------------------------------------- the customer's files */
 

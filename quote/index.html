@@ -782,7 +782,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <label for="deadline" data-i18n="f_deadline">Needed by</label>
           <button type="button" class="link-button" id="clearDeadline" data-i18n="btn_clear" hidden>Clear</button>
         </header>
-        <input id="deadline" name="deadline" type="date">
+        <input id="deadline" name="deadline" type="text" inputmode="numeric" autocomplete="off" spellcheck="false">
       </div>
 
       <div class="field">
@@ -1299,6 +1299,11 @@ const T = {
   /* English is the source text: every other language is checked against it,
      and any key missing elsewhere falls back to here. */
   en: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "yyyy",
+    err_date: "Write the date as {pattern}.",
+    err_date_past: "That date has already passed. Pick a later one.",
     an_chars: "characters, spaces excluded",
     an_counted: "counted in your browser, nothing was uploaded.",
     an_failed: "Those files could not be analysed. Enter the word count by hand.",
@@ -1455,6 +1460,11 @@ const T = {
     who_individual: "Individual",
   },
   it: {
+    date_d: "gg",
+    date_m: "mm",
+    date_y: "aaaa",
+    err_date: "Scrivi la data come {pattern}.",
+    err_date_past: "Quella data è già passata. Scegline una successiva.",
     an_chars: "caratteri, spazi esclusi",
     an_counted: "contati nel tuo browser, nessun file è stato caricato.",
     an_failed: "Non è stato possibile analizzare quei file. Inserisci il conteggio parole a mano.",
@@ -1611,6 +1621,11 @@ const T = {
     who_individual: "Privato",
   },
   fr: {
+    date_d: "jj",
+    date_m: "mm",
+    date_y: "aaaa",
+    err_date: "Écrivez la date sous la forme {pattern}.",
+    err_date_past: "Cette date est déjà passée. Choisissez-en une plus tardive.",
     an_chars: "caractères, espaces non compris",
     an_counted: "comptés dans votre navigateur, aucun fichier n'a été envoyé.",
     an_failed: "Ces fichiers n'ont pas pu être analysés. Saisissez le nombre de mots à la main.",
@@ -1767,6 +1782,11 @@ const T = {
     who_individual: "Particulier",
   },
   es: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "aaaa",
+    err_date: "Escribe la fecha como {pattern}.",
+    err_date_past: "Esa fecha ya ha pasado. Elige una posterior.",
     an_chars: "caracteres, sin espacios",
     an_counted: "contados en tu navegador, no se ha subido ningún archivo.",
     an_failed: "No ha sido posible analizar esos archivos. Introduce el recuento de palabras a mano.",
@@ -1923,6 +1943,11 @@ const T = {
     who_individual: "Particular",
   },
   de: {
+    date_d: "TT",
+    date_m: "MM",
+    date_y: "JJJJ",
+    err_date: "Schreiben Sie das Datum als {pattern}.",
+    err_date_past: "Dieses Datum liegt bereits in der Vergangenheit. Wählen Sie ein späteres.",
     an_chars: "Zeichen, ohne Leerzeichen",
     an_counted: "im Browser gezählt, es wurde keine Datei hochgeladen.",
     an_failed: "Diese Dateien konnten nicht analysiert werden. Geben Sie die Wortzahl von Hand ein.",
@@ -2079,6 +2104,11 @@ const T = {
     who_individual: "Privatperson",
   },
   pt: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "aaaa",
+    err_date: "Escreva a data como {pattern}.",
+    err_date_past: "Essa data já passou. Escolha uma posterior.",
     an_chars: "caracteres, sem espaços",
     an_counted: "contados no seu navegador, nenhum ficheiro foi carregado.",
     an_failed: "Não foi possível analisar esses ficheiros. Introduza a contagem de palavras à mão.",
@@ -2235,6 +2265,11 @@ const T = {
     who_individual: "Particular",
   },
   nl: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "jjjj",
+    err_date: "Schrijf de datum als {pattern}.",
+    err_date_past: "Die datum is al voorbij. Kies een latere.",
     an_chars: "tekens, spaties niet meegeteld",
     an_counted: "geteld in uw browser, er is geen bestand geüpload.",
     an_failed: "Die bestanden konden niet worden geanalyseerd. Voer het aantal woorden met de hand in.",
@@ -2391,6 +2426,11 @@ const T = {
     who_individual: "Particulier",
   },
   no: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "åååå",
+    err_date: "Skriv datoen som {pattern}.",
+    err_date_past: "Den datoen er allerede passert. Velg en senere.",
     an_chars: "tegn, uten mellomrom",
     an_counted: "talt i nettleseren din, ingen fil er lastet opp.",
     an_failed: "Disse filene kunne ikke analyseres. Skriv inn ordtellingen for hånd.",
@@ -2547,6 +2587,11 @@ const T = {
     who_individual: "Privatperson",
   },
   fi: {
+    date_d: "pp",
+    date_m: "kk",
+    date_y: "vvvv",
+    err_date: "Kirjoita päivämäärä muodossa {pattern}.",
+    err_date_past: "Tuo päivä on jo mennyt. Valitse myöhempi.",
     an_chars: "merkkiä, ilman välilyöntejä",
     an_counted: "laskettu selaimessasi, yhtään tiedostoa ei lähetetty.",
     an_failed: "Näitä tiedostoja ei voitu analysoida. Syötä sanamäärä käsin.",
@@ -2703,6 +2748,11 @@ const T = {
     who_individual: "Yksityishenkilö",
   },
   sv: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "åååå",
+    err_date: "Skriv datumet som {pattern}.",
+    err_date_past: "Det datumet har redan passerat. Välj ett senare.",
     an_chars: "tecken, utan mellanslag",
     an_counted: "räknade i din webbläsare, ingen fil har laddats upp.",
     an_failed: "Dessa filer kunde inte analyseras. Ange ordantalet för hand.",
@@ -2859,6 +2909,11 @@ const T = {
     who_individual: "Privatperson",
   },
   zh: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "yyyy",
+    err_date: "请按 {pattern} 的格式填写日期。",
+    err_date_past: "该日期已过。请选择更晚的日期。",
     an_chars: "个字符，不含空格",
     an_counted: "在您的浏览器中统计，未上传任何文件。",
     an_failed: "这些文件无法分析。请手动输入字数。",
@@ -3015,6 +3070,11 @@ const T = {
     who_individual: "个人",
   },
   da: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "åååå",
+    err_date: "Skriv datoen som {pattern}.",
+    err_date_past: "Den dato er allerede passeret. Vælg en senere.",
     an_chars: "tegn, uden mellemrum",
     an_counted: "talt i din browser, ingen fil er uploadet.",
     an_failed: "Disse filer kunne ikke analyseres. Indtast ordtællingen manuelt.",
@@ -3171,6 +3231,11 @@ const T = {
     who_individual: "Privatperson",
   },
   tr: {
+    date_d: "gg",
+    date_m: "aa",
+    date_y: "yyyy",
+    err_date: "Tarihi {pattern} biçiminde yazın.",
+    err_date_past: "Bu tarih geçmişte kaldı. Daha ileri bir tarih seçin.",
     an_chars: "karakter, boşluklar hariç",
     an_counted: "tarayıcınızda sayıldı, hiçbir dosya yüklenmedi.",
     an_failed: "Bu dosyalar çözümlenemedi. Kelime sayısını elle girin.",
@@ -3327,6 +3392,11 @@ const T = {
     who_individual: "Bireysel",
   },
   ru: {
+    date_d: "дд",
+    date_m: "мм",
+    date_y: "гггг",
+    err_date: "Запишите дату в виде {pattern}.",
+    err_date_past: "Эта дата уже прошла. Выберите более позднюю.",
     an_chars: "знаков, без пробелов",
     an_counted: "подсчитано в вашем браузере, ни один файл не был загружен.",
     an_failed: "Эти файлы не удалось проанализировать. Введите количество слов вручную.",
@@ -3483,6 +3553,11 @@ const T = {
     who_individual: "Частное лицо",
   },
   ja: {
+    date_d: "dd",
+    date_m: "mm",
+    date_y: "yyyy",
+    err_date: "日付は {pattern} の形式で入力してください。",
+    err_date_past: "その日付はすでに過ぎています。もっと先の日付をお選びください。",
     an_chars: "文字（スペースを除く）",
     an_counted: "お使いのブラウザー内で計算しました。ファイルはアップロードされていません。",
     an_failed: "これらのファイルは解析できませんでした。文字数を手入力してください。",
@@ -3659,6 +3734,12 @@ function t(key) {
 const locale = () => (LANG === 'en' ? 'en-GB' : LANG);
 
 function applyTranslation(lang) {
+  /* Read the date while the old language is still in force: afterwards
+     30/10/2026 would be read as the year 30 in a language that writes the year
+     first, and the day the customer chose would quietly be lost. */
+  const dateField = $('deadline');
+  const keptDate = dateField ? parseTypedDate(dateField.value) : '';
+
   LANG = T[lang] ? lang : 'en';
   document.documentElement.lang = LANG;
   try { localStorage.setItem('quote-desk-lang', LANG); } catch (err) {}
@@ -3677,6 +3758,13 @@ function applyTranslation(lang) {
     b.classList.toggle('active', b.getAttribute('data-lang') === LANG);
     b.setAttribute('aria-pressed', b.getAttribute('data-lang') === LANG ? 'true' : 'false');
   });
+
+  /* The date field is the one input whose format the page owns: the pattern,
+     and the day already chosen, are written the new language's way. */
+  if (dateField) {
+    dateField.placeholder = datePattern();
+    if (keptDate) dateField.value = formatTypedDate(keptDate);
+  }
 
   /* Everything the engine drew in the old language has to be drawn again. The
      prices themselves are not recomputed: a quote standing on the board stays
@@ -3757,7 +3845,75 @@ function fillSelects() {
   $('subject').value = 'mechanical';
   $('currency').innerHTML = CURRENCIES.map((c) => '<option value="' + c.code + '">' + c.code + ' (' + c.symbol + ')</option>').join('');
   $('currency').value = guessCurrency();
-  $('deadline').min = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  $('deadline').placeholder = datePattern();
+}
+
+/* ──────────────────────────────────────────────────────────── the date field
+
+   A native <input type="date"> draws its own format, and it takes it from the
+   browser's interface language - not from the page's. An Italian browser shows
+   gg/mm/aaaa on the Japanese page, and there is no attribute, property or
+   stylesheet that changes it: setting lang="ja" on the input was tried and
+   Chrome ignored it.
+
+   So the field is an ordinary text box and the page owns the format. The
+   ORDER and the SEPARATOR come from Intl for the chosen language - day first
+   in Europe, year first in Japan - and the LETTERS come from the dictionary,
+   because only a speaker knows that a year is aaaa in Italian, jjjj in Dutch
+   and vvvv in Finnish. One source for each, and they cannot drift apart. */
+
+/** The order of the parts and the separator this language writes dates with. */
+function dateShape() {
+  try {
+    const parts = new Intl.DateTimeFormat(locale(), {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    }).formatToParts(new Date(Date.UTC(2026, 0, 2)));
+    const order = parts.filter((p) => p.type !== 'literal').map((p) => p.type);
+    const literal = parts.find((p) => p.type === 'literal');
+    if (order.length === 3) {
+      return { order: order, separator: literal ? literal.value.trim() || '/' : '/' };
+    }
+  } catch (err) {}
+  return { order: ['day', 'month', 'year'], separator: '/' };
+}
+
+const DATE_LETTER = { day: 'date_d', month: 'date_m', year: 'date_y' };
+
+/** dd/mm/yyyy, gg/mm/aaaa, yyyy/mm/dd - whatever this language writes. */
+function datePattern() {
+  const shape = dateShape();
+  return shape.order.map((part) => t(DATE_LETTER[part])).join(shape.separator);
+}
+
+/** What the customer typed, as an ISO date, or '' when it is not one. */
+function parseTypedDate(text) {
+  const digits = String(text).match(/[0-9]+/g);
+  if (!digits || digits.length !== 3) return '';
+
+  const shape = dateShape();
+  const got = {};
+  shape.order.forEach((part, i) => { got[part] = Number(digits[i]); });
+  if (String(got.year).length < 4) return '';
+
+  const when = new Date(Date.UTC(got.year, got.month - 1, got.day));
+  /* Reject the 31st of February rather than let it slide into March. */
+  if (when.getUTCFullYear() !== got.year || when.getUTCMonth() !== got.month - 1 ||
+      when.getUTCDate() !== got.day) return '';
+  return when.toISOString().slice(0, 10);
+}
+
+/** An ISO date written the way this language writes it. */
+function formatTypedDate(iso) {
+  if (!iso) return '';
+  const bits = iso.split('-');
+  const shape = dateShape();
+  const pad = { year: bits[0], month: bits[1], day: bits[2] };
+  return shape.order.map((part) => pad[part]).join(shape.separator);
+}
+
+/** The earliest date the desk will take: tomorrow. */
+function earliestDate() {
+  return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 }
 
 /** Euro is the list currency, and the default everywhere. */
@@ -3770,7 +3926,7 @@ const brief = () => ({
   targets: [$('target').value].concat(state.extraTargets),
   words: Math.floor(Number($('words').value)),
   subject: $('subject').value,
-  deadline: $('deadline').value || null,
+  deadline: parseTypedDate($('deadline').value) || null,
   currency: $('currency').value,
   layout: $('layout').checked,
   pages: Math.floor(Number($('pages').value))
@@ -3804,7 +3960,7 @@ function fail(message) {
  * whatever is on the board stays until the button is pressed.
  */
 function briefChanged() {
-  $('clearDeadline').hidden = !brief().deadline;
+  $('clearDeadline').hidden = !$('deadline').value.trim();
 }
 
 /** A quote is standing: the button goes quiet and the cards take the floor. */
@@ -3823,7 +3979,13 @@ function standingQuote() {
 
 function refresh() {
   const input = brief();
-  $('clearDeadline').hidden = !input.deadline;
+  const typed = $('deadline').value.trim();
+  $('clearDeadline').hidden = !typed;
+
+  /* The field is ours now, so an unreadable date has to be said out loud
+     rather than quietly treated as "no date at all" and priced as such. */
+  if (typed && !input.deadline) return fail(t('err_date').replace('{pattern}', datePattern()));
+  if (input.deadline && input.deadline < earliestDate()) return fail(t('err_date_past'));
 
   if (!input.words || input.words < 1) return fail(t('err_words'));
   if (input.words > 2000000) return fail(t('err_words_max'));

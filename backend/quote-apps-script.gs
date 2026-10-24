@@ -22,6 +22,44 @@
  */
 
 var SHEET = 'orders';
+
+/*
+ * Where the customer's files and the order's paperwork are kept.
+ *
+ * The quote page counts words in the browser and used to send nothing but the
+ * number: an order arrived with no documents to translate, which is most of a
+ * translation job missing. The files now follow the order into a Drive folder
+ * of their own, one per order, and the confirmation is filed beside them so
+ * there is a record of what was sent and to whom.
+ *
+ * The parent folder is created on first use and its id kept in Script
+ * properties, so it survives and is not made again.
+ */
+var LIBRARY_NAME = 'Quote Desk — Orders';
+var MAX_UPLOAD_BYTES = 20 * 1024 * 1024;   // per file, before base64
+var MAX_FILES = 30;
+
+function libraryFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('ORDERS_FOLDER_ID');
+  if (id) {
+    try { return DriveApp.getFolderById(id); } catch (err) {}
+  }
+  var found = DriveApp.getFoldersByName(LIBRARY_NAME);
+  var folder = found.hasNext() ? found.next() : DriveApp.createFolder(LIBRARY_NAME);
+  props.setProperty('ORDERS_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+/** The folder of one order, made the first time it is asked for. */
+function orderFolder(id, customerName) {
+  var library = libraryFolder();
+  var existing = library.getFoldersByName(id);
+  if (existing.hasNext()) return existing.next();
+  var folder = library.createFolder(id);
+  folder.setDescription((customerName || '') + ' — ' + new Date().toISOString());
+  return folder;
+}
 var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes
 var SENDER_NAME = 'DEMA Solutions';
 
@@ -169,6 +207,8 @@ function doPost(e) {
       return json({ ok: true, headers: HEADERS, orders: orders() });
     }
 
+    if (order.action === 'upload') return json(receiveFile(order));
+
     if (!order.id || !order.customer || !order.customer.email) {
       return json({ ok: false, error: 'incomplete order' });
     }
@@ -182,9 +222,15 @@ function doPost(e) {
     if (repriced) vat = round2(vat ? net * 0.22 : 0);
     var gross = round2(net + vat);
 
-    record(order, net, vat, gross, repriced);
+    /* The folder first, so the row can carry its link and the uploads that
+       follow have somewhere to land. */
+    var folder = orderFolder(order.id, order.customer.name);
+    record(order, net, vat, gross, repriced, folder.getUrl());
 
     var pdf = confirmationPdf(order, net, vat, gross);
+    /* Filed, not only attached: an order confirmation nobody kept a copy of is
+       a document that cannot be produced when it is asked for. */
+    try { folder.createFile(pdf); } catch (err) {}
     var senderTrouble = send({
       to: order.customer.email,
       name: SENDER_NAME,
@@ -270,29 +316,143 @@ function json(payload) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/* ------------------------------------------------------- the customer's files */
+
+/**
+ * Take one file and put it in its order's folder.
+ *
+ * One file per request on purpose: a web app has a request size limit and a six
+ * minute clock, and a customer sending twelve files should not lose all twelve
+ * because the eleventh was large. The page sends them one at a time and can
+ * report which arrived.
+ *
+ * The guard is the order reference: a file is only accepted against a row that
+ * is really in the sheet, and only while the order is young. It is not a
+ * password - the reference travels in the customer's own confirmation - but it
+ * stops this being an open drop box for anyone who finds the URL.
+ */
+function receiveFile(req) {
+  var id = String(req.id || '');
+  if (!/^[A-Za-z0-9-]{4,40}$/.test(id)) return { ok: false, error: 'bad reference' };
+
+  var row = findOrderRow(id);
+  if (!row) return { ok: false, error: 'unknown order' };
+
+  var received = Object.prototype.toString.call(row[0]) === '[object Date]' ? row[0].getTime() : 0;
+  if (!received || Date.now() - received > 6 * 3600 * 1000) {
+    return { ok: false, error: 'order closed to uploads' };
+  }
+
+  /* Drive has no paths, so a name cannot escape anywhere - but a file called
+     ".._.._evil.sh" is still a nuisance to work with. Keep letters, digits,
+     spaces and the ordinary punctuation of a filename; collapse the rest. */
+  var name = String(req.name || 'file')
+    .replace(/[^A-Za-z0-9 ._()À-ɏ-]/g, '_')
+    .replace(/_{2,}/g, '_')
+    .replace(/^[._]+/, '')
+    .slice(0, 150) || 'file';
+  var data = String(req.data || '');
+  if (!data) return { ok: false, error: 'empty file' };
+  if (data.length > MAX_UPLOAD_BYTES * 1.4) return { ok: false, error: 'file too large' };
+
+  var folder = orderFolder(id, '');
+  var count = 0;
+  var walk = folder.getFiles();
+  while (walk.hasNext() && count <= MAX_FILES) { walk.next(); count++; }
+  if (count > MAX_FILES) return { ok: false, error: 'too many files' };
+
+  var blob = Utilities.newBlob(Utilities.base64Decode(data),
+    req.mime || 'application/octet-stream', name);
+  folder.createFile(blob);
+  return { ok: true, stored: name };
+}
+
+/** The row of one order, by its reference, or null. */
+function findOrderRow(id) {
+  var book = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = book.getSheetByName(SHEET);
+  if (!sheet || sheet.getLastRow() < 2) return null;
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length).getValues();
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][1]) === id) return rows[i];
+  }
+  return null;
+}
+
+
 /* ───────────────────────────────────────────────────────────────── the sheet */
 
-var HEADERS = ['Received', 'Reference', 'Customer', 'Email', 'Company', 'Country', 'VAT number',
-  'Project', 'Solution', 'From', 'Into', 'Words', 'Subject', 'Desktop publishing', 'Delivery',
-  'Net', 'VAT', 'Total', 'Currency', 'VAT treatment', 'Re-priced', 'Reference (customer)', 'Notes'];
+/*
+ * Status is written by hand in the sheet as the job moves, and read back by the
+ * back office; the page only ever sets the first value. Files is the link to
+ * the order's Drive folder - the customer's documents, the confirmation, and
+ * where the finished translation is put when it goes back.
+ */
+var STATUS_NEW = 'Received';
 
-function record(order, net, vat, gross, repriced) {
+/*
+ * Everything the order carried, in one row - who, where, what, when, how much.
+ * The billing address used to be dropped on the floor: the row kept the company
+ * and the country and threw away the street, the town, the postcode and the
+ * telephone, which is most of an address. An order you cannot invoice is not a
+ * record of anything.
+ */
+var HEADERS = ['Received', 'Reference', 'Status',
+  'First name', 'Last name', 'Email', 'Telephone',
+  'Company', 'VAT number', 'Address', 'City', 'Postal code', 'Country',
+  'Project', 'Solution', 'From', 'Into', 'Words', 'Subject', 'Desktop publishing', 'Delivery',
+  'Net', 'VAT', 'Total', 'Currency', 'VAT treatment', 'Re-priced',
+  'Customer reference', 'Notes', 'Files'];
+
+/** First and last name, however the page happened to send them. */
+function splitName(order) {
+  var c = order.customer || {};
+  if (c.firstName || c.lastName) return [c.firstName || '', c.lastName || ''];
+  var whole = String(c.name || '').trim();
+  var gap = whole.indexOf(' ');
+  return gap === -1 ? [whole, ''] : [whole.slice(0, gap), whole.slice(gap + 1)];
+}
+
+function record(order, net, vat, gross, repriced, folderUrl) {
   var book = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = book.getSheetByName(SHEET) || book.insertSheet(SHEET);
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
+  } else {
+    /*
+     * The columns have grown - the address used to be thrown away - and a sheet
+     * started under the old set would keep its old heading for ever, so the back
+     * office would read every column by the wrong name.
+     *
+     * The heading is brought up to date here. Rows written before the change
+     * keep the shape they were written in and will read crooked: there is no
+     * honest way to invent an address that was never recorded. Move them to a
+     * sheet of their own, or delete them if they were only tests.
+     */
+    var width = Math.max(sheet.getLastColumn(), HEADERS.length);
+    var heading = sheet.getRange(1, 1, 1, width).getValues()[0];
+    var current = heading.slice(0, HEADERS.length).join('');
+    if (current !== HEADERS.join('')) {
+      sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+      sheet.setFrozenRows(1);
+    }
   }
   var b = order.billing || {};
+  var who = splitName(order);
+  var street = [b.address1, b.address2].filter(function (x) { return x; }).join(', ');
+
   sheet.appendRow([
-    new Date(), order.id, order.customer.name, order.customer.email,
-    b.company ? b.companyName : 'individual', b.countryName || b.country || '', b.vatNumber || '',
+    new Date(), order.id, STATUS_NEW,
+    who[0], who[1], order.customer.email, b.telephone || '',
+    b.company ? b.companyName : 'individual', b.vatNumber || '',
+    street, b.city || '', b.postalCode || '', b.countryName || b.country || '',
     order.project || '', order.solution, order.source, (order.targets || []).join(', '),
     (Number(order.words) || 0) * (order.targets || []).length, order.subject,
     order.layout ? order.layout.pages + ' pages' : 'no',
     order.eta ? new Date(order.eta) : '', net, vat, gross, order.currency,
     order.vatTreatment || '', repriced ? 'yes' : '', order.customer.reference || '',
-    order.customer.note || ''
+    order.customer.note || '', folderUrl || ''
   ]);
 }
 

@@ -270,6 +270,33 @@ tbody tr:hover > td { background: var(--surface-2); }
 .pair { white-space: nowrap; }
 .late { color: var(--warn); }
 
+/* The status is written by hand in the sheet as the job moves, so it can hold
+   anything; the colour is a hint, never a requirement. */
+.chip {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+}
+
+.chip.new { border-color: var(--accent); color: var(--accent-text); }
+.chip.doing { border-color: var(--warn); color: var(--warn); }
+.chip.done { border-color: var(--good); color: var(--good); }
+
+.folder {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.folder:hover { color: var(--accent); }
+
 .flag {
   display: inline-block;
   font-size: 0.75rem;
@@ -421,6 +448,7 @@ footer {
           <tr>
             <th>Received</th>
             <th>Reference</th>
+            <th>Status</th>
             <th>Customer</th>
             <th>Project</th>
             <th>Solution</th>
@@ -428,6 +456,7 @@ footer {
             <th>Words</th>
             <th>Delivery</th>
             <th>Total</th>
+            <th>Files</th>
             <th><span class="sr">Detail</span></th>
           </tr>
         </thead>
@@ -682,10 +711,25 @@ function sieve() {
 
 /* ───────────────────────────────────────────────────────────────── the book */
 
-var DETAIL = ['Email', 'Company', 'Country', 'VAT number', 'Subject', 'Desktop publishing',
-  'Net', 'VAT', 'VAT treatment', 'Reference (customer)', 'Notes'];
+var DETAIL = ['Email', 'Telephone', 'Company', 'VAT number', 'Address', 'City',
+  'Postal code', 'Country', 'Subject', 'Desktop publishing', 'Net', 'VAT', 'VAT treatment',
+  'Customer reference', 'Notes'];
 
-var COLUMNS = 10;
+var COLUMNS = 12;
+
+/* A word the desk typed, shown as it was typed; the class is a guess at what
+   it means, and an unknown word simply gets no colour. */
+function statusChip(value) {
+  const text = String(value || '').trim();
+  if (!text) return '<span class="sub">—</span>';
+  const low = text.toLowerCase();
+  let kind = '';
+  if (low.indexOf('receiv') === 0 || low.indexOf('ricev') === 0 || low.indexOf('new') === 0) kind = ' new';
+  else if (low.indexOf('deliver') === 0 || low.indexOf('conseg') === 0 || low.indexOf('done') === 0 ||
+           low.indexOf('complet') === 0) kind = ' done';
+  else kind = ' doing';
+  return '<span class="chip' + kind + '">' + escapeHtml(text) + '</span>';
+}
 
 function detailRow(row) {
   var parts = DETAIL.map(function (name) {
@@ -720,7 +764,10 @@ function paintBook(rows) {
     out += '<td class="num">' + escapeHtml(stamp(cell(row, 'Received'))) + '</td>';
     out += '<td class="ref">' + escapeHtml(ref) +
       (String(cell(row, 'Re-priced')) ? '<span class="flag">re-priced</span>' : '') + '</td>';
-    out += '<td><span class="strong">' + escapeHtml(cell(row, 'Customer')) + '</span>' +
+    out += '<td>' + statusChip(cell(row, 'Status')) + '</td>';
+    out += '<td><span class="strong">' +
+      escapeHtml([cell(row, 'First name'), cell(row, 'Last name')].filter(Boolean).join(' ')) +
+      '</span>' +
       (company && company !== 'individual'
         ? '<span class="sub">' + escapeHtml(company) + '</span>' : '') + '</td>';
     out += '<td>' + escapeHtml(cell(row, 'Project')) + '</td>';
@@ -733,6 +780,11 @@ function paintBook(rows) {
       '<span class="sub">' + escapeHtml(dueWords(cell(row, 'Delivery'))) + '</span></td>';
     out += '<td class="num strong">' +
       escapeHtml(money(cell(row, 'Total'), cell(row, 'Currency'))) + '</td>';
+    var folder = String(cell(row, 'Files'));
+    out += '<td>' + (folder
+      ? '<a class="folder" href="' + escapeHtml(folder) + '" target="_blank" rel="noopener">' +
+        'Files</a>'
+      : '<span class="sub">—</span>') + '</td>';
     out += '<td><button type="button" class="open" data-ref="' + escapeHtml(ref) +
       '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
       (open ? 'Close' : 'Open') + '</button></td>';

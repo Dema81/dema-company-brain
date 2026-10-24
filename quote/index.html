@@ -945,6 +945,8 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <h2 class="checkout-step-title" data-i18n="h_done">Order received</h2>
           <p id="doneText"></p>
           <div class="ref"><span id="doneRef"></span><button type="button" class="ghost-button" id="copyRef" data-i18n="btn_copy">Copy</button></div>
+          <p class="hint" id="doneFiles" hidden></p>
+          <p class="hint" id="donePay"></p>
           <p class="hint" id="doneMail"></p>
           <div class="checkout-foot">
             <button type="button" class="price-button" id="newQuote" data-i18n="btn_another">Price another job</button>
@@ -1405,6 +1407,11 @@ const T = {
     f_country_choose: "Choose a country",
     st_language: "language",
     st_languages: "languages",
+    files_sending: "Sending your files… {done} of {total}.",
+    files_sent: "Your files are with us: {n} sent with the order.",
+    files_failed: "We could not send {n} of your files. Reply to the confirmation email and attach them.",
+    files_none: "No files were attached. Reply to the confirmation email with the documents to translate.",
+    pay_how: "To pay, transfer the total to the IBAN on the confirmation, quoting {ref} as the reference. Work starts when payment is received.",
     done_mail_desk: "The order is in the book. The desk sends the confirmation and the order document to {email}.",
     st_words: "words",
     standfirst: "One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.",
@@ -1565,6 +1572,11 @@ const T = {
     f_country_choose: "Scegli un paese",
     st_language: "lingua",
     st_languages: "lingue",
+    files_sending: "Invio dei tuoi file… {done} di {total}.",
+    files_sent: "I tuoi file sono arrivati: {n} inviati con l'ordine.",
+    files_failed: "Non siamo riusciti a inviare {n} dei tuoi file. Rispondi alla email di conferma allegandoli.",
+    files_none: "Nessun file allegato. Rispondi alla email di conferma con i documenti da tradurre.",
+    pay_how: "Per pagare, bonifica il totale sull'IBAN indicato nella conferma, citando {ref} come causale. Il lavoro inizia dal ricevimento del pagamento.",
     done_mail_desk: "L'ordine è registrato. Il desk invia la conferma e il documento d'ordine a {email}.",
     st_words: "parole",
     standfirst: "Un lavoro, tre prezzi: AI Translator; AI Translator verificato da Senior AI Reviewer; Senior AI Reviewer approvato da uno specialista madrelingua.",
@@ -1700,7 +1712,7 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => {
 
 /* ------------------------------------------------------------------- state */
 
-const state = { extraTargets: [], quote: null, pending: null, analysis: null };
+const state = { extraTargets: [], quote: null, pending: null, analysis: null, files: [] };
 
 /* ──────────────────────────────────────────────────────────── the order desk
    This page is served as a static file, so it has no server of its own. The
@@ -2181,6 +2193,9 @@ async function submitOrder(event) {
   try {
     const answer = await sendOrder(id, record);
     showReceipt(id, record, answer);
+    /* The order exists now, so the documents have somewhere to go. Until this
+       was written the desk received a word count and nothing to translate. */
+    await sendFiles(id);
   } catch (err) {
     // The desk could not be reached: hand the order to the customer's mail client
     // rather than lose it, and say plainly that is what happened.
@@ -2204,6 +2219,66 @@ async function sendOrder(id, record) {
   const answer = await res.json();
   if (!answer || answer.ok !== true) throw new Error(answer && answer.error ? answer.error : 'refused');
   return { delivered: true };
+}
+
+/**
+ * Send the customer's documents up to the desk, one at a time.
+ *
+ * They were counted in the browser and never left it, which meant an order
+ * arrived with nothing to work on. One request per file, because a web app has
+ * a request size limit and a clock, and twelve files should not be lost
+ * because the eleventh was large. Whatever does not arrive is said plainly on
+ * the receipt rather than hidden: the customer can still reply to the
+ * confirmation and attach it.
+ */
+async function sendFiles(id) {
+  const files = state.files || [];
+  const note = $('doneFiles');
+  if (!note) return;
+
+  if (!files.length) {
+    note.textContent = t('files_none');
+    return;
+  }
+
+  let done = 0;
+  let failed = 0;
+  note.hidden = false;
+
+  for (const file of files) {
+    note.textContent = t('files_sending')
+      .replace('{done}', done).replace('{total}', files.length);
+    try {
+      const data = await asBase64(file);
+      const res = await fetch(ORDERS_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'upload', id: id, name: file.name, mime: file.type, data: data })
+      });
+      const answer = await res.json();
+      if (answer && answer.ok) done++; else failed++;
+    } catch (err) {
+      failed++;
+    }
+  }
+
+  note.textContent = failed
+    ? t('files_failed').replace('{n}', failed)
+    : t('files_sent').replace('{n}', done);
+}
+
+/** A file as base64, without the data: prefix the reader puts in front. */
+function asBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result);
+      const comma = result.indexOf(',');
+      resolve(comma === -1 ? result : result.slice(comma + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 /** The fallback: the whole order, written into the visitor's own mail client. */
@@ -2248,6 +2323,7 @@ function showReceipt(id, record, answer) {
   $('doneText').textContent = record.solution + ' ' + t('done_into') + ' ' +
     record.targets.join(', ') + '. ' + t('done_deliver') + ' ' + when(record.eta) +
     ' ' + t('done_send') + ' ' + record.customer.email + '.';
+  $('donePay').textContent = t('pay_how').replace('{ref}', id);
   $('doneMail').textContent = answer.delivered
     ? t('done_mail_sent').replace('{email}', record.customer.email)
     : t('done_mail_client').replace('{inbox}', ORDERS_INBOX);
@@ -2281,6 +2357,7 @@ async function countFiles(files) {
      renderOrderFiles reads them from here. It was never stored, so that list
      has been empty for every customer who ever counted a file. */
   state.analysis = report;
+  state.files = files;
   renderAnalysis(report);
   briefChanged();
 }
@@ -2317,6 +2394,7 @@ function renderAnalysis(report) {
 
 function clearFiles() {
   state.analysis = null;
+  state.files = [];
   $('fileInput').value = '';
   $('analysis').innerHTML = '';
   $('analysisField').hidden = true;

@@ -61,7 +61,18 @@ and the quote page stops reaching it.
 
 ## Euro is the list currency
 
-Dollar prices convert at a fixed reference rate stated on the page, because a static file
-cannot call a currency feed. The source project `translation-quote-app` reads the live ECB
-rate; this page cannot, so **check that rate from time to time** — it is `USD_PER_EUR` in
-`index.html`, with the date it was taken beside it.
+Dollar prices convert at a fixed reference rate, because a static file cannot call a
+currency feed. The source project `translation-quote-app` reads the live ECB rate; this
+page cannot, so **check that rate from time to time** — it is `USD_PER_EUR` in
+`index.html`, with the date it was taken in the comment above it. Last taken: **1.1193,
+23 October 2026**.
+
+`index.html` is **generated**, never hand-edited: change the rate in the artifact source
+and rebuild with `translation-quote-app/scripts/build-production.py`, or the next build
+quietly throws the edit away.
+
+**The rate is not shown to the customer**, though it was long believed to be. The code
+that would state it writes into `$('rateNote')`, an element that exists in no copy of the
+page, and the `if (note)` guard around it makes the miss silent. Quoting in dollars
+without saying at what rate is worth a decision rather than an accident — see question 8
+in the project's `HANDOFF.md`.

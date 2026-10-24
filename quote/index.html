@@ -118,6 +118,27 @@ body {
 
 .standfirst { font-size: var(--step-lead); line-height: 1.3; margin: 0; max-width: 26ch; }
 
+/* The language switcher. Eleven buttons, so they wrap rather than shrink; the
+   chosen one is filled, the rest are outlines. */
+.langs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 14px; }
+
+.lang-btn {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  min-height: 28px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.lang-btn:hover { border-color: var(--accent); color: var(--accent-text); }
+.lang-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
 .pair {
   font-family: var(--mono);
   font-size: var(--step-small);
@@ -713,98 +734,99 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
   <section class="tile t-name">
     <div class="logo-plate"><img src="dema-logo.webp" alt="DEMA Solutions" width="359" height="120"></div>
     <h1 class="wordmark">Quote<br><mark>Desk</mark></h1>
-    <p class="standfirst">One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.</p>
+    <nav class="langs" id="langs" aria-label="Language"></nav>
+    <p class="standfirst" data-i18n="standfirst">One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.</p>
   </section>
 
   <section class="tile t-brief" id="briefTile">
     <form class="brief" id="brief" novalidate>
       <div class="field wide">
-        <header><label for="project">Project name <span class="optional">(optional)</span></label></header>
-        <input id="project" name="project" type="text" maxlength="120" placeholder="Hydraulic press manual, rev. 4">
+        <header><label for="project"><span data-i18n="f_project">Project name</span> <span class="optional" data-i18n="optional">(optional)</span></label></header>
+        <input id="project" name="project" type="text" maxlength="120" data-i18n-placeholder="ph_project" placeholder="Hydraulic press manual, rev. 4">
       </div>
 
       <div class="field">
-        <header><label for="source">From</label></header>
+        <header><label for="source" data-i18n="f_from">From</label></header>
         <select id="source" name="source"></select>
       </div>
 
       <div class="field">
         <header>
-          <label for="target">Into</label>
-          <button type="button" class="link-button" id="addTarget">Add</button>
+          <label for="target" data-i18n="f_into">Into</label>
+          <button type="button" class="link-button" id="addTarget" data-i18n="btn_add">Add</button>
         </header>
         <select id="target" name="target"></select>
       </div>
 
       <div class="field">
-        <header><label for="words">Word count</label></header>
+        <header><label for="words" data-i18n="f_words">Word count</label></header>
         <div class="count-row">
           <input id="words" name="words" type="number" min="1" step="1" value="1000" inputmode="numeric">
-          <button type="button" id="uploadButton">Count my files</button>
+          <button type="button" id="uploadButton" data-i18n="btn_count">Count my files</button>
           <input type="file" id="fileInput" multiple hidden>
         </div>
       </div>
 
       <div class="field wide" id="extraTargetsField" hidden>
-        <header><span class="field-label">Also into</span></header>
+        <header><span class="field-label" data-i18n="f_also">Also into</span></header>
         <div class="chips" id="extraTargets"></div>
       </div>
 
       <div class="field">
-        <header><label for="subject">Subject</label></header>
+        <header><label for="subject" data-i18n="f_subject">Subject</label></header>
         <select id="subject" name="subject"></select>
       </div>
 
       <div class="field">
         <header>
-          <label for="deadline">Needed by</label>
-          <button type="button" class="link-button" id="clearDeadline" hidden>Clear</button>
+          <label for="deadline" data-i18n="f_deadline">Needed by</label>
+          <button type="button" class="link-button" id="clearDeadline" data-i18n="btn_clear" hidden>Clear</button>
         </header>
         <input id="deadline" name="deadline" type="date">
       </div>
 
       <div class="field">
-        <header><label for="currency">Currency</label></header>
+        <header><label for="currency" data-i18n="f_currency">Currency</label></header>
         <select id="currency" name="currency"></select>
       </div>
 
       <div class="field dtp">
-        <header><span class="field-label">Desktop publishing <span class="optional">(optional)</span></span></header>
+        <header><span class="field-label"><span data-i18n="f_dtp">Desktop publishing</span> <span class="optional" data-i18n="optional">(optional)</span></span></header>
         <div class="layout-row">
-          <label class="toggle" for="layout"><input type="checkbox" id="layout"> Lay out the translated files</label>
+          <label class="toggle" for="layout"><input type="checkbox" id="layout"> <span data-i18n="dtp_toggle">Lay out the translated files</span></label>
           <span class="pages-field" id="pagesField" hidden>
-            <input id="pages" type="number" min="15" step="1" value="15" aria-label="Pages in the document">
-            <span class="pages-unit">pages</span>
+            <input id="pages" type="number" min="15" step="1" value="15" data-i18n-aria="aria_pages" aria-label="Pages in the document">
+            <span class="pages-unit" data-i18n="unit_pages">pages</span>
           </span>
         </div>
       </div>
 
       <div class="field submit">
         <header aria-hidden="true"></header>
-        <button type="submit" class="price-button" id="priceButton">Show prices</button>
+        <button type="submit" class="price-button" id="priceButton" data-i18n="btn_price">Show prices</button>
       </div>
 
-      <p class="hint field wide" id="briefHint">Leave the date empty for the earliest delivery at list price.</p>
+      <p class="hint field wide" id="briefHint" data-i18n="hint_deadline">Leave the date empty for the earliest delivery at list price.</p>
       <p class="notice" id="briefError" hidden></p>
     </form>
   </section>
 
   <div class="solutions-head" id="solutionsHead">
-    <h2>Three ways</h2>
+    <h2 data-i18n="h_threeways">Three ways</h2>
     <p class="status" id="quoteStatus"></p>
   </div>
 
   <section class="tile t-solutions" id="solutionsTile">
     <div class="solutions" id="solutions"></div>
-    <p class="unpriced" id="unpriced">Fill in the brief, then press <strong>Show prices</strong>.</p>
-    <p class="terms">Dates are indicative and count working hours only, Monday to Friday 9:00&ndash;17:00 CET. The clock starts when payment is received, by bank transfer or card.</p>
+    <p class="unpriced" id="unpriced"><span data-i18n="unpriced_pre">Fill in the brief, then press</span> <strong data-i18n="btn_price">Show prices</strong>.</p>
+    <p class="terms" data-i18n="terms">Dates are indicative and count working hours only, Monday to Friday 9:00&ndash;17:00 CET. The clock starts when payment is received, by bank transfer or card.</p>
     <p class="terms" id="rateNote" hidden></p>
   </section>
 
   <section class="tile t-analysis" id="analysisField" hidden>
     <header class="analysis-head">
-      <span class="field-label">File analysis</span>
-      <button type="button" class="link-button" id="clearFiles">Clear</button>
+      <span class="field-label" data-i18n="h_analysis">File analysis</span>
+      <button type="button" class="link-button" id="clearFiles" data-i18n="btn_clear">Clear</button>
     </header>
     <div class="analysis" id="analysis"></div>
   </section>
@@ -816,116 +838,116 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
       <div class="checkout-main">
   
         <form class="checkout-step" id="detailsForm" novalidate>
-          <h2 class="checkout-step-title">Project information</h2>
+          <h2 class="checkout-step-title" data-i18n="h_details">Project information</h2>
           <div class="brief">
             <div class="field">
-              <header><label for="orderProject">Project name <span class="optional">(appears on the confirmation)</span></label></header>
-              <input id="orderProject" maxlength="120" placeholder="Hydraulic press manual, rev. 4">
+              <header><label for="orderProject"><span data-i18n="f_project">Project name</span> <span class="optional" data-i18n="opt_confirmation">(appears on the confirmation)</span></label></header>
+              <input id="orderProject" maxlength="120" data-i18n-placeholder="ph_project" placeholder="Hydraulic press manual, rev. 4">
             </div>
             <div class="field">
-              <header><label for="orderEmail">Email <span class="optional">(where the translation is sent)</span></label></header>
-              <input id="orderEmail" type="email" maxlength="160" autocomplete="email" placeholder="you@company.com">
+              <header><label for="orderEmail"><span data-i18n="f_email">Email</span> <span class="optional" data-i18n="opt_email">(where the translation is sent)</span></label></header>
+              <input id="orderEmail" type="email" maxlength="160" autocomplete="email" data-i18n-placeholder="ph_email" placeholder="you@company.com">
             </div>
             <div class="field">
-              <header><label for="orderFirstName">First name</label></header>
+              <header><label for="orderFirstName" data-i18n="f_first">First name</label></header>
               <input id="orderFirstName" maxlength="60" autocomplete="given-name">
             </div>
             <div class="field">
-              <header><label for="orderLastName">Last name</label></header>
+              <header><label for="orderLastName" data-i18n="f_last">Last name</label></header>
               <input id="orderLastName" maxlength="60" autocomplete="family-name">
             </div>
             <div class="field">
-              <header><label for="orderRef">Your reference <span class="optional">(optional)</span></label></header>
-              <input id="orderRef" maxlength="60" placeholder="PO number or project code">
+              <header><label for="orderRef"><span data-i18n="f_ref">Your reference</span> <span class="optional" data-i18n="optional">(optional)</span></label></header>
+              <input id="orderRef" maxlength="60" data-i18n-placeholder="ph_ref" placeholder="PO number or project code">
             </div>
             <div class="field wide">
-              <header><label for="orderNote">Notes for the translator <span class="optional">(optional)</span></label></header>
-              <textarea id="orderNote" rows="4" placeholder="Context, audience, terms to keep in English"></textarea>
+              <header><label for="orderNote"><span data-i18n="f_note">Notes for the translator</span> <span class="optional" data-i18n="optional">(optional)</span></label></header>
+              <textarea id="orderNote" rows="4" data-i18n-placeholder="ph_note" placeholder="Context, audience, terms to keep in English"></textarea>
             </div>
             <div class="field wide" id="orderFilesField" hidden>
-              <header><span class="field-label">Your files</span></header>
+              <header><span class="field-label" data-i18n="f_files">Your files</span></header>
               <ul class="order-files" id="orderFiles"></ul>
             </div>
           </div>
           <p class="notice" id="detailsError" hidden></p>
           <div class="checkout-foot">
-            <button type="button" class="link-button" id="backToSolutions">&larr; Back to the prices</button>
-            <button type="submit" class="price-button" id="toBilling">Continue</button>
+            <button type="button" class="link-button" id="backToSolutions" data-i18n="back_prices">&larr; Back to the prices</button>
+            <button type="submit" class="price-button" id="toBilling" data-i18n="btn_continue">Continue</button>
           </div>
         </form>
   
         <form class="checkout-step" id="billingForm" novalidate hidden>
-          <h2 class="checkout-step-title">Billing information</h2>
+          <h2 class="checkout-step-title" data-i18n="h_billing">Billing information</h2>
           <div class="brief">
             <div class="field wide">
-              <header><span class="field-label">Who are you?</span></header>
+              <header><span class="field-label" data-i18n="f_who">Who are you?</span></header>
               <div class="who">
-                <label class="toggle"><input type="radio" name="who" value="individual" checked> Individual</label>
-                <label class="toggle"><input type="radio" name="who" value="company"> Company</label>
+                <label class="toggle"><input type="radio" name="who" value="individual" checked> <span data-i18n="who_individual">Individual</span></label>
+                <label class="toggle"><input type="radio" name="who" value="company"> <span data-i18n="who_company">Company</span></label>
               </div>
             </div>
         <div class="field">
-          <header><label for="billCompanyName">Company name</label></header>
+          <header><label for="billCompanyName" data-i18n="f_company">Company name</label></header>
           <input id="billCompanyName" maxlength="160" autocomplete="organization">
         </div>
         <div class="field">
-          <header><label for="billFirstName">First name</label></header>
+          <header><label for="billFirstName" data-i18n="f_first">First name</label></header>
           <input id="billFirstName" maxlength="60" autocomplete="given-name">
         </div>
         <div class="field">
-          <header><label for="billLastName">Last name</label></header>
+          <header><label for="billLastName" data-i18n="f_last">Last name</label></header>
           <input id="billLastName" maxlength="60" autocomplete="family-name">
         </div>
         <div class="field">
-          <header><label for="billPhone">Telephone <span class="optional">(optional)</span></label></header>
+          <header><label for="billPhone"><span data-i18n="f_phone">Telephone</span> <span class="optional" data-i18n="optional">(optional)</span></label></header>
           <input id="billPhone" type="tel" maxlength="40" autocomplete="tel">
         </div>
         <div class="field wide">
-          <header><label for="billAddress1">Address (line 1)</label></header>
+          <header><label for="billAddress1" data-i18n="f_addr1">Address (line 1)</label></header>
           <input id="billAddress1" maxlength="160" autocomplete="address-line1">
         </div>
         <div class="field wide">
-          <header><label for="billAddress2">Address (line 2) <span class="optional">(optional)</span></label></header>
+          <header><label for="billAddress2"><span data-i18n="f_addr2">Address (line 2)</span> <span class="optional" data-i18n="optional">(optional)</span></label></header>
           <input id="billAddress2" maxlength="160" autocomplete="address-line2">
         </div>
         <div class="field">
-          <header><label for="billCity">City</label></header>
+          <header><label for="billCity" data-i18n="f_city">City</label></header>
           <input id="billCity" maxlength="90" autocomplete="address-level2">
         </div>
         <div class="field">
-          <header><label for="billPostal">Postal code</label></header>
+          <header><label for="billPostal" data-i18n="f_postal">Postal code</label></header>
           <input id="billPostal" maxlength="20" autocomplete="postal-code">
         </div>
         <div class="field">
-          <header><label for="billCountry">Country</label></header>
+          <header><label for="billCountry" data-i18n="f_country">Country</label></header>
           <select id="billCountry" autocomplete="country"></select>
         </div>
         <div class="field">
-          <header><label for="billVat">VAT number <span class="optional">(EU only)</span></label></header>
+          <header><label for="billVat"><span data-i18n="f_vat">VAT number</span> <span class="optional" data-i18n="opt_eu">(EU only)</span></label></header>
           <input id="billVat" maxlength="30">
         </div>
             <div class="field wide">
               <label class="toggle consent" for="billAccept">
                 <input type="checkbox" id="billAccept">
-                I have read and agree to the privacy policy and the conditions of sale.
+                <span data-i18n="consent">I have read and agree to the privacy policy and the conditions of sale.</span>
               </label>
             </div>
           </div>
           <p class="notice" id="billingError" hidden></p>
           <p class="hint" id="placingNote" hidden>Recording your order, one moment… this takes a few seconds.</p>
           <div class="checkout-foot">
-            <button type="button" class="link-button" id="backToDetails">&larr; Back to your details</button>
-            <button type="submit" class="price-button" id="submitOrder">Submit order</button>
+            <button type="button" class="link-button" id="backToDetails" data-i18n="back_details">&larr; Back to your details</button>
+            <button type="submit" class="price-button" id="submitOrder" data-i18n="btn_submit">Submit order</button>
           </div>
         </form>
   
         <div class="checkout-step" id="orderDone" hidden>
-          <h2 class="checkout-step-title">Order received</h2>
+          <h2 class="checkout-step-title" data-i18n="h_done">Order received</h2>
           <p id="doneText"></p>
-          <div class="ref"><span id="doneRef"></span><button type="button" class="ghost-button" id="copyRef">Copy</button></div>
+          <div class="ref"><span id="doneRef"></span><button type="button" class="ghost-button" id="copyRef" data-i18n="btn_copy">Copy</button></div>
           <p class="hint" id="doneMail"></p>
           <div class="checkout-foot">
-            <button type="button" class="price-button" id="newQuote">Price another job</button>
+            <button type="button" class="price-button" id="newQuote" data-i18n="btn_another">Price another job</button>
           </div>
         </div>
   
@@ -933,13 +955,13 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
   
       <aside class="order-summary">
         <header>
-          <span class="field-label">Order summary</span>
-          <button type="button" class="link-button" id="editQuote">Edit</button>
+          <span class="field-label" data-i18n="h_summary">Order summary</span>
+          <button type="button" class="link-button" id="editQuote" data-i18n="btn_edit">Edit</button>
         </header>
         <dl id="summaryRows"></dl>
-        <p class="summary-line"><span>Total excluding VAT</span><strong id="summaryNet"></strong></p>
+        <p class="summary-line"><span data-i18n="sum_net">Total excluding VAT</span><strong id="summaryNet"></strong></p>
         <p class="summary-line" id="summaryVatLine"><span id="summaryVatLabel">VAT</span><strong id="summaryVat"></strong></p>
-        <p class="summary-line total"><span>Total due</span><strong id="summaryTotal"></strong></p>
+        <p class="summary-line total"><span data-i18n="sum_total">Total due</span><strong id="summaryTotal"></strong></p>
         <p class="summary-note" id="summaryNote"></p>
       </aside>
     </div>
@@ -1012,6 +1034,19 @@ const TIERS = [
     description: 'Everything in Good Enough, then a specialised native translator reviews and signs off every segment. The rate follows the language pair: common European pairs cost least, rarer ones more.',
     includes: ['Everything in Good Enough', 'Native specialist reviews every segment', 'Style and tone adapted to the market', 'Named translator and revision round included'] }
 ];
+
+const TIER_KEY = { basic: 'basic', 'good-enough': 'ge', professional: 'pro' };
+
+/** The bullet list of a tier, read key by key until one is missing. */
+function includesOf(tier) {
+  const out = [];
+  for (let i = 1; i <= 6; i++) {
+    const key = 'tier_' + TIER_KEY[tier] + '_inc' + i;
+    if (t(key) === key) break;
+    out.push(t(key));
+  }
+  return out;
+}
 
 const VOLUME_BREAKS = [[50000, 0.15], [20000, 0.1], [5000, 0.05], [0, 0]];
 
@@ -1147,8 +1182,8 @@ const WORKING = { timeZone: 'Europe/Rome', startHour: 9, endHour: 17, hoursPerDa
 
   /** What the card says about how the date was reached. */
   function deliveryRule(tier) {
-    if (tier.workingHours) return tier.workingHours + ' working hours';
-    return tier.wordsPerDay.toLocaleString('en-US') + ' words a working day';
+    if (tier.workingHours) return tier.workingHours + ' ' + t('lbl_workinghours');
+    return tier.wordsPerDay.toLocaleString(locale()) + ' ' + t('lbl_wordsperday');
   }
 
 
@@ -1230,18 +1265,415 @@ function priceTier(input, tier, now) {
 const quoteAll = (input, now) => ({
   input: input,
   generatedAt: now.toISOString(),
-  solutions: TIERS.map((t) => priceTier(input, t, now))
+  solutions: TIERS.map((tier) => priceTier(input, tier, now))
 });
 
 /* -------------------------------------------------------------- formatting */
 
 const $ = (id) => document.getElementById(id);
+
+/* ──────────────────────────────────────────────────────────────────── i18n
+
+   The same arrangement the home page at ai-dema-solutions.com uses, so the two
+   stay learnable together: `data-i18n="key"` on the markup, one dictionary per
+   language in T, and a language applied by assigning textContent.
+
+   Two things that arrangement cannot do on its own, and how they are handled:
+
+   - **textContent wipes an element's children.** So no translatable string is
+     ever left sharing an element with inline markup: where it was, the text was
+     wrapped in a span of its own. `(optional)` became one key used five times
+     rather than five copies of the same word.
+   - **Half this page's copy is built in JavaScript** - the cards, the error
+     messages, the analysis table - where there is no element to carry a key.
+     Those strings go through `t('key')` instead, and the page is re-rendered
+     when the language changes.
+
+   A key with no translation falls back to English, and a key in no dictionary
+   at all shows its own name: a hole in the page is louder than a silent blank. */
+
+const T = {
+  /* English is the source text: every other language is checked against it,
+     and any key missing elsewhere falls back to here. */
+  en: {
+    an_chars: "characters, spaces excluded",
+    an_counted: "counted in your browser, nothing was uploaded.",
+    an_failed: "Those files could not be analysed. Enter the word count by hand.",
+    an_file: "File",
+    an_opening_many: "Opening {n} files…",
+    an_opening_one: "Opening {n} file…",
+    an_pages: "Pages",
+    an_repeated: "Repeated",
+    an_repeatedwords: "words sit in repeated segments",
+    an_segments: "Segments",
+    an_total: "Total",
+    an_words: "Words",
+    aria_pages: "Pages in the document",
+    back_details: "← Back to your details",
+    back_prices: "← Back to the prices",
+    badge_bestseller: "Best Seller",
+    btn_add: "Add",
+    btn_another: "Price another job",
+    btn_clear: "Clear",
+    btn_continue: "Continue",
+    btn_copy: "Copy",
+    btn_count: "Count my files",
+    btn_edit: "Edit",
+    btn_placing: "Placing…",
+    btn_price: "Show prices",
+    btn_submit: "Submit order",
+    btn_update: "Update prices",
+    consent: "I have read and agree to the privacy policy and the conditions of sale.",
+    done_deliver: "We deliver by",
+    done_into: "into",
+    done_mail_client: "Your mail client is opening with the order ready to send to {inbox}. Send it and we will have everything we need.",
+    done_mail_sent: "The confirmation is on its way to {email}, with the order document attached.",
+    done_send: "and send the files to",
+    dtp_toggle: "Lay out the translated files",
+    err_address: "Enter the billing address.",
+    err_city: "Enter the city.",
+    err_company: "Enter the company name.",
+    err_consent: "Accept the privacy policy and the conditions of sale.",
+    err_country: "Choose the billing country.",
+    err_email: "Enter an email address we can send the files to.",
+    err_name: "Enter the first and last name the order is for.",
+    err_order: "The order could not be saved. Try once more in a moment.",
+    err_pages: "Enter how many pages the document has.",
+    err_pages_max: "For documents above {n} pages, talk to us directly.",
+    err_postal: "Enter the postal code.",
+    err_same_lang: "The source language is also in the target list. Pick a different target.",
+    err_tootight: "That delivery date is now too tight for this solution. Pick a later date or a faster solution.",
+    err_words: "Enter how many words there are, or count a file.",
+    err_words_max: "For jobs above 2,000,000 words, talk to us directly.",
+    f_addr1: "Address (line 1)",
+    f_addr2: "Address (line 2)",
+    f_also: "Also into",
+    f_city: "City",
+    f_company: "Company name",
+    f_country: "Country",
+    f_currency: "Currency",
+    f_deadline: "Needed by",
+    f_dtp: "Desktop publishing",
+    f_email: "Email",
+    f_files: "Your files",
+    f_first: "First name",
+    f_from: "From",
+    f_into: "Into",
+    f_last: "Last name",
+    f_note: "Notes for the translator",
+    f_phone: "Telephone",
+    f_postal: "Postal code",
+    f_project: "Project name",
+    f_ref: "Your reference",
+    f_subject: "Subject",
+    f_vat: "VAT number",
+    f_who: "Who are you?",
+    f_words: "Word count",
+    h_analysis: "File analysis",
+    h_billing: "Billing information",
+    h_details: "Project information",
+    h_done: "Order received",
+    h_summary: "Order summary",
+    h_threeways: "Three ways",
+    hint_deadline: "Leave the date empty for the earliest delivery at list price.",
+    lbl_delivered: "Delivered by",
+    lbl_earliest: "Earliest possible",
+    lbl_later: "later than your date",
+    lbl_layout: "layout",
+    lbl_lowest: "lowest price",
+    lbl_order: "Order",
+    lbl_pages: "pages",
+    lbl_perword: "per word",
+    lbl_tootight: "Date too tight",
+    lbl_volume: "volume",
+    lbl_vs: "vs",
+    lbl_whatyouget: "What you get",
+    lbl_words: "words",
+    lbl_wordsperday: "words a working day",
+    lbl_workinghours: "working hours",
+    opt_confirmation: "(appears on the confirmation)",
+    opt_email: "(where the translation is sent)",
+    opt_eu: "(EU only)",
+    optional: "(optional)",
+    ph_email: "you@company.com",
+    ph_note: "Context, audience, terms to keep in English",
+    ph_project: "Hydraulic press manual, rev. 4",
+    ph_ref: "PO number or project code",
+    rate_note: "Dollar prices convert the euro rate card at €1 = ${rate}, the European Central Bank reference rate of {date}, fixed in this page. We invoice in euro.",
+    st_notpriced: "Not priced",
+    st_notpriced_yet: "Not priced yet",
+    f_country_choose: "Choose a country",
+    st_language: "language",
+    st_languages: "languages",
+    done_mail_desk: "The order is in the book. The desk sends the confirmation and the order document to {email}.",
+    st_words: "words",
+    standfirst: "One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.",
+    subj_finance: "Finance / Banking",
+    subj_general: "General / Standard",
+    subj_legal: "Legal / Contracts",
+    subj_marketing: "Marketing / Advertising",
+    subj_mechanical: "Mechanical / Manufacturing",
+    subj_medical: "Medical / Life sciences",
+    subj_patent: "Patents / IP",
+    subj_software: "IT / Software",
+    subj_tourism: "Tourism / Hospitality",
+    sum_delivery: "Delivery",
+    sum_from: "From",
+    sum_into: "Into",
+    sum_net: "Total excluding VAT",
+    sum_solution: "Solution",
+    sum_subject: "Subject",
+    sum_total: "Total due",
+    sum_vat_label: "VAT",
+    sum_vat_pct: "VAT 22%",
+    sum_words: "Word count",
+    terms: "Dates are indicative and count working hours only, Monday to Friday 9:00–17:00 CET. The clock starts when payment is received, by bank transfer or card.",
+    tier_basic_alt: "AI Translator alone: the AI translates and returns the file.",
+    tier_basic_desc: "AI Translator tuned on your subject area. Best for internal content, high volumes and first drafts.",
+    tier_basic_inc1: "Subject-tuned AI engine",
+    tier_basic_inc2: "Tags, placeholders and numbers preserved",
+    tier_basic_inc3: "Source formatting returned intact",
+    tier_basic_tagline: "AI speed, subject-tuned.",
+    tier_ge_alt: "AI Translator, then a Senior AI Reviewer re-reads the translation against the source.",
+    tier_ge_desc: "Everything in Basic, plus a second AI pass that re-reads the translation against the source for terminology, consistency, numbers and fluency.",
+    tier_ge_inc1: "Everything in Basic",
+    tier_ge_inc2: "Automated revision against the source",
+    tier_ge_inc3: "Numbers, units and dates verified",
+    tier_ge_tagline: "Checked before it reaches you.",
+    tier_pro_alt: "AI Translator, Senior AI Reviewer, then a human translator signs the file off.",
+    tier_pro_desc: "Everything in Good Enough, then a specialised native translator reviews and signs off every segment. The rate follows the language pair: common European pairs cost least, rarer ones more.",
+    tier_pro_inc1: "Everything in Good Enough",
+    tier_pro_inc2: "Native specialist reviews every segment",
+    tier_pro_inc3: "Style and tone adapted to the market",
+    tier_pro_inc4: "Named translator and revision round included",
+    tier_pro_tagline: "Signed off by a native specialist.",
+    unit_pages: "pages",
+    unpriced_pre: "Fill in the brief, then press",
+    vat_italy: "VAT 22% applies.",
+    vat_outside: "Outside the European Union: Italian VAT does not apply.",
+    vat_unknown: "VAT is settled once the billing country is known.",
+    who_company: "Company",
+    who_individual: "Individual",
+  },
+  it: {
+    an_chars: "caratteri, spazi esclusi",
+    an_counted: "contati nel tuo browser, nessun file è stato caricato.",
+    an_failed: "Non è stato possibile analizzare quei file. Inserisci il conteggio parole a mano.",
+    an_file: "File",
+    an_opening_many: "Apertura di {n} file…",
+    an_opening_one: "Apertura di {n} file…",
+    an_pages: "Pagine",
+    an_repeated: "Ripetuti",
+    an_repeatedwords: "parole si trovano in segmenti ripetuti",
+    an_segments: "Segmenti",
+    an_total: "Totale",
+    an_words: "Parole",
+    aria_pages: "Pagine del documento",
+    back_details: "← Torna ai tuoi dati",
+    back_prices: "← Torna ai prezzi",
+    badge_bestseller: "Più richiesto",
+    btn_add: "Aggiungi",
+    btn_another: "Preventiva un altro lavoro",
+    btn_clear: "Azzera",
+    btn_continue: "Continua",
+    btn_copy: "Copia",
+    btn_count: "Conta i miei file",
+    btn_edit: "Modifica",
+    btn_placing: "Invio in corso…",
+    btn_price: "Mostra i prezzi",
+    btn_submit: "Invia l'ordine",
+    btn_update: "Aggiorna i prezzi",
+    consent: "Ho letto e accetto l'informativa sulla privacy e le condizioni di vendita.",
+    done_deliver: "Consegniamo entro il",
+    done_into: "verso",
+    done_mail_client: "Si sta aprendo il tuo programma di posta con l'ordine pronto da inviare a {inbox}. Invialo e avremo tutto il necessario.",
+    done_mail_sent: "La conferma sta arrivando a {email}, con il documento d'ordine allegato.",
+    done_send: "e inviamo i file a",
+    dtp_toggle: "Impagina i file tradotti",
+    err_address: "Inserisci l'indirizzo di fatturazione.",
+    err_city: "Inserisci la città.",
+    err_company: "Inserisci la ragione sociale.",
+    err_consent: "Accetta l'informativa sulla privacy e le condizioni di vendita.",
+    err_country: "Scegli il paese di fatturazione.",
+    err_email: "Inserisci un indirizzo email a cui possiamo inviare i file.",
+    err_name: "Inserisci il nome e il cognome a cui intestare l'ordine.",
+    err_order: "Non è stato possibile salvare l'ordine. Riprova fra un momento.",
+    err_pages: "Inserisci quante pagine ha il documento.",
+    err_pages_max: "Per documenti oltre {n} pagine, parlane direttamente con noi.",
+    err_postal: "Inserisci il CAP.",
+    err_same_lang: "La lingua di partenza è anche fra quelle di destinazione. Scegli una destinazione diversa.",
+    err_tootight: "Quella data di consegna è ormai troppo stretta per questa soluzione. Scegli una data successiva o una soluzione più rapida.",
+    err_words: "Inserisci quante parole sono, oppure fai contare un file.",
+    err_words_max: "Per lavori oltre 2.000.000 di parole, parlane direttamente con noi.",
+    f_addr1: "Indirizzo (riga 1)",
+    f_addr2: "Indirizzo (riga 2)",
+    f_also: "Anche verso",
+    f_city: "Città",
+    f_company: "Ragione sociale",
+    f_country: "Paese",
+    f_currency: "Valuta",
+    f_deadline: "Entro il",
+    f_dtp: "Impaginazione",
+    f_email: "Email",
+    f_files: "I tuoi file",
+    f_first: "Nome",
+    f_from: "Da",
+    f_into: "Verso",
+    f_last: "Cognome",
+    f_note: "Note per il traduttore",
+    f_phone: "Telefono",
+    f_postal: "CAP",
+    f_project: "Nome del progetto",
+    f_ref: "Il tuo riferimento",
+    f_subject: "Settore",
+    f_vat: "Partita IVA",
+    f_who: "Chi sei?",
+    f_words: "Conteggio parole",
+    h_analysis: "Analisi dei file",
+    h_billing: "Dati di fatturazione",
+    h_details: "Informazioni sul progetto",
+    h_done: "Ordine ricevuto",
+    h_summary: "Riepilogo dell'ordine",
+    h_threeways: "Tre vie",
+    hint_deadline: "Lascia la data vuota per la consegna più rapida a prezzo di listino.",
+    lbl_delivered: "Consegna entro",
+    lbl_earliest: "Prima data possibile",
+    lbl_later: "oltre la tua data",
+    lbl_layout: "impaginazione",
+    lbl_lowest: "prezzo più basso",
+    lbl_order: "Ordina",
+    lbl_pages: "pagine",
+    lbl_perword: "a parola",
+    lbl_tootight: "Data troppo stretta",
+    lbl_volume: "volume",
+    lbl_vs: "rispetto a",
+    lbl_whatyouget: "Che cosa ricevi",
+    lbl_words: "parole",
+    lbl_wordsperday: "parole al giorno lavorativo",
+    lbl_workinghours: "ore lavorative",
+    opt_confirmation: "(compare sulla conferma)",
+    opt_email: "(dove inviamo la traduzione)",
+    opt_eu: "(solo UE)",
+    optional: "(facoltativo)",
+    ph_email: "tu@azienda.com",
+    ph_note: "Contesto, destinatari, termini da lasciare in inglese",
+    ph_project: "Manuale pressa idraulica, rev. 4",
+    ph_ref: "Numero d'ordine o codice progetto",
+    rate_note: "I prezzi in dollari convertono il listino in euro a €1 = ${rate}, il cambio di riferimento della Banca Centrale Europea del {date}, fissato in questa pagina. Fatturiamo in euro.",
+    st_notpriced: "Non preventivato",
+    st_notpriced_yet: "Non ancora preventivato",
+    f_country_choose: "Scegli un paese",
+    st_language: "lingua",
+    st_languages: "lingue",
+    done_mail_desk: "L'ordine è registrato. Il desk invia la conferma e il documento d'ordine a {email}.",
+    st_words: "parole",
+    standfirst: "Un lavoro, tre prezzi: AI Translator; AI Translator verificato da Senior AI Reviewer; Senior AI Reviewer approvato da uno specialista madrelingua.",
+    subj_finance: "Finanza / Banche",
+    subj_general: "Generale / Standard",
+    subj_legal: "Legale / Contratti",
+    subj_marketing: "Marketing / Pubblicità",
+    subj_mechanical: "Meccanica / Produzione",
+    subj_medical: "Medico / Scienze della vita",
+    subj_patent: "Brevetti / Proprietà intellettuale",
+    subj_software: "IT / Software",
+    subj_tourism: "Turismo / Ospitalità",
+    sum_delivery: "Consegna",
+    sum_from: "Da",
+    sum_into: "Verso",
+    sum_net: "Totale IVA esclusa",
+    sum_solution: "Soluzione",
+    sum_subject: "Settore",
+    sum_total: "Totale dovuto",
+    sum_vat_label: "IVA",
+    sum_vat_pct: "IVA 22%",
+    sum_words: "Conteggio parole",
+    terms: "Le date sono indicative e contano solo le ore lavorative, dal lunedì al venerdì 9:00–17:00 CET. Il tempo decorre dal ricevimento del pagamento, con bonifico o carta.",
+    tier_basic_alt: "AI Translator da solo: l'AI traduce e restituisce il file.",
+    tier_basic_desc: "AI Translator calibrato sul tuo settore. Ideale per contenuti interni, grandi volumi e prime stesure.",
+    tier_basic_inc1: "Motore AI calibrato sul settore",
+    tier_basic_inc2: "Tag, segnaposto e numeri preservati",
+    tier_basic_inc3: "Formattazione di partenza restituita intatta",
+    tier_basic_tagline: "Velocità dell'AI, calibrata sul settore.",
+    tier_ge_alt: "AI Translator, poi un Senior AI Reviewer rilegge la traduzione a fronte dell'originale.",
+    tier_ge_desc: "Tutto quello che c'è in Basic, più un secondo passaggio AI che rilegge la traduzione a fronte dell'originale per terminologia, coerenza, numeri e scorrevolezza.",
+    tier_ge_inc1: "Tutto quello che c'è in Basic",
+    tier_ge_inc2: "Revisione automatica a fronte dell'originale",
+    tier_ge_inc3: "Numeri, unità di misura e date verificati",
+    tier_ge_tagline: "Verificato prima di arrivarti.",
+    tier_pro_alt: "AI Translator, Senior AI Reviewer, poi un traduttore umano approva il file.",
+    tier_pro_desc: "Tutto quello che c'è in Good Enough, poi un traduttore madrelingua specializzato rivede e approva ogni segmento. La tariffa segue la combinazione linguistica: le coppie europee comuni costano meno, quelle più rare di più.",
+    tier_pro_inc1: "Tutto quello che c'è in Good Enough",
+    tier_pro_inc2: "Uno specialista madrelingua rivede ogni segmento",
+    tier_pro_inc3: "Stile e tono adattati al mercato",
+    tier_pro_inc4: "Traduttore nominato e un giro di revisione inclusi",
+    tier_pro_tagline: "Approvato da uno specialista madrelingua.",
+    unit_pages: "pagine",
+    unpriced_pre: "Compila la richiesta, poi premi",
+    vat_italy: "Si applica l'IVA al 22%.",
+    vat_outside: "Fuori dall'Unione Europea: l'IVA italiana non si applica.",
+    vat_unknown: "L'IVA si determina una volta noto il paese di fatturazione.",
+    who_company: "Azienda",
+    who_individual: "Privato",
+  }
+};
+
+const LANGS = [
+  ['en', 'EN'], ['it', 'IT'], ['fr', 'FR'], ['es', 'ES'], ['de', 'DE'], ['pt', 'PT'],
+  ['nl', 'NL'], ['no', 'NO'], ['fi', 'FI'], ['sv', 'SV'], ['zh', 'ZH']
+];
+
+let LANG = 'en';
+
+function t(key) {
+  const dict = T[LANG] || {};
+  if (dict[key] !== undefined) return dict[key];
+  if (T.en[key] !== undefined) return T.en[key];
+  return key;
+}
+
+/** Dates and money follow the page's language, not the browser's. */
+const locale = () => (LANG === 'en' ? 'en-GB' : LANG);
+
+function applyTranslation(lang) {
+  LANG = T[lang] ? lang : 'en';
+  document.documentElement.lang = LANG;
+  try { localStorage.setItem('quote-desk-lang', LANG); } catch (err) {}
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+  });
+
+  document.querySelectorAll('.lang-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-lang') === LANG);
+    b.setAttribute('aria-pressed', b.getAttribute('data-lang') === LANG ? 'true' : 'false');
+  });
+
+  /* Everything the engine drew in the old language has to be drawn again. The
+     prices themselves are not recomputed: a quote standing on the board stays
+     the quote it was, exactly as an edit to the brief does not re-price it. */
+  retranslateRendered();
+}
+
+function rememberedLang() {
+  try {
+    const kept = localStorage.getItem('quote-desk-lang');
+    if (kept && T[kept]) return kept;
+  } catch (err) {}
+  const guess = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  return T[guess] ? guess : 'en';
+}
 const THEME_KEY = 'quote-desk-theme';
 
 function money(amount, currency, digits) {
   const d = digits === undefined ? 2 : digits;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale(), {
       style: 'currency', currency: currency, minimumFractionDigits: d, maximumFractionDigits: d
     }).format(amount);
   } catch (err) {
@@ -1249,10 +1681,10 @@ function money(amount, currency, digits) {
   }
 }
 
-const when = (iso) => new Intl.DateTimeFormat(undefined,
+const when = (iso) => new Intl.DateTimeFormat(locale(),
   { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 
-const shortWhen = (iso) => new Intl.DateTimeFormat(undefined,
+const shortWhen = (iso) => new Intl.DateTimeFormat(locale(),
   { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 
 function fromNow(iso) {
@@ -1268,7 +1700,7 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => {
 
 /* ------------------------------------------------------------------- state */
 
-const state = { extraTargets: [], quote: null, pending: null };
+const state = { extraTargets: [], quote: null, pending: null, analysis: null };
 
 /* ──────────────────────────────────────────────────────────── the order desk
    This page is served as a static file, so it has no server of its own. The
@@ -1283,13 +1715,35 @@ const ORDERS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbxkQZuUjzsYWSpCs
 const ORDERS_INBOX = 'g.gambuto@dema-solutions.com';
 
 
+/*
+ * The name of a language, in the language of the reader.
+ *
+ * Forty-eight names in eleven languages is a dictionary nobody would keep
+ * current, and the browser already knows them. In English the card's own names
+ * are kept, because they are written the way this page writes them -
+ * "English (United Kingdom)" rather than "British English".
+ */
+function languageName(l) {
+  if (LANG === 'en') return l.name;
+  try {
+    const name = new Intl.DisplayNames([locale()], { type: 'language' }).of(l.code);
+    if (name && name !== l.code) return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch (err) {}
+  return l.name;
+}
+
+function languageOptions() {
+  return LANGUAGES.map((l) =>
+    '<option value="' + l.code + '">' + escapeHtml(languageName(l)) + '</option>').join('');
+}
+
 function fillSelects() {
-  const options = LANGUAGES.map((l) => '<option value="' + l.code + '">' + l.name + '</option>').join('');
+  const options = languageOptions();
   $('source').innerHTML = options;
   $('target').innerHTML = options;
   $('source').value = 'en-GB';
   $('target').value = 'fr-FR';
-  $('subject').innerHTML = SUBJECTS.map((s) => '<option value="' + s.code + '">' + s.name + '</option>').join('');
+  $('subject').innerHTML = SUBJECTS.map((s) => '<option value="' + s.code + '">' + t('subj_' + s.code) + '</option>').join('');
   $('subject').value = 'mechanical';
   $('currency').innerHTML = CURRENCIES.map((c) => '<option value="' + c.code + '">' + c.code + ' (' + c.symbol + ')</option>').join('');
   $('currency').value = guessCurrency();
@@ -1332,7 +1786,7 @@ function renderExtraTargets() {
 function fail(message) {
   $('briefError').hidden = false;
   $('briefError').textContent = message;
-  $('quoteStatus').textContent = 'Not priced';
+  $('quoteStatus').textContent = t('st_notpriced');
 }
 
 /**
@@ -1346,7 +1800,7 @@ function briefChanged() {
 /** A quote is standing: the button goes quiet and the cards take the floor. */
 function standingQuote() {
   const button = $('priceButton');
-  button.textContent = 'Update prices';
+  button.textContent = t('btn_update');
   button.classList.add('standing');
   $('unpriced').hidden = true;
 
@@ -1361,38 +1815,46 @@ function refresh() {
   const input = brief();
   $('clearDeadline').hidden = !input.deadline;
 
-  if (!input.words || input.words < 1) return fail('Enter how many words there are, or count a file.');
-  if (input.words > 2000000) return fail('For jobs above 2,000,000 words, talk to us directly.');
-  if (input.layout && (!input.pages || input.pages < 1)) return fail('Enter how many pages the document has.');
+  if (!input.words || input.words < 1) return fail(t('err_words'));
+  if (input.words > 2000000) return fail(t('err_words_max'));
+  if (input.layout && (!input.pages || input.pages < 1)) return fail(t('err_pages'));
   if (input.layout && input.pages > LAYOUT.maxPages) {
-    return fail('For documents above ' + LAYOUT.maxPages.toLocaleString() + ' pages, talk to us directly.');
+    return fail(t('err_pages_max').replace('{n}', LAYOUT.maxPages.toLocaleString(locale())));
   }
-  if (input.targets.indexOf(input.source) !== -1) return fail('The source language is also in the target list. Pick a different target.');
+  if (input.targets.indexOf(input.source) !== -1) return fail(t('err_same_lang'));
 
   $('briefError').hidden = true;
   state.quote = quoteAll(input, new Date());
   renderSolutions(state.quote);
   standingQuote();
 
-  /* Quoting in a currency the card is not written in means saying at what rate,
-     and as of when: the customer cannot check the sum otherwise. In euro there
-     is nothing to disclose, so the line is not there at all. */
+  refreshRateNote();
+}
+
+/*
+ * Quoting in a currency the card is not written in means saying at what rate,
+ * and as of when: the customer cannot check the sum otherwise. In euro there is
+ * nothing to disclose, so the line is not there at all.
+ *
+ * It reads the currency off the standing quote rather than off the form,
+ * because the board shows the quote as it was priced, not as the brief is being
+ * edited - and because a change of language has to redraw this line too.
+ */
+function refreshRateNote() {
   const note = $('rateNote');
-  if (note) {
-    const inDollars = input.currency === 'USD';
-    note.hidden = !inDollars;
-    note.textContent = inDollars
-      ? 'Dollar prices convert the euro rate card at €1 = $' + USD_PER_EUR.toFixed(4) +
-        ', the European Central Bank reference rate of ' + USD_RATE_DATE +
-        ', fixed in this page. We invoice in euro.'
-      : '';
-  }
+  if (!note) return;
+  const inDollars = state.quote && state.quote.input.currency === 'USD';
+  note.hidden = !inDollars;
+  note.textContent = inDollars
+    ? t('rate_note').replace('{rate}', USD_PER_EUR.toFixed(4)).replace('{date}', USD_RATE_DATE)
+    : '';
 }
 
 function renderSolutions(quote) {
   const totalWords = quote.input.words * quote.input.targets.length;
-  $('quoteStatus').textContent = totalWords.toLocaleString() + ' words · ' +
-    quote.input.targets.length + (quote.input.targets.length === 1 ? ' language' : ' languages');
+  $('quoteStatus').textContent = totalWords.toLocaleString(locale()) + ' ' + t('st_words') + ' · ' +
+    quote.input.targets.length + ' ' +
+    t(quote.input.targets.length === 1 ? 'st_language' : 'st_languages');
 
   // The longest pipeline is the ladder every card is drawn against, so the same
   // stage sits on the same line in all three columns.
@@ -1412,31 +1874,32 @@ function renderSolutions(quote) {
 
     const gap = Math.round((s.total - cheapest) * 100) / 100;
     const deltaChip = gap > 0
-      ? '<span class="delta">+' + money(gap, s.currency) + ' vs ' + cheapestName + '</span>'
-      : '<span class="delta lowest">lowest price</span>';
+      ? '<span class="delta">+' + money(gap, s.currency) + ' ' + t('lbl_vs') + ' ' + cheapestName + '</span>'
+      : '<span class="delta lowest">' + t('lbl_lowest') + '</span>';
 
     return '<article class="solution step-' + (idx + 1) + (s.feasible ? '' : ' unfeasible') + '">' +
-      (s.badge ? '<span class="badge">' + s.badge + '</span>' : '') +
-      '<h3>' + s.name + '</h3><p class="tagline">' + s.tagline + '</p>' +
+      (s.badge ? '<span class="badge">' + t('badge_bestseller') + '</span>' : '') +
+      '<h3>' + s.name + '</h3><p class="tagline">' + t('tier_' + TIER_KEY[s.tier] + '_tagline') + '</p>' +
       '<ol class="pipeline">' + stages + '</ol>' +
       (s.workflow ? '<img class="workflow" src="' + s.workflow.image + '" alt="' +
-        escapeHtml(s.workflow.alt) + '" loading="lazy" decoding="async">' : '') +
+        escapeHtml(t('tier_' + TIER_KEY[s.tier] + '_alt')) + '" loading="lazy" decoding="async">' : '') +
       '<div class="spacer"></div>' +
-      '<p class="delivery">' + (s.feasible ? 'Delivered by' : 'Earliest possible') +
+      '<p class="delivery">' + (s.feasible ? t('lbl_delivered') : t('lbl_earliest')) +
       '<time datetime="' + s.eta + '">' + when(s.eta) + '</time>' +
-      (s.feasible ? s.deliveryRule : 'later than your date') + '</p>' +
+      (s.feasible ? s.deliveryRule : t('lbl_later')) + '</p>' +
       // Intl already prints the currency; a second label would read "22,51 USD USD".
       '<p class="price">' + money(s.total, s.currency) + '</p>' +
-      '<p class="per-word">' + money(s.perWord, s.currency, 3) + ' per word' +
-      (b.discount ? ' <span class="saving">· volume −' + Math.round(b.discount * 100) + '%</span>' : '') + '</p>' +
+      '<p class="per-word">' + money(s.perWord, s.currency, 3) + ' ' + t('lbl_perword') +
+      (b.discount ? ' <span class="saving">· ' + t('lbl_volume') + ' −' + Math.round(b.discount * 100) + '%</span>' : '') + '</p>' +
       (b.layout.requested
-        ? '<p class="price-parts">' + money(s.translationTotal, s.currency) + ' words + ' +
-          money(s.layoutTotal, s.currency) + ' layout (' + b.layout.pages + ' pages)</p>'
+        ? '<p class="price-parts">' + money(s.translationTotal, s.currency) + ' ' + t('lbl_words') + ' + ' +
+          money(s.layoutTotal, s.currency) + ' ' + t('lbl_layout') + ' (' + b.layout.pages + ' ' + t('lbl_pages') + ')</p>'
         : '') +
       '<button type="button" class="cta" data-order="' + s.tier + '"' + (s.feasible ? '' : ' disabled') + '>' +
-      (s.feasible ? 'Order ' + s.name : 'Date too tight') + '</button>' +
-      '<details><summary>What you get</summary><p>' + s.description + '</p><ul>' +
-      s.includes.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
+      (s.feasible ? t('lbl_order') + ' ' + s.name : t('lbl_tootight')) + '</button>' +
+      '<details><summary>' + t('lbl_whatyouget') + '</summary><p>' +
+      t('tier_' + TIER_KEY[s.tier] + '_desc') + '</p><ul>' +
+      includesOf(s.tier).map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
       '</details></article>';
   }).join('');
 
@@ -1467,7 +1930,7 @@ const NOT_A_COUNTRY = ['AQ', 'BV', 'HM', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ
 
 /** Every country the browser knows a name for, so the list cannot drift. */
 function countries() {
-  const names = new Intl.DisplayNames(['en'], { type: 'region' });
+  const names = new Intl.DisplayNames([locale()], { type: 'region' });
   const list = [];
   for (let a = 65; a <= 90; a++) {
     for (let b = 65; b <= 90; b++) {
@@ -1483,8 +1946,10 @@ function countries() {
 }
 
 function fillCountries() {
-  $('billCountry').innerHTML = '<option value="">Choose a country</option>' +
+  const chosen = $('billCountry').value;
+  $('billCountry').innerHTML = '<option value="">' + t('f_country_choose') + '</option>' +
     countries().map((c) => '<option value="' + c.code + '">' + escapeHtml(c.name) + '</option>').join('');
+  if (chosen) $('billCountry').value = chosen;
 }
 
 function vatFor(net) {
@@ -1492,7 +1957,7 @@ function vatFor(net) {
   const company = $('billingForm').querySelector('input[name="who"]:checked').value === 'company';
   const vatNumber = $('billVat').value.trim();
   let due = false;
-  let reason = 'VAT is settled once the billing country is known.';
+  let reason = t('vat_unknown');
 
   if (country === 'IT') {
     due = true;
@@ -1500,9 +1965,9 @@ function vatFor(net) {
     due = !company || !vatNumber;
     if (!due) reason = REVERSE_CHARGE;
   } else if (country) {
-    reason = company ? REVERSE_CHARGE : 'Outside the European Union: Italian VAT does not apply.';
+    reason = company ? REVERSE_CHARGE : t('vat_outside');
   }
-  if (due) reason = 'VAT 22% applies.';
+  if (due) reason = t('vat_italy');
 
   const vat = due ? Math.round(net * 0.22 * 100) / 100 : 0;
   return { due: due, vat: vat, gross: Math.round((net + vat) * 100) / 100, reason: reason };
@@ -1556,7 +2021,8 @@ function renderOrderFiles() {
   const files = report && report.files ? report.files.filter((f) => f.supported) : [];
   $('orderFilesField').hidden = files.length === 0;
   $('orderFiles').innerHTML = files
-    .map((f) => '<li>' + escapeHtml(f.file) + '<span>' + f.words.toLocaleString() + ' words</span></li>')
+    .map((f) => '<li>' + escapeHtml(f.file) + '<span>' + f.words.toLocaleString(locale()) +
+      ' ' + t('st_words') + '</span></li>')
     .join('');
 }
 
@@ -1566,20 +2032,20 @@ function renderSummary() {
   const input = state.pending.input;
 
   $('summaryRows').innerHTML =
-    summaryRow('From', lang(input.source).name) +
-    summaryRow('Into', input.targets.map((c) => lang(c).name).join(', ')) +
-    summaryRow('Subject', s.breakdown.subject) +
-    summaryRow('Word count', (input.words * input.targets.length).toLocaleString() + ' words') +
-    summaryRow('Solution', s.name) +
-    summaryRow('Price per word', money(s.perWord, s.currency, 3)) +
+    summaryRow(t('sum_from'), lang(input.source).name) +
+    summaryRow(t('sum_into'), input.targets.map((c) => lang(c).name).join(', ')) +
+    summaryRow(t('sum_subject'), t('subj_' + input.subject)) +
+    summaryRow(t('sum_words'), (input.words * input.targets.length).toLocaleString(locale()) + ' ' + t('st_words')) +
+    summaryRow(t('sum_solution'), s.name) +
+    summaryRow(t('lbl_perword'), money(s.perWord, s.currency, 3)) +
     (s.breakdown.layout.requested
-      ? summaryRow('Desktop publishing', s.breakdown.layout.pages + ' pages \u00b7 ' + money(s.layoutTotal, s.currency))
+      ? summaryRow(t('f_dtp'), s.breakdown.layout.pages + ' ' + t('lbl_pages') + ' \u00b7 ' + money(s.layoutTotal, s.currency))
       : '') +
-    summaryRow('Delivery', when(s.eta));
+    summaryRow(t('sum_delivery'), when(s.eta));
 
   const charge = vatFor(s.total);
   $('summaryNet').textContent = money(s.total, s.currency);
-  $('summaryVatLabel').textContent = charge.due ? 'VAT 22%' : 'VAT';
+  $('summaryVatLabel').textContent = charge.due ? t('sum_vat_pct') : t('sum_vat_label');
   $('summaryVat').textContent = charge.due ? money(charge.vat, s.currency) : '\u2014';
   $('summaryTotal').textContent = money(charge.gross, s.currency);
   $('summaryNote').textContent = charge.reason;
@@ -1604,10 +2070,10 @@ function continueToBilling(event) {
   const lastName = $('orderLastName').value.trim();
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    return showStepError('detailsError', 'Enter an email address we can send the files to.');
+    return showStepError('detailsError', t('err_email'));
   }
   if (firstName.length < 2 || lastName.length < 2) {
-    return showStepError('detailsError', 'Enter the first and last name the order is for.');
+    return showStepError('detailsError', t('err_name'));
   }
   $('detailsError').hidden = true;
   /* The billing name is almost always the same person, so it starts filled in
@@ -1656,21 +2122,21 @@ async function submitOrder(event) {
   const party = billingPayload();
 
   if (party.company && party.companyName.length < 2) {
-    return showStepError('billingError', 'Enter the company name.');
+    return showStepError('billingError', t('err_company'));
   }
-  if (!party.address1) return showStepError('billingError', 'Enter the billing address.');
-  if (!party.city) return showStepError('billingError', 'Enter the city.');
-  if (!party.postalCode) return showStepError('billingError', 'Enter the postal code.');
-  if (!party.country) return showStepError('billingError', 'Choose the billing country.');
+  if (!party.address1) return showStepError('billingError', t('err_address'));
+  if (!party.city) return showStepError('billingError', t('err_city'));
+  if (!party.postalCode) return showStepError('billingError', t('err_postal'));
+  if (!party.country) return showStepError('billingError', t('err_country'));
   if (!$('billAccept').checked) {
-    return showStepError('billingError', 'Accept the privacy policy and the conditions of sale.');
+    return showStepError('billingError', t('err_consent'));
   }
 
   // Re-price at submit time, so a form left open never books a stale number.
-  const tier = TIERS.find((t) => t.id === state.pending.solution.tier);
+  const tier = TIERS.find((x) => x.id === state.pending.solution.tier);
   const priced = priceTier(state.pending.input, tier, new Date());
   if (!priced.feasible) {
-    return showStepError('billingError', 'That delivery date is now too tight for this solution. Pick a later date or a faster solution.');
+    return showStepError('billingError', t('err_tootight'));
   }
 
   const charge = vatFor(priced.total);
@@ -1708,7 +2174,7 @@ async function submitOrder(event) {
   const id = reference(now);
 
   button.disabled = true;
-  button.textContent = 'Placing\u2026';
+  button.textContent = t('btn_placing');
   $('billingError').hidden = true;
   $('placingNote').hidden = false;
 
@@ -1722,7 +2188,7 @@ async function submitOrder(event) {
     showReceipt(id, record, { delivered: false });
   } finally {
     button.disabled = false;
-    button.textContent = 'Submit order';
+    button.textContent = t('btn_submit');
     $('placingNote').hidden = true;
   }
 }
@@ -1779,12 +2245,12 @@ function mailOrder(id, record) {
 
 function showReceipt(id, record, answer) {
   $('doneRef').textContent = id;
-  $('doneText').textContent = record.solution + ' into ' + record.targets.join(', ') +
-    '. We deliver by ' + when(record.eta) + ' and send the files to ' + record.customer.email + '.';
+  $('doneText').textContent = record.solution + ' ' + t('done_into') + ' ' +
+    record.targets.join(', ') + '. ' + t('done_deliver') + ' ' + when(record.eta) +
+    ' ' + t('done_send') + ' ' + record.customer.email + '.';
   $('doneMail').textContent = answer.delivered
-    ? 'The confirmation is on its way to ' + record.customer.email + ', with the order document attached.'
-    : 'Your mail client is opening with the order ready to send to ' + ORDERS_INBOX +
-      '. Send it and we will have everything we need.';
+    ? t('done_mail_sent').replace('{email}', record.customer.email)
+    : t('done_mail_client').replace('{inbox}', ORDERS_INBOX);
   goToStep('done');
 }
 
@@ -1797,31 +2263,38 @@ function showReceipt(id, record, answer) {
 async function countFiles(files) {
   $('analysisField').hidden = false;
   $('analysis').innerHTML =
-    '<p class="analysis-note">Opening ' + files.length + (files.length === 1 ? ' file' : ' files') + '…</p>';
+    '<p class="analysis-note">' +
+    t(files.length === 1 ? 'an_opening_one' : 'an_opening_many').replace('{n}', files.length) + '</p>';
 
   let report;
   try {
     report = await FileAnalysis.analyse(files);
   } catch (err) {
     $('analysis').innerHTML =
-      '<p class="analysis-note warn">Those files could not be analysed. Enter the word count by hand.</p>';
+      '<p class="analysis-note warn">' + t('an_failed') + '</p>';
     return;
   }
 
   if (report.total.words > 0) $('words').value = report.total.words;
   if (report.total.pages > 0) $('pages').value = Math.max(15, report.total.pages);
+  /* Kept, because the checkout lists the counted files beside the order and
+     renderOrderFiles reads them from here. It was never stored, so that list
+     has been empty for every customer who ever counted a file. */
+  state.analysis = report;
   renderAnalysis(report);
   briefChanged();
 }
 
 function renderAnalysis(report) {
-  const t = report.total;
+  /* Named `total`, not `t`: `t` is the translation lookup, and a local of the
+     same name would shadow it inside this function. */
+  const total = report.total;
   const rows = report.files.map((f) =>
     '<tr' + (f.supported ? '' : ' class="uncounted"') + '>' +
     '<td class="name">' + escapeHtml(f.file) + '<small>' + escapeHtml(f.kind) + '</small></td>' +
-    '<td class="num">' + (f.supported ? f.words.toLocaleString() : '—') + '</td>' +
-    '<td class="num">' + (f.supported ? f.segments.toLocaleString() : '—') + '</td>' +
-    '<td class="num">' + (f.supported ? f.repeatedSegments.toLocaleString() : '—') + '</td></tr>'
+    '<td class="num">' + (f.supported ? f.words.toLocaleString(locale()) : '—') + '</td>' +
+    '<td class="num">' + (f.supported ? f.segments.toLocaleString(locale()) : '—') + '</td>' +
+    '<td class="num">' + (f.supported ? f.repeatedSegments.toLocaleString(locale()) : '—') + '</td></tr>'
   ).join('');
 
   const notes = report.files.filter((f) => f.note).map((f) =>
@@ -1829,18 +2302,21 @@ function renderAnalysis(report) {
   ).join('');
 
   $('analysis').innerHTML =
-    '<table><thead><tr><th>File</th><th class="num">Words</th><th class="num">Segments</th>' +
-    '<th class="num">Repeated</th><th class="num">Pages</th></tr></thead><tbody>' + rows +
-    '<tr class="totals"><td>Total</td><td class="num">' + t.words.toLocaleString() + '</td>' +
-    '<td class="num">' + t.segments.toLocaleString() + '</td>' +
-    '<td class="num">' + t.repeatedSegments.toLocaleString() + '</td>' +
-    '<td class="num">' + (t.pages ? t.pages.toLocaleString() : '\u2014') + '</td></tr></tbody></table>' +
-    '<p class="analysis-note">' + t.characters.toLocaleString() + ' characters, spaces excluded' +
-    (t.repeatedWords ? ' · ' + t.repeatedWords.toLocaleString() + ' words sit in repeated segments' : '') +
-    ' · counted in your browser, nothing was uploaded.</p>' + notes;
+    '<table><thead><tr><th>' + t('an_file') + '</th><th class="num">' + t('an_words') +
+    '</th><th class="num">' + t('an_segments') + '</th>' +
+    '<th class="num">' + t('an_repeated') + '</th><th class="num">' + t('an_pages') +
+    '</th></tr></thead><tbody>' + rows +
+    '<tr class="totals"><td>' + t('an_total') + '</td><td class="num">' + total.words.toLocaleString(locale()) + '</td>' +
+    '<td class="num">' + total.segments.toLocaleString(locale()) + '</td>' +
+    '<td class="num">' + total.repeatedSegments.toLocaleString(locale()) + '</td>' +
+    '<td class="num">' + (total.pages ? total.pages.toLocaleString(locale()) : '\u2014') + '</td></tr></tbody></table>' +
+    '<p class="analysis-note">' + total.characters.toLocaleString(locale()) + ' ' + t('an_chars') +
+    (total.repeatedWords ? ' · ' + total.repeatedWords.toLocaleString(locale()) + ' ' + t('an_repeatedwords') : '') +
+    ' · ' + t('an_counted') + '</p>' + notes;
 }
 
 function clearFiles() {
+  state.analysis = null;
   $('fileInput').value = '';
   $('analysis').innerHTML = '';
   $('analysisField').hidden = true;
@@ -1943,13 +2419,70 @@ function wire() {
 /* --------------------------------------------------------- store, if given */
 
 
+/** The eleven buttons, built from LANGS so the list lives in one place. */
+function buildLangs() {
+  const box = $('langs');
+  if (!box) return;
+  /* Only the languages that actually have a dictionary get a button. A button
+     that quietly falls back to English is worse than no button: the visitor
+     presses it, nothing changes, and the page looks broken. Add a language to T
+     and its button appears by itself. */
+  box.innerHTML = LANGS.filter((l) => T[l[0]]).map((l) =>
+    '<button type="button" class="lang-btn" data-lang="' + l[0] + '" aria-pressed="false">' +
+    l[1] + '</button>').join('');
+  box.hidden = box.children.length < 2;
+  box.addEventListener('click', (event) => {
+    const button = event.target.closest ? event.target.closest('.lang-btn') : null;
+    if (button) applyTranslation(button.getAttribute('data-lang'));
+  });
+}
+
+/**
+ * Draw again, in the new language, everything the engine had drawn in the old.
+ *
+ * Nothing is re-priced: a quote standing on the board stays the quote it was,
+ * the same way editing the brief does not re-price it. Only the words change.
+ */
+function retranslateRendered() {
+  const subject = $('subject');
+  if (subject) {
+    const chosen = subject.value;
+    subject.innerHTML = SUBJECTS.map((x) =>
+      '<option value="' + x.code + '">' + t('subj_' + x.code) + '</option>').join('');
+    subject.value = chosen;
+  }
+
+  if (state.quote) {
+    renderSolutions(state.quote);
+    $('priceButton').textContent = t('btn_update');
+    refreshRateNote();
+  } else {
+    $('quoteStatus').textContent = t('st_notpriced_yet');
+    $('priceButton').textContent = t('btn_price');
+  }
+
+  const source = $('source').value;
+  const target = $('target').value;
+  const options = languageOptions();
+  $('source').innerHTML = options;
+  $('target').innerHTML = options;
+  $('source').value = source;
+  $('target').value = target;
+  renderExtraTargets();
+
+  fillCountries();
+  if (state.analysis) renderAnalysis(state.analysis);
+  if (state.pending) renderSummary();
+}
+
 /* -------------------------------------------------------------------- boot */
 
+buildLangs();
 fillSelects();
 fillCountries();
 wire();
 renderExtraTargets();
-$('quoteStatus').textContent = 'Not priced yet';
+applyTranslation(rememberedLang());
 </script>
 
 </body>

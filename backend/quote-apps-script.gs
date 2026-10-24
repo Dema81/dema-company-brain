@@ -367,6 +367,11 @@ function doPost(e) {
     var folder = orderFolder(order.id, order.customer.name, customerCode(order), order.project);
     record(order, net, vat, gross, repriced, folder.getUrl());
 
+    /* Asked for before the confirmation is written, so the customer can pay
+       from the email itself. Empty when cards are off, and then nothing in the
+       message mentions them. */
+    var payUrl = payLink(order, gross);
+
     var pdf = confirmationPdf(order, net, vat, gross);
     /* Filed, not only attached: an order confirmation nobody kept a copy of is
        a document that cannot be produced when it is asked for. */
@@ -378,7 +383,7 @@ function doPost(e) {
       // answer has to be pointed at the desk rather than at the sending mailbox.
       replyTo: DESK,
       subject: 'Your order ' + order.id + ' - ' + order.solution,
-      htmlBody: customerBody(order, net, vat, gross),
+      htmlBody: customerBody(order, net, vat, gross, payUrl),
       attachments: [pdf]
     });
     send({
@@ -490,6 +495,183 @@ var MAIL_ATTACHMENT_LIMIT = 24 * 1024 * 1024;   // MailApp refuses much above 25
  * Runs on open; the first time, open the script editor and run onOpen by hand
  * once to authorise it.
  */
+/* ---------------------------------------------------------------- paying */
+
+/**
+ * A card link for one order, when a card is wanted.
+ *
+ * Be clear about the cost before switching it on: there is no free way to take
+ * a card. Stripe keeps roughly 1.5% + 0.25 EUR of a European card payment and
+ * charges no monthly fee; every other processor charges something comparable.
+ * Bank transfer, which the confirmation already carries, stays free and stays
+ * the default.
+ *
+ * One thing to do once: make an account, then put its SECRET key (sk_live_...,
+ * or sk_test_... while trying it) in Project Settings > Script properties under
+ * STRIPE_SECRET. Never in this file. Without it nothing changes and no link is
+ * offered - the customer simply transfers as before.
+ *
+ * The amount is taken from what the script itself worked out, never from the
+ * page: a price the browser proposed is not a price to charge.
+ */
+function stripeKey() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('STRIPE_SECRET') || '';
+  } catch (err) {
+    return '';
+  }
+}
+
+/**
+ * @returns {string} a payment page for this order, or '' when cards are off
+ */
+function payLink(order, gross) {
+  var key = stripeKey();
+  if (!key || !(gross > 0)) return '';
+
+  var currency = String(order.currency || 'EUR').toLowerCase();
+  /* Stripe counts in the currency's smallest unit: cents, not euros. */
+  var amount = Math.round(gross * 100);
+
+  var form = {
+    mode: 'payment',
+    'payment_method_types[0]': 'card',
+    client_reference_id: order.id,
+    customer_email: order.customer.email,
+    'line_items[0][quantity]': '1',
+    'line_items[0][price_data][currency]': currency,
+    'line_items[0][price_data][unit_amount]': String(amount),
+    'line_items[0][price_data][product_data][name]':
+      'Translation ' + order.id + ' - ' + (order.solution || ''),
+    success_url: 'https://ai-dema-solutions.com/quote/status/?ref=' + encodeURIComponent(order.id),
+    cancel_url: 'https://ai-dema-solutions.com/quote/'
+  };
+
+  try {
+    var res = UrlFetchApp.fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'post',
+      payload: form,
+      headers: { Authorization: 'Bearer ' + key },
+      muteHttpExceptions: true
+    });
+    var code = res.getResponseCode();
+    if (code < 200 || code >= 300) {
+      throw new Error('HTTP ' + code + ' ' + res.getContentText().slice(0, 200));
+    }
+    return JSON.parse(res.getContentText()).url || '';
+  } catch (err) {
+    /* A card link that cannot be made must not lose the order: the customer
+       still has the IBAN on the confirmation, and the desk is told. */
+    try {
+      MailApp.sendEmail(DESK, 'Quote Desk: no card link for ' + order.id, String(err));
+    } catch (ignored) {}
+    return '';
+  }
+}
+
+/** The paragraph the confirmation carries when a card link exists. */
+function payParagraph(link) {
+  if (!link) return '';
+  return '<p style="margin:18px 0"><a href="' + link + '" ' +
+    'style="background:#1c244b;color:#ffffff;padding:12px 22px;' +
+    'text-decoration:none;border-radius:2px;display:inline-block">Pay by card</a></p>' +
+    '<p style="color:#6e768c;font-size:13px">Or transfer to the IBAN below, quoting the ' +
+    'order reference. Work starts when payment is received, either way.</p>';
+}
+
+
+/* ------------------------------------------------------------- the self-test */
+
+/**
+ * Check this deployment from the inside, and say plainly what works.
+ *
+ * Everything here was written against stubs, never against the real Google:
+ * the first time it meets Drive, the sheet, a token and a mailbox is the first
+ * order a customer places. That is a poor moment to discover a missing
+ * permission. Run this from the editor instead - Run > selfTest - and read the
+ * log. It writes a row and deletes it, makes a folder and deletes it, and
+ * sends one email to the desk.
+ *
+ * Nothing here touches a real order.
+ */
+function selfTest() {
+  var out = [];
+  var say = function (ok, what, detail) {
+    out.push((ok ? '[ok]   ' : '[FAIL] ') + what + (detail ? ' - ' + detail : ''));
+  };
+
+  // 1. the sheet
+  try {
+    var book = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = book.getSheetByName(SHEET);
+    if (!sheet) {
+      say(false, 'sheet "' + SHEET + '"', 'not found - it is made on the first order');
+    } else {
+      var heading = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
+      var mark = String.fromCharCode(1);
+      var same = heading.join(mark) === HEADERS.join(mark);
+      say(same, 'sheet heading', same ? HEADERS.length + ' columns, current'
+        : 'out of date - it is rewritten on the next order, but rows written before ' +
+          'the change will read crooked');
+      say(true, 'orders on file', Math.max(0, sheet.getLastRow() - 1) + '');
+    }
+  } catch (err) { say(false, 'sheet', String(err)); }
+
+  // 2. Drive
+  try {
+    var library = libraryFolder();
+    var probe = library.createFolder('selftest-' + Date.now());
+    probe.createFile(Utilities.newBlob('ok', 'text/plain', 'selftest.txt'));
+    probe.setTrashed(true);
+    say(true, 'Drive', 'can write in "' + library.getName() + '"');
+  } catch (err) { say(false, 'Drive', String(err)); }
+
+  // 3. the back office
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var user = props.getProperty('ADMIN_USER');
+    var pass = props.getProperty('ADMIN_PASS');
+    say(!!(user && pass), 'back office login',
+      user && pass ? 'ADMIN_USER and ADMIN_PASS are set'
+        : 'not set - /quote/admin/ will refuse every login');
+  } catch (err) { say(false, 'back office login', String(err)); }
+
+  // 4. the sender
+  var creds = graphCredentials();
+  if (!creds) {
+    say(false, 'Microsoft 365 sender',
+      'GRAPH_TENANT / GRAPH_CLIENT / GRAPH_SECRET not all set - mail will go out ' +
+      'from the Gmail account instead');
+  } else {
+    try {
+      graphToken(creds);
+      say(true, 'Microsoft 365 token', 'granted');
+      graphSend(creds, {
+        to: DESK, name: SENDER_NAME, replyTo: DESK,
+        subject: 'Quote Desk self-test',
+        htmlBody: shell('Self-test', '<p>This deployment can send as ' +
+          escape(SENDER_FROM) + '. Nothing else was changed.</p>')
+      });
+      say(true, 'Microsoft 365 send', 'a test message is on its way to ' + DESK);
+    } catch (err) {
+      say(false, 'Microsoft 365', String(err) +
+        ' - check that Mail.Send is an APPLICATION permission and that admin consent was granted');
+    }
+  }
+
+  // 5. the deployed code, as the page will meet it
+  say(typeof receiveFile === 'function' && typeof orderStatus === 'function' &&
+      typeof deliverSelected === 'function',
+    'endpoints', 'upload, status and delivery are present in this version');
+
+  var report = out.join(String.fromCharCode(10));
+  Logger.log(report);
+  try { SpreadsheetApp.getUi().alert('Quote Desk self-test', report,
+    SpreadsheetApp.getUi().ButtonSet.OK); } catch (err) {}
+  return report;
+}
+
+
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Quote Desk')
@@ -889,7 +1071,7 @@ function shell(title, body) {
     COMPANY.site + '</p></div>';
 }
 
-function customerBody(order, net, vat, gross) {
+function customerBody(order, net, vat, gross, payUrl) {
   return shell('Thank you - your order is in',
     '<p>We have your order and the confirmation is attached. The short version:</p>' +
     table([
@@ -900,7 +1082,8 @@ function customerBody(order, net, vat, gross) {
       ['Total due', money(gross, order.currency)]
     ]) +
     '<p>' + escape(order.vatTreatment || '') + '</p>' +
-    '<p>' + escape(COMPANY.terms) + '</p>' +
+    payParagraph(payUrl) +
+    (payUrl ? '' : '<p>' + escape(COMPANY.terms) + '</p>') +
     '<p>Any question, answer this email and it reaches the desk handling the job.</p>');
 }
 

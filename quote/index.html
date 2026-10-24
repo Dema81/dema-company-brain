@@ -827,8 +827,12 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
               <input id="orderEmail" type="email" maxlength="160" autocomplete="email" placeholder="you@company.com">
             </div>
             <div class="field">
-              <header><label for="orderName">Your name</label></header>
-              <input id="orderName" maxlength="120" autocomplete="name">
+              <header><label for="orderFirstName">First name</label></header>
+              <input id="orderFirstName" maxlength="60" autocomplete="given-name">
+            </div>
+            <div class="field">
+              <header><label for="orderLastName">Last name</label></header>
+              <input id="orderLastName" maxlength="60" autocomplete="family-name">
             </div>
             <div class="field">
               <header><label for="orderRef">Your reference <span class="optional">(optional)</span></label></header>
@@ -845,7 +849,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           </div>
           <p class="notice" id="detailsError" hidden></p>
           <div class="checkout-foot">
-            <button type="button" class="link-button" id="backToSolutions">&larr; Return to solution selection</button>
+            <button type="button" class="link-button" id="backToSolutions">&larr; Back to the prices</button>
             <button type="submit" class="price-button" id="toBilling">Continue</button>
           </div>
         </form>
@@ -865,8 +869,12 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <input id="billCompanyName" maxlength="160" autocomplete="organization">
         </div>
         <div class="field">
-          <header><label for="billName">First and last name</label></header>
-          <input id="billName" maxlength="120" autocomplete="name">
+          <header><label for="billFirstName">First name</label></header>
+          <input id="billFirstName" maxlength="60" autocomplete="given-name">
+        </div>
+        <div class="field">
+          <header><label for="billLastName">Last name</label></header>
+          <input id="billLastName" maxlength="60" autocomplete="family-name">
         </div>
         <div class="field">
           <header><label for="billPhone">Telephone <span class="optional">(optional)</span></label></header>
@@ -885,7 +893,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <input id="billCity" maxlength="90" autocomplete="address-level2">
         </div>
         <div class="field">
-          <header><label for="billPostal">ZIP code</label></header>
+          <header><label for="billPostal">Postal code</label></header>
           <input id="billPostal" maxlength="20" autocomplete="postal-code">
         </div>
         <div class="field">
@@ -906,7 +914,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <p class="notice" id="billingError" hidden></p>
           <p class="hint" id="placingNote" hidden>Recording your order, one moment… this takes a few seconds.</p>
           <div class="checkout-foot">
-            <button type="button" class="link-button" id="backToDetails">&larr; Return to order details</button>
+            <button type="button" class="link-button" id="backToDetails">&larr; Back to your details</button>
             <button type="submit" class="price-button" id="submitOrder">Submit order</button>
           </div>
         </form>
@@ -995,12 +1003,12 @@ const TIERS = [
     includes: ['Subject-tuned neural engine', 'Tags, placeholders and numbers preserved', 'Source formatting returned intact'] },
   { id: 'good-enough', name: 'Good Enough', tagline: 'Checked before it reaches you.',
     workflow: { image: 'tier-good-enough.webp', alt: 'AI Translator, then a Senior AI Reviewer re-reads the translation against the source.' },
-    stages: ['AI Translator', 'AI Revisor'], rate: 0.04, workingHours: 8, floor: 8, badge: 'Best Seller',
+    stages: ['AI Translator', 'Senior AI Reviewer'], rate: 0.04, workingHours: 8, floor: 8, badge: 'Best Seller',
     description: 'Everything in Basic, plus a second AI pass that re-reads the translation against the source for terminology, consistency, numbers and fluency.',
     includes: ['Everything in Basic', 'Automated revision against the source', 'Numbers, units and dates verified'] },
   { id: 'professional', name: 'Professional', tagline: 'Signed off by a native specialist.',
     workflow: { image: 'tier-professional.webp', alt: 'AI Translator, Senior AI Reviewer, then a human translator signs the file off.' },
-    stages: ['AI Translator', 'AI Revisor', 'Human Translator'], rate: null, wordsPerDay: 2000, minimumWorkingHours: 8, floor: 12, badge: null,
+    stages: ['AI Translator', 'Senior AI Reviewer', 'Human Translator'], rate: null, wordsPerDay: 2000, minimumWorkingHours: 8, floor: 12, badge: null,
     description: 'Everything in Good Enough, then a specialised native translator reviews and signs off every segment. The rate follows the language pair: common European pairs cost least, rarer ones more.',
     includes: ['Everything in Good Enough', 'Native specialist reviews every segment', 'Style and tone adapted to the market', 'Named translator and revision round included'] }
 ];
@@ -1583,17 +1591,29 @@ function showStepError(id, message) {
   box.textContent = message;
 }
 
+/* The form asks for the name in two fields, because half the world writes the
+   family name first and one box invites the wrong order. Everything downstream -
+   the record, the confirmation, the invoice - wants a single name. */
+const fullName = (first, last) =>
+  [first.trim(), last.trim()].filter(Boolean).join(' ').slice(0, 120);
+
 function continueToBilling(event) {
   event.preventDefault();
   const email = $('orderEmail').value.trim();
-  const name = $('orderName').value.trim();
+  const firstName = $('orderFirstName').value.trim();
+  const lastName = $('orderLastName').value.trim();
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return showStepError('detailsError', 'Enter an email address we can send the files to.');
   }
-  if (name.length < 2) return showStepError('detailsError', 'Enter the name the order is for.');
+  if (firstName.length < 2 || lastName.length < 2) {
+    return showStepError('detailsError', 'Enter the first and last name the order is for.');
+  }
   $('detailsError').hidden = true;
-  if (!$('billName').value.trim()) $('billName').value = name;
+  /* The billing name is almost always the same person, so it starts filled in
+     and can still be changed. */
+  if (!$('billFirstName').value.trim()) $('billFirstName').value = firstName;
+  if (!$('billLastName').value.trim()) $('billLastName').value = lastName;
   goToStep('billing');
 }
 
@@ -1603,7 +1623,7 @@ function billingPayload() {
   return {
     company: company,
     companyName: $('billCompanyName').value.trim().slice(0, 160),
-    name: $('billName').value.trim().slice(0, 120),
+    name: fullName($('billFirstName').value, $('billLastName').value),
     telephone: $('billPhone').value.trim().slice(0, 40),
     address1: $('billAddress1').value.trim().slice(0, 160),
     address2: $('billAddress2').value.trim().slice(0, 160),
@@ -1640,10 +1660,10 @@ async function submitOrder(event) {
   }
   if (!party.address1) return showStepError('billingError', 'Enter the billing address.');
   if (!party.city) return showStepError('billingError', 'Enter the city.');
-  if (!party.postalCode) return showStepError('billingError', 'Enter the ZIP or postal code.');
+  if (!party.postalCode) return showStepError('billingError', 'Enter the postal code.');
   if (!party.country) return showStepError('billingError', 'Choose the billing country.');
   if (!$('billAccept').checked) {
-    return showStepError('billingError', 'Please accept the privacy policy and the conditions of sale.');
+    return showStepError('billingError', 'Accept the privacy policy and the conditions of sale.');
   }
 
   // Re-price at submit time, so a form left open never books a stale number.
@@ -1678,7 +1698,7 @@ async function submitOrder(event) {
     currency: priced.currency,
     eta: priced.eta,
     customer: {
-      name: $('orderName').value.trim().slice(0, 120),
+      name: fullName($('orderFirstName').value, $('orderLastName').value),
       email: email,
       reference: $('orderRef').value.trim().slice(0, 60),
       note: $('orderNote').value.trim().slice(0, 1000)
@@ -1764,7 +1784,7 @@ function showReceipt(id, record, answer) {
   $('doneMail').textContent = answer.delivered
     ? 'The confirmation is on its way to ' + record.customer.email + ', with the order document attached.'
     : 'Your mail client is opening with the order ready to send to ' + ORDERS_INBOX +
-      '. Send it and we have everything we need.';
+      '. Send it and we will have everything we need.';
   goToStep('done');
 }
 

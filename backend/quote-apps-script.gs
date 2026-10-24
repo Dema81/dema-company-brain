@@ -52,25 +52,29 @@ function libraryFolder() {
 }
 
 /** The folder of one order, made the first time it is asked for. */
-function orderFolder(id, customerName) {
+function orderFolder(id, customerName, code, project) {
   var library = libraryFolder();
 
-  /* Found by the reference it starts with, never by the whole name: the name
-     also carries the customer and the date, and the uploads that arrive after
-     the order know only the reference. */
-  var walk = library.getFolders();
-  while (walk.hasNext()) {
-    var found = walk.next();
-    if (found.getName().indexOf(id) === 0) return found;
+  /* The uploads that follow an order know only its reference, and the folder
+     is not named after it - so the folder is found through the row, which
+     carries its link. A name can be edited; a link in the sheet cannot drift. */
+  var row = findOrderRow(id);
+  if (row) {
+    var link = String(row[HEADERS.indexOf('Files')] || '');
+    var match = /folders\/([A-Za-z0-9_-]+)/.exec(link);
+    if (match) {
+      try { return DriveApp.getFolderById(match[1]); } catch (err) {}
+    }
   }
 
-  /* "ORD-20261024-AB12 - Mara Bianchi - 2026-10-24": the reference first so
-     the folders sort and search by it, then who it is for and the day it
-     arrived, so the desk can read the list of folders without opening them. */
-  var who = String(customerName || '').replace(/[^A-Za-z0-9 .'À-ɏ-]/g, ' ')
-    .replace(/\s+/g, ' ').trim().slice(0, 60);
+  /* "mara_bianchi - manuale_cnc_2026-10-24": the customer first, so one
+     customer's work sits together in the listing, then what the job is and the
+     day it was asked for. The reference is not in the name - the sheet holds
+     the folder's link, which is how an upload finds it again. */
   var day = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  var name = [id, who, day].filter(function (part) { return part; }).join(' - ');
+  var what = slug(project) || slug(id);
+  var name = [code || slug(customerName), what + '_' + day]
+    .filter(function (part) { return part; }).join(' - ');
 
   var folder = library.createFolder(name);
   folder.setDescription('Quote Desk order ' + id + ', received ' + new Date().toISOString());
@@ -82,24 +86,111 @@ var SENDER_NAME = 'DEMA Solutions';
 /*
  * Who the confirmation comes from.
  *
- * Apps Script sends as the account that deployed it, which is a Gmail address -
- * poor on a document a client reads. Gmail can send as another address only
- * through that address's own SMTP, and Microsoft 365 refuses the basic
- * authentication that needs (535 5.7.3), so that door is shut.
- *
- * So when a Brevo API key is present the mail goes through Brevo instead, from
- * the address below, on a domain authenticated there. Without a key nothing
- * changes: it goes out through Gmail as before. The key is **not** kept in this
- * file - it lives in Project Settings > Script properties, under BREVO_API_KEY,
- * so it is never in the repository.
+ * Apps Script sends as the Google account it was deployed from, which is a
+ * Gmail address. The customer should see the desk's own address instead, and
+ * Microsoft Graph is how that happens - see graphCredentials() below for the
+ * one-off setup. Without it the Gmail account is used and nothing breaks.
  */
 var SENDER_FROM = 'g.gambuto@dema-solutions.com';
 
-function brevoKey() {
+/*
+ * Sending as g.gambuto@dema-solutions.com, through Microsoft 365 itself.
+ *
+ * Apps Script sends as the Google account it was deployed from, which is a
+ * Gmail address - poor on a document a client reads. The obvious roads are
+ * shut: Gmail will send as another address only through that address's own
+ * SMTP, and this tenant answers 535 5.7.3 to basic SMTP authentication, which
+ * is policy and not a per-mailbox switch.
+ *
+ * Microsoft Graph is the way that costs nothing and brings in no third party:
+ * the mail leaves the real mailbox, on Microsoft's own servers, with the
+ * tenant's own SPF and DKIM behind it.
+ *
+ * It needs one thing done once, by someone who administers the tenant:
+ *
+ *  1. Entra admin centre > App registrations > New registration. Any name.
+ *  2. Certificates & secrets > New client secret. Copy the VALUE, not the id.
+ *  3. API permissions > Microsoft Graph > Application permissions >
+ *     Mail.Send > Add, then "Grant admin consent". Application, not delegated.
+ *  4. Overview gives the Application (client) ID and the Directory (tenant) ID.
+ *  5. Put all three in Project Settings > Script properties, never in this
+ *     file: GRAPH_TENANT, GRAPH_CLIENT, GRAPH_SECRET.
+ *
+ * Narrow it afterwards if you like: an application access policy can limit the
+ * app to this one mailbox rather than every mailbox in the tenant.
+ *
+ * With any of the three missing nothing changes: the mail goes out through the
+ * Gmail account as before, and the desk's copy says so.
+ */
+function graphCredentials() {
   try {
-    return PropertiesService.getScriptProperties().getProperty('BREVO_API_KEY') || '';
-  } catch (err) {
-    return '';
+    var props = PropertiesService.getScriptProperties();
+    var tenant = props.getProperty('GRAPH_TENANT');
+    var client = props.getProperty('GRAPH_CLIENT');
+    var secret = props.getProperty('GRAPH_SECRET');
+    if (tenant && client && secret) {
+      return { tenant: tenant, client: client, secret: secret };
+    }
+  } catch (err) {}
+  return null;
+}
+
+/** A token for the app itself, cached for the hour Microsoft gives it. */
+function graphToken(creds) {
+  var cache = CacheService.getScriptCache();
+  var kept = cache.get('graph_token');
+  if (kept) return kept;
+
+  var res = UrlFetchApp.fetch(
+    'https://login.microsoftonline.com/' + encodeURIComponent(creds.tenant) + '/oauth2/v2.0/token', {
+      method: 'post',
+      payload: {
+        client_id: creds.client,
+        client_secret: creds.secret,
+        scope: 'https://graph.microsoft.com/.default',
+        grant_type: 'client_credentials'
+      },
+      muteHttpExceptions: true
+    });
+  if (res.getResponseCode() !== 200) {
+    throw new Error('token HTTP ' + res.getResponseCode() + ' ' + res.getContentText().slice(0, 200));
+  }
+  var body = JSON.parse(res.getContentText());
+  /* A minute short of what Microsoft says, so a token never expires in flight. */
+  cache.put('graph_token', body.access_token, Math.max(60, (body.expires_in || 3600) - 60));
+  return body.access_token;
+}
+
+function graphSend(creds, options) {
+  var attachments = (options.attachments || []).map(function (blob) {
+    return {
+      '@odata.type': '#microsoft.graph.fileAttachment',
+      name: blob.getName(),
+      contentType: blob.getContentType ? blob.getContentType() : 'application/octet-stream',
+      contentBytes: Utilities.base64Encode(blob.getBytes())
+    };
+  });
+
+  var message = {
+    subject: options.subject,
+    body: { contentType: 'HTML', content: options.htmlBody },
+    toRecipients: [{ emailAddress: { address: options.to } }]
+  };
+  if (options.replyTo) message.replyTo = [{ emailAddress: { address: options.replyTo } }];
+  if (attachments.length) message.attachments = attachments;
+
+  var res = UrlFetchApp.fetch(
+    'https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(SENDER_FROM) + '/sendMail', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + graphToken(creds) },
+      payload: JSON.stringify({ message: message, saveToSentItems: true }),
+      muteHttpExceptions: true
+    });
+  var code = res.getResponseCode();
+  /* Graph answers 202 and an empty body when it has taken the message. */
+  if (code < 200 || code >= 300) {
+    throw new Error('HTTP ' + code + ' ' + res.getContentText().slice(0, 300));
   }
 }
 
@@ -110,6 +201,29 @@ function brevoKey() {
  * this repository. With no token set the reading endpoint stays shut, so a
  * half-finished deployment cannot hand the order book to the open internet.
  */
+/*
+ * Who may read the order book.
+ *
+ * A name and a password rather than one shared string, because the desk is a
+ * few people and a login is what they expect to see. Be clear about what this
+ * is worth: the page is a static file with no server of its own, so the only
+ * thing that can really decide is this script. The pair is checked here, over
+ * HTTPS, and nothing but the answer ever reaches the page. That is the same
+ * strength the single token had - two boxes instead of one, and a habit people
+ * already have.
+ *
+ * With ADMIN_USER or ADMIN_PASS unset the book stays shut.
+ */
+function adminLogin(user, pass) {
+  var props;
+  try { props = PropertiesService.getScriptProperties(); } catch (err) { return false; }
+  var wantUser = props.getProperty('ADMIN_USER') || '';
+  var wantPass = props.getProperty('ADMIN_PASS') || '';
+  if (!wantUser || !wantPass) return false;
+  return sameSecret(String(user || '').trim().toLowerCase(), wantUser.trim().toLowerCase()) &&
+    sameSecret(String(pass || ''), wantPass);
+}
+
 function adminToken() {
   try {
     return PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN') || '';
@@ -119,14 +233,18 @@ function adminToken() {
 }
 
 /** Compare without leaking the answer through how long it took. */
-function sameToken(given) {
-  var want = adminToken();
+function sameSecret(given, want) {
   if (!want || !given || given.length !== want.length) return false;
   var diff = 0;
   for (var i = 0; i < want.length; i++) {
     diff |= want.charCodeAt(i) ^ given.charCodeAt(i);
   }
   return diff === 0;
+}
+
+function sameToken(given) {
+  var want = adminToken();
+  return sameSecret(given, want);
 }
 
 /* Who is issuing the document — from Dema Solutions' own invoices. */
@@ -219,7 +337,12 @@ function doPost(e) {
      * app answers no OPTIONS).
      */
     if (order.action === 'orders') {
-      if (!sameToken(order.token)) return json({ ok: false, error: 'refused' });
+      /* Either a name and a password, or the older shared token: both are
+         checked here and nowhere else. */
+      var allowed = order.user
+        ? adminLogin(order.user, order.pass)
+        : sameToken(order.token);
+      if (!allowed) return json({ ok: false, error: 'refused' });
       return json({ ok: true, headers: HEADERS, orders: orders() });
     }
 
@@ -241,7 +364,7 @@ function doPost(e) {
 
     /* The folder first, so the row can carry its link and the uploads that
        follow have somewhere to land. */
-    var folder = orderFolder(order.id, order.customer.name);
+    var folder = orderFolder(order.id, order.customer.name, customerCode(order), order.project);
     record(order, net, vat, gross, repriced, folder.getUrl());
 
     var pdf = confirmationPdf(order, net, vat, gross);
@@ -280,51 +403,28 @@ function doPost(e) {
 }
 
 /**
- * Send one message: through Brevo when a key is configured, otherwise through
- * Gmail. Either way an order never fails to reach anyone over a sender address -
- * a refusal falls back to Gmail and says so, and the desk is told.
+ * Send one message: through Microsoft 365 when the tenant is configured,
+ * otherwise through the Gmail account the script was deployed from.
+ *
+ * An order must never fail to reach anyone over a sender address, so a refusal
+ * falls back to Gmail and says why. The desk's copy carries that sentence, so
+ * a broken sender turns up in the inbox rather than in a customer's complaint.
  *
  * @returns {string|null} why it fell back, or null when all was well
  */
 function send(options) {
-  var key = brevoKey();
-  if (!key) {
+  var creds = graphCredentials();
+  if (!creds) {
     MailApp.sendEmail(options);
     return null;
   }
   try {
-    brevoSend(key, options);
+    graphSend(creds, options);
     return null;
   } catch (err) {
     MailApp.sendEmail(options);
-    return 'Brevo refused the message, so it went out from the Gmail account instead (' + err + ')';
-  }
-}
-
-/** One transactional message through Brevo's API. */
-function brevoSend(key, options) {
-  var attachments = (options.attachments || []).map(function (blob) {
-    return { name: blob.getName(), content: Utilities.base64Encode(blob.getBytes()) };
-  });
-  var payload = {
-    sender: { email: SENDER_FROM, name: options.name || SENDER_NAME },
-    to: [{ email: options.to }],
-    subject: options.subject,
-    htmlContent: options.htmlBody
-  };
-  if (options.replyTo) payload.replyTo = { email: options.replyTo };
-  if (attachments.length) payload.attachment = attachments;
-
-  var res = UrlFetchApp.fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { 'api-key': key },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-  var code = res.getResponseCode();
-  if (code < 200 || code >= 300) {
-    throw new Error('HTTP ' + code + ' ' + res.getContentText().slice(0, 300));
+    return 'Microsoft 365 refused the message, so it went out from the Gmail account instead (' +
+      err + ')';
   }
 }
 
@@ -550,12 +650,36 @@ var STATUS_NEW = 'Received';
  * telephone, which is most of an address. An order you cannot invoice is not a
  * record of anything.
  */
-var HEADERS = ['Received', 'Reference', 'Status',
+var HEADERS = ['Received', 'Reference', 'Status', 'Customer code',
   'First name', 'Last name', 'Email', 'Telephone',
   'Company', 'VAT number', 'Address', 'City', 'Postal code', 'Country',
   'Project', 'Solution', 'From', 'Into', 'Words', 'Subject', 'Desktop publishing', 'Delivery',
   'Net', 'VAT', 'Total', 'Currency', 'VAT treatment', 'Re-priced',
   'Customer reference', 'Notes', 'Files'];
+
+/**
+ * A short, stable name for the customer: mara_bianchi for a person, the
+ * company slugged for a company. The same customer ordering again gets the
+ * same code, which is the whole point of having one.
+ *
+ * Accents are folded rather than dropped, so Lundqvist and Lundqvíst do not
+ * become two customers.
+ */
+function slug(text) {
+  return String(text || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 50);
+}
+
+function customerCode(order) {
+  var b = order.billing || {};
+  if (b.company && b.companyName) return slug(b.companyName);
+  var who = splitName(order);
+  return slug(who[0] + ' ' + who[1]) || slug(order.customer.email.split('@')[0]);
+}
 
 /** First and last name, however the page happened to send them. */
 function splitName(order) {
@@ -596,7 +720,7 @@ function record(order, net, vat, gross, repriced, folderUrl) {
   var street = [b.address1, b.address2].filter(function (x) { return x; }).join(', ');
 
   sheet.appendRow([
-    new Date(), order.id, STATUS_NEW,
+    new Date(), order.id, STATUS_NEW, customerCode(order),
     who[0], who[1], order.customer.email, b.telephone || '',
     b.company ? b.companyName : 'individual', b.vatNumber || '',
     street, b.city || '', b.postalCode || '', b.countryName || b.country || '',

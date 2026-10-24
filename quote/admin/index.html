@@ -221,6 +221,64 @@ input, select {
 .stat .v span { display: block; }
 .stat .v small { display: block; font-size: var(--step-small); color: var(--muted); font-family: var(--text); }
 
+/* ─────────────────────────────────────────────────────────────── the charts
+
+   Four small charts, each answering one question, each on one axis. Orders and
+   money are never drawn on the same pair of axes: two measures of different
+   scale means two charts, not two scales.
+
+   The three solution colours were not chosen by eye. They were put through the
+   palette validator against this very surface and pass all five checks -
+   lightness band, chroma, colour-blind separation (ΔE 10.4), normal-vision
+   separation (16.1) and contrast. Do not "tidy" them towards the brand blues:
+   the blues fail, which is how these were arrived at. The status colours
+   (--good, --warn) are reserved for status and never used as a series. */
+
+:root {
+  --series-1: #3b8fd9;
+  --series-2: #17a07c;
+  --series-3: #ab8420;
+  --plot: #4ea0e6;
+}
+
+.charts { grid-column: span 12; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); }
+.chart { grid-column: span 6; }
+
+.chart h2 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--step-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.chart .reading {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--step-lead);
+  margin: 0 0 14px;
+  min-height: 1.3em;
+}
+
+.chart .reading small { font-family: var(--text); font-size: var(--step-small); color: var(--muted); }
+
+.plot { width: 100%; display: block; overflow: visible; }
+.plot .grid { stroke: var(--line); stroke-width: 1; }
+.plot .axis { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+.plot rect.mark { transition: opacity .12s; }
+.plot rect.mark:hover { opacity: 0.75; }
+.plot .value { fill: var(--ink); font-family: var(--mono); font-size: 10px; font-variant-numeric: tabular-nums; }
+.plot .name { fill: var(--muted); font-family: var(--text); font-size: 11px; }
+.plot .empty { fill: var(--muted); font-family: var(--text); font-size: 12px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 0; font-size: var(--step-small); color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+@media (max-width: 900px) { .chart { grid-column: span 12; } }
+
 /* ──────────────────────────────────────────────────────────────── the sieve */
 
 .sieve { display: flex; flex-wrap: wrap; gap: var(--gap); align-items: flex-end; }
@@ -385,16 +443,18 @@ footer {
       <!-- A password field with nothing to name it is worse for a screen reader
            and for a password manager, which then saves the token under no name
            at all. There is one account here, so it is named, and hidden. -->
-      <label for="who" class="sr">Account</label>
-      <input type="text" id="who" class="sr" value="Quote Desk back office"
-             autocomplete="username" readonly tabindex="-1">
       <div>
-        <label for="token">Desk token</label>
-        <input type="password" id="token" name="token" required autocomplete="current-password"
-               spellcheck="false" placeholder="paste the token">
+        <label for="who">User</label>
+        <input type="text" id="who" name="username" required autocomplete="username"
+               spellcheck="false" placeholder="desk">
       </div>
-      <p class="note" id="gate-note">The token is kept in this browser only, and never goes into
-        the address bar. Ask the desk for it.</p>
+      <div>
+        <label for="token">Password</label>
+        <input type="password" id="token" name="password" required autocomplete="current-password"
+               spellcheck="false">
+      </div>
+      <p class="note" id="gate-note">Only the desk sees this. A customer never does: the
+        quote page records orders and never lists one back.</p>
       <button type="submit" class="filled" id="gate-go">Open the book</button>
     </form>
   </section>
@@ -418,6 +478,34 @@ footer {
     <p class="k">Due within 7 days</p>
     <p class="v" id="v-due">—</p>
   </section>
+
+  <div class="charts" id="charts" hidden>
+    <section class="tile chart">
+      <h2>Orders a month</h2>
+      <p class="reading" id="r-orders"></p>
+      <svg class="plot" id="c-orders" viewBox="0 0 520 170" role="img"
+           aria-label="Orders received each month"></svg>
+    </section>
+    <section class="tile chart">
+      <h2>Billed a month</h2>
+      <p class="reading" id="r-billed"></p>
+      <svg class="plot" id="c-billed" viewBox="0 0 520 170" role="img"
+           aria-label="Amount billed each month"></svg>
+    </section>
+    <section class="tile chart">
+      <h2>By solution</h2>
+      <p class="reading" id="r-solution"></p>
+      <svg class="plot" id="c-solution" viewBox="0 0 520 150" role="img"
+           aria-label="Orders by solution"></svg>
+      <p class="legend" id="l-solution"></p>
+    </section>
+    <section class="tile chart">
+      <h2>Most asked for</h2>
+      <p class="reading" id="r-langs"></p>
+      <svg class="plot" id="c-langs" viewBox="0 0 520 190" role="img"
+           aria-label="Most requested target languages"></svg>
+    </section>
+  </div>
 
   <section class="tile quiet" id="sieve-tile" hidden>
     <div class="sieve">
@@ -481,12 +569,17 @@ function $(id) { return document.getElementById(id); }
 
 /* localStorage throws in a private window with site data blocked, and the book
    must still open there — the token is simply asked for again every time. */
+/* The pair is kept in this browser so the desk is not asked twice a day.
+   It is the same secret either way: what decides is the script, not the page. */
 function remembered() {
-  try { return window.localStorage.getItem(STORE) || ''; } catch (err) { return ''; }
+  try {
+    var kept = JSON.parse(window.localStorage.getItem(STORE) || 'null');
+    return kept && kept.user ? kept : null;
+  } catch (err) { return null; }
 }
 
-function remember(value) {
-  try { window.localStorage.setItem(STORE, value); } catch (err) {}
+function remember(who) {
+  try { window.localStorage.setItem(STORE, JSON.stringify(who)); } catch (err) {}
 }
 
 function forget() {
@@ -495,7 +588,7 @@ function forget() {
 
 /* ───────────────────────────────────────────────────────────── what is held */
 
-var state = { token: '', headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
+var state = { who: null, headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
 
 /*
  * Read the sheet.
@@ -504,11 +597,11 @@ var state = { token: '', headers: [], index: {}, rows: [], loadedAt: null, openR
  * the web app answers no OPTIONS. The token goes in the body, never the URL,
  * because a query string ends up in history and in referrers.
  */
-function fetchOrders(token) {
+function fetchOrders(who) {
   return fetch(ORDERS_WEBHOOK, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'orders', token: token })
+    body: JSON.stringify({ action: 'orders', user: who.user, pass: who.pass })
   }).then(function (res) {
     if (!res.ok) throw new Error('the desk answered ' + res.status);
     return res.json();
@@ -520,7 +613,7 @@ function fetchOrders(token) {
          finds it incomplete. That is the one answer worth translating: it means
          the script was edited but never redeployed as a new version. */
       var message;
-      if (refused) message = 'That token was refused.';
+      if (refused) message = 'That user and password were refused.';
       else if (why === 'incomplete order') {
         message = 'The web app is still running its previous version, which cannot hand ' +
           'over the book. In the Apps Script project: Deploy › Manage deployments › ' +
@@ -661,6 +754,231 @@ function paintCounts(rows) {
     (late ? '<small>' + escapeHtml(thousands(late)) + ' past their date</small>' : '');
 }
 
+/* ────────────────────────────────────────────────────────────── the charts
+
+   Drawn by hand in SVG, because the page carries no libraries and should not
+   start now. Each chart answers one question on one axis; a reading above it
+   says what the eye should take away, so the picture is never the only route
+   to the number.
+
+   Orders and money are never put on one pair of axes. Two measures of
+   different scale means two charts, not two scales.
+
+   The three solution colours were not chosen by eye: they were put through the
+   palette validator against this very surface and pass all five checks -
+   lightness band, chroma, colour-blind separation (dE 10.4), normal-vision
+   separation (16.1) and contrast. Do not "tidy" them back towards the brand
+   blues; the blues fail, which is how these were arrived at. The status
+   colours stay reserved for status and are never used as a series. */
+
+var SVG_NS = 'http://www.w3.org/2000/svg';
+
+function el(name, attrs, text) {
+  var node = document.createElementNS(SVG_NS, name);
+  Object.keys(attrs || {}).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function clearPlot(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+function nothingYet(svg, reading) {
+  clearPlot(svg);
+  svg.appendChild(el('text', { x: 10, y: 30, class: 'empty' }, 'Nothing to chart yet.'));
+  $(reading).textContent = '';
+}
+
+/** Every month the book spans, newest last, at most 24. */
+function monthsOf(rows) {
+  var seen = {};
+  rows.forEach(function (row) {
+    var d = parseDate(cell(row, 'Received'));
+    if (d) seen[d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')] = true;
+  });
+  var keys = Object.keys(seen).sort();
+  if (!keys.length) return [];
+
+  /* A month with no orders is a month too: the gap is the information. */
+  var first = keys[0].split('-');
+  var last = keys[keys.length - 1].split('-');
+  var out = [];
+  var y = Number(first[0]);
+  var m = Number(first[1]);
+  for (var guard = 0; guard < 400; guard++) {
+    out.push(y + '-' + String(m).padStart(2, '0'));
+    if (y === Number(last[0]) && m === Number(last[1])) break;
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return out.slice(-24);
+}
+
+function monthLabel(key) {
+  var bits = key.split('-');
+  try {
+    return new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric' })
+      .format(new Date(Number(bits[0]), Number(bits[1]) - 1, 1));
+  } catch (err) { return key; }
+}
+
+/**
+ * Bars over time. One series, so no legend: the heading names it. Only the
+ * first month of each year is labelled, and only the tallest bar carries its
+ * figure - a number on every bar is noise, not information.
+ */
+function timeChart(svg, months, values, reading, format, caption) {
+  if (!months.length) { nothingYet(svg, reading); return; }
+  clearPlot(svg);
+
+  var W = 520, H = 170, top = 16, bottom = 26, left = 2;
+  var high = Math.max.apply(null, values.concat([1]));
+  var step = (W - left) / months.length;
+  var width = Math.max(3, Math.min(26, step - 2));   // a 2px gap between fills
+  var plotHeight = H - top - bottom;
+
+  svg.appendChild(el('line', {
+    x1: 0, y1: H - bottom + 0.5, x2: W, y2: H - bottom + 0.5, class: 'grid'
+  }));
+
+  var peak = values.indexOf(high);
+  months.forEach(function (key, i) {
+    var v = values[i];
+    var h = v > 0 ? Math.max(2, plotHeight * (v / high)) : 0;
+    var x = left + i * step + (step - width) / 2;
+
+    if (h) {
+      var bar = el('rect', {
+        x: x.toFixed(1), y: (H - bottom - h).toFixed(1),
+        width: width.toFixed(1), height: h.toFixed(1),
+        rx: Math.min(4, width / 2), fill: 'var(--plot)', class: 'mark'
+      });
+      bar.appendChild(el('title', {}, monthLabel(key) + ': ' + format(v)));
+      svg.appendChild(bar);
+    }
+
+    if (key.slice(5) === '01' || i === 0) {
+      svg.appendChild(el('text', {
+        x: (x + width / 2).toFixed(1), y: H - 8, class: 'axis', 'text-anchor': 'middle'
+      }, key.slice(0, 4)));
+    }
+    if (i === peak && v > 0) {
+      svg.appendChild(el('text', {
+        x: (x + width / 2).toFixed(1), y: (H - bottom - h - 5).toFixed(1),
+        class: 'value', 'text-anchor': 'middle'
+      }, format(v)));
+    }
+  });
+
+  var total = values.reduce(function (a, b) { return a + b; }, 0);
+  $(reading).innerHTML = escapeHtml(format(values[values.length - 1])) +
+    ' <small>' + escapeHtml(caption) + ' · ' + escapeHtml(format(total)) + ' over ' +
+    months.length + ' month' + (months.length === 1 ? '' : 's') + '</small>';
+}
+
+/**
+ * A ranked list as bars. The name and the figure sit beside every bar, so this
+ * reads with no colour at all; colour only groups it.
+ */
+function rankChart(svg, rows, reading, colours) {
+  if (!rows.length) { nothingYet(svg, reading); return; }
+  clearPlot(svg);
+
+  var W = 520, rowHeight = 30, nameWidth = 160, pad = 80;
+  var high = Math.max.apply(null, rows.map(function (r) { return r.value; }).concat([1]));
+  var span = W - nameWidth - pad;
+
+  rows.forEach(function (r, i) {
+    var y = i * rowHeight;
+    var w = r.value > 0 ? Math.max(2, span * (r.value / high)) : 0;
+    svg.appendChild(el('text', { x: 0, y: y + 19, class: 'name' }, r.name));
+    var bar = el('rect', {
+      x: nameWidth, y: y + 6, width: w.toFixed(1), height: 16, rx: 4,
+      fill: colours ? colours[i % colours.length] : 'var(--plot)', class: 'mark'
+    });
+    bar.appendChild(el('title', {}, r.name + ': ' + r.label));
+    svg.appendChild(bar);
+    svg.appendChild(el('text', {
+      x: (nameWidth + w + 8).toFixed(1), y: y + 19, class: 'value'
+    }, r.label));
+  });
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (rows.length * rowHeight + 4));
+
+  /* The bars keep their own order so a colour always means the same tier, but
+     the reading has to name whoever is actually largest - the first bar is not
+     the leader just because it is drawn first. */
+  var lead = rows.reduce(function (a, b) { return b.value > a.value ? b : a; });
+  $(reading).innerHTML = escapeHtml(lead.name) + ' <small>leads with ' +
+    escapeHtml(lead.label) + '</small>';
+}
+
+var SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)'];
+
+/** Money with no code, for a chart whose heading already says the currency. */
+function plainMoney(amount) {
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency', currency: 'EUR', maximumFractionDigits: 0
+    }).format(amount);
+  } catch (err) { return Math.round(amount) + ' EUR'; }
+}
+
+function paintCharts(rows) {
+  var months = monthsOf(rows);
+  var counts = months.map(function () { return 0; });
+  var money = months.map(function () { return 0; });
+
+  rows.forEach(function (row) {
+    var d = parseDate(cell(row, 'Received'));
+    if (!d) return;
+    var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    var at = months.indexOf(key);
+    if (at === -1) return;
+    counts[at]++;
+    /* Only the list currency is added up: a chart that quietly sums euros and
+       dollars is a chart that lies. The heading says which one this is. */
+    if (String(cell(row, 'Currency') || 'EUR') === 'EUR') {
+      money[at] += Number(cell(row, 'Total')) || 0;
+    }
+  });
+
+  timeChart($('c-orders'), months, counts, 'r-orders', thousands, 'this month');
+  timeChart($('c-billed'), months, money, 'r-billed', plainMoney, 'this month, EUR orders');
+
+  var bySolution = {};
+  var byLang = {};
+  rows.forEach(function (row) {
+    var sol = String(cell(row, 'Solution') || '').trim();
+    if (sol) bySolution[sol] = (bySolution[sol] || 0) + 1;
+    String(cell(row, 'Into') || '').split(',').forEach(function (code) {
+      var name = code.trim();
+      if (name) byLang[name] = (byLang[name] || 0) + 1;
+    });
+  });
+
+  /* The tiers keep their own order, cheapest first, so a colour means the same
+     thing from one month to the next: colour follows the entity, never rank. */
+  var ORDER = ['Basic', 'Good Enough', 'Professional'];
+  var known = ORDER.filter(function (k) { return bySolution[k]; });
+  var rest = Object.keys(bySolution).filter(function (k) { return ORDER.indexOf(k) === -1; });
+  var solutions = known.concat(rest).map(function (k) {
+    return { name: k, value: bySolution[k], label: thousands(bySolution[k]) };
+  });
+  rankChart($('c-solution'), solutions, 'r-solution', SERIES);
+
+  $('l-solution').innerHTML = solutions.map(function (r, i) {
+    return '<span><i style="background:' + SERIES[i % SERIES.length] + '"></i>' +
+      escapeHtml(r.name) + '</span>';
+  }).join('');
+
+  var langs = Object.keys(byLang).sort(function (a, b) { return byLang[b] - byLang[a]; })
+    .slice(0, 6).map(function (k) {
+      return { name: k, value: byLang[k], label: thousands(byLang[k]) };
+    });
+  rankChart($('c-langs'), langs, 'r-langs', null);
+}
+
+
 /* ─────────────────────────────────────────────────────────────── the sieve */
 
 function fillSolutions(rows) {
@@ -798,6 +1116,9 @@ function paintBook(rows) {
 function paint() {
   var rows = sieve();
   paintCounts(state.rows);
+  /* The charts read the whole book, not the sieve: a filter narrows the table,
+     it does not change what the year looked like. */
+  paintCharts(state.rows);
   paintBook(rows);
   $('tally').textContent = rows.length === state.rows.length
     ? thousands(rows.length) + ' shown'
@@ -838,7 +1159,7 @@ function csv() {
 /* ────────────────────────────────────────────────────── opening and shutting */
 
 var SHOWN = ['tools', 'stat-orders', 'stat-month', 'stat-billed', 'stat-due',
-  'sieve-tile', 'book-tile'];
+  'charts', 'sieve-tile', 'book-tile'];
 
 function show(open) {
   SHOWN.forEach(function (id) { $(id).hidden = !open; });
@@ -852,19 +1173,19 @@ function trouble(message) {
   note.className = 'note bad';
 }
 
-function load(token, fromGate) {
+function load(who, fromGate) {
   var button = fromGate ? $('gate-go') : $('refresh');
   var was = button.textContent;
   button.disabled = true;
   button.textContent = 'Reading…';
 
-  return fetchOrders(token).then(function (answer) {
-    state.token = token;
+  return fetchOrders(who).then(function (answer) {
+    state.who = who;
     state.headers = answer.headers || [];
     state.index = indexOf(state.headers);
     state.rows = answer.orders || [];
     state.loadedAt = new Date().toISOString();
-    remember(token);
+    remember(who);
     fillSolutions(state.rows);
     show(true);
     paint();
@@ -874,9 +1195,9 @@ function load(token, fromGate) {
       /* A stale token must not leave the page stuck on a spinner at every
          reload: drop it and ask again. */
       forget();
-      state.token = '';
+      state.who = null;
       show(false);
-      trouble(why + ' Ask the desk for the current one.');
+      trouble(why);
     } else if (fromGate) {
       trouble(why);
     } else {
@@ -891,21 +1212,22 @@ function load(token, fromGate) {
 
 $('gate-form').addEventListener('submit', function (event) {
   event.preventDefault();
-  var token = $('token').value.trim();
-  if (!token) return;
+  var who = { user: $('who').value.trim(), pass: $('token').value };
+  if (!who.user || !who.pass) return;
   $('gate-note').className = 'note';
   $('gate-note').textContent =
     'The token is kept in this browser only, and never goes into the address bar.';
-  load(token, true);
+  load(who, true);
 });
 
-$('refresh').addEventListener('click', function () { load(state.token, false); });
+$('refresh').addEventListener('click', function () { load(state.who, false); });
 $('csv').addEventListener('click', csv);
 
 $('forget').addEventListener('click', function () {
   forget();
-  state = { token: '', headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
+  state = { who: null, headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
   $('token').value = '';
+  $('who').value = '';
   show(false);
 });
 
@@ -926,10 +1248,11 @@ $('book').addEventListener('click', function (event) {
 /* ───────────────────────────────────────────────────────────────── the boot */
 
 (function boot() {
-  var token = remembered();
-  if (token) {
-    $('token').value = token;
-    load(token, true);
+  var who = remembered();
+  if (who) {
+    $('who').value = who.user;
+    $('token').value = who.pass;
+    load(who, true);
   } else {
     show(false);
   }

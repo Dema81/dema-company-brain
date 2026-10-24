@@ -834,7 +834,7 @@ var STATUS_NEW = 'Received';
  */
 var HEADERS = ['Received', 'Reference', 'Status', 'Customer code',
   'First name', 'Last name', 'Email', 'Telephone',
-  'Company', 'VAT number', 'Address', 'City', 'Postal code', 'Country',
+  'Company', 'VAT number', 'Tax code', 'Address', 'City', 'Postal code', 'Country',
   'Project', 'Solution', 'From', 'Into', 'Words', 'Subject', 'Desktop publishing', 'Delivery',
   'Net', 'VAT', 'Total', 'Currency', 'VAT treatment', 'Re-priced',
   'Customer reference', 'Notes', 'Files'];
@@ -904,7 +904,7 @@ function record(order, net, vat, gross, repriced, folderUrl) {
   sheet.appendRow([
     new Date(), order.id, STATUS_NEW, customerCode(order),
     who[0], who[1], order.customer.email, b.telephone || '',
-    b.company ? b.companyName : 'individual', b.vatNumber || '',
+    b.company ? b.companyName : 'individual', b.vatNumber || '', b.taxCode || '',
     street, b.city || '', b.postalCode || '', b.countryName || b.country || '',
     order.project || '', order.solution, order.source, (order.targets || []).join(', '),
     (Number(order.words) || 0) * (order.targets || []).length, order.subject,

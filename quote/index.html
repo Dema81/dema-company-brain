@@ -923,8 +923,13 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <select id="billCountry" autocomplete="country"></select>
         </div>
         <div class="field">
-          <header><label for="billVat"><span data-i18n="f_vat">VAT number</span> <span class="optional" data-i18n="opt_eu">(EU only)</span></label></header>
+          <header><label for="billVat" data-i18n="f_vat">VAT number</label></header>
           <input id="billVat" maxlength="30">
+        </div>
+        <div class="field">
+          <header><label for="billTaxCode"><span data-i18n="f_taxcode">Tax code</span>
+            <span class="optional" data-i18n="opt_taxcode">(Italy)</span></label></header>
+          <input id="billTaxCode" maxlength="20" spellcheck="false">
         </div>
             <div class="field wide">
               <label class="toggle consent" for="billAccept">
@@ -1416,6 +1421,13 @@ const T = {
     files_sent: "Your files are with us: {n} sent with the order.",
     files_failed: "We could not send {n} of your files. Reply to the confirmation email and attach them.",
     files_none: "No files were attached. Reply to the confirmation email with the documents to translate.",
+    pay_private: "Pay now, by card or bank transfer, quoting {ref}. We confirm the order once the payment is in.",
+    pay_company: "Pay by card or instant transfer, quoting {ref}. For any other terms, write to {email} or call {phone}.",
+    pay_invoice: "The invoice is issued on delivery.",
+    f_taxcode: "Tax code",
+    opt_taxcode: "(Italy)",
+    err_taxcode: "Enter the tax code the invoice is made out to.",
+    err_vat_company: "Enter the company's VAT number.",
     pay_how: "To pay, transfer the total to the IBAN on the confirmation, quoting {ref} as the reference. Work starts when payment is received.",
     done_track: "You can check this order at any time:",
     done_mail_desk: "The order is in the book. The desk sends the confirmation and the order document to {email}.",
@@ -1577,6 +1589,13 @@ const T = {
     files_sent: "I tuoi file sono arrivati: {n} inviati con l'ordine.",
     files_failed: "Non siamo riusciti a inviare {n} dei tuoi file. Rispondi alla email di conferma allegandoli.",
     files_none: "Nessun file allegato. Rispondi alla email di conferma con i documenti da tradurre.",
+    pay_private: "Paga subito, con carta o bonifico, citando {ref}. Confermiamo l'ordine appena il pagamento è arrivato.",
+    pay_company: "Paga con carta o bonifico istantaneo, citando {ref}. Per condizioni diverse, scrivi a {email} o chiama {phone}.",
+    pay_invoice: "La fattura viene emessa alla consegna.",
+    f_taxcode: "Codice fiscale",
+    opt_taxcode: "(Italia)",
+    err_taxcode: "Inserisci il codice fiscale a cui intestare la fattura.",
+    err_vat_company: "Inserisci la partita IVA dell'azienda.",
     pay_how: "Per pagare, bonifica il totale sull'IBAN indicato nella conferma, citando {ref} come causale. Il lavoro inizia dal ricevimento del pagamento.",
     done_track: "Puoi controllare questo ordine quando vuoi:",
     done_mail_desk: "L'ordine è registrato. Il desk invia la conferma e il documento d'ordine a {email}.",
@@ -4269,7 +4288,8 @@ function billingPayload() {
     postalCode: $('billPostal').value.trim().slice(0, 20),
     country: $('billCountry').value,
     countryName: option ? option.textContent : '',
-    vatNumber: $('billVat').value.trim().slice(0, 30),
+    vatNumber: company ? $('billVat').value.trim().slice(0, 30) : '',
+    taxCode: company ? '' : $('billTaxCode').value.trim().slice(0, 20),
     acceptedAt: new Date().toISOString()
   };
 }
@@ -4295,6 +4315,15 @@ async function submitOrder(event) {
 
   if (party.company && party.companyName.length < 2) {
     return showStepError('billingError', t('err_company'));
+  }
+  /* A company is invoiced on its VAT number, so it is not optional any more.
+     A person is invoiced on a tax code, which only Italy issues - asked for
+     when the bill goes to Italy and left alone everywhere else. */
+  if (party.company && party.vatNumber.length < 4) {
+    return showStepError('billingError', t('err_vat_company'));
+  }
+  if (!party.company && party.country === 'IT' && party.taxCode.length < 11) {
+    return showStepError('billingError', t('err_taxcode'));
   }
   if (!party.address1) return showStepError('billingError', t('err_address'));
   if (!party.city) return showStepError('billingError', t('err_city'));
@@ -4483,7 +4512,15 @@ function showReceipt(id, record, answer) {
   $('doneText').textContent = record.solution + ' ' + t('done_into') + ' ' +
     record.targets.join(', ') + '. ' + t('done_deliver') + ' ' + when(record.eta) +
     ' ' + t('done_send') + ' ' + record.customer.email + '.';
-  $('donePay').textContent = t('pay_how').replace('{ref}', id);
+  /* A person pays before the order is confirmed; a company may also agree
+     other terms with the desk. Either way the invoice follows the delivery,
+     not the payment. */
+  var isCompany = record.billing && record.billing.company;
+  $('donePay').textContent = (isCompany
+    ? t('pay_company').replace('{ref}', id)
+        .replace('{email}', 'g.gambuto@dema-solutions.com')
+        .replace('{phone}', '+39 039 9467678')
+    : t('pay_private').replace('{ref}', id)) + ' ' + t('pay_invoice');
   /* The customer can look the order up later without an account: the reference
      and the email they placed it with are the key. */
   var track = $('doneTrack');
@@ -4640,11 +4677,18 @@ function wire() {
   $('billVat').addEventListener('input', renderSummary);
   $('billingForm').querySelectorAll('input[name="who"]').forEach((radio) =>
     radio.addEventListener('change', () => {
-      $('billCompanyName').closest('.field').hidden = radio.value !== 'company';
+      var isCompany = radio.value === 'company';
+      $('billCompanyName').closest('.field').hidden = !isCompany;
+      /* A company has a VAT number, a person has a tax code. Showing both at
+         once invites the wrong one in the wrong box. */
+      $('billVat').closest('.field').hidden = !isCompany;
+      $('billTaxCode').closest('.field').hidden = isCompany;
+      renderSummary();
       renderSummary();
     })
   );
   $('billCompanyName').closest('.field').hidden = true;
+  $('billVat').closest('.field').hidden = true;
 
   window.addEventListener('hashchange', () => {
     const match = /^#step=([\w-]+)$/.exec(location.hash);

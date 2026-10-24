@@ -97,6 +97,25 @@ h1 {
 
 .lede { color: var(--muted); margin: 0; max-width: 78ch; }
 
+.langs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 14px; }
+
+.lang-btn {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  min-height: 28px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.lang-btn:hover { border-color: var(--accent); color: var(--accent-text); }
+.lang-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
 form { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--gap); align-items: end; }
 
 label {
@@ -199,22 +218,22 @@ footer {
 
   <section class="tile">
     <span class="plate"><img src="../dema-logo.webp" alt="DEMA Solutions" width="120" height="30"></span>
-    <h1>Your order</h1>
-    <p class="lede">The reference is on the confirmation we sent you. The email is the one
-      the order was placed with.</p>
+    <h1 data-i18n="h_yourorder">Your order</h1>
+    <nav class="langs" id="langs" aria-label="Language"></nav>
+    <p class="lede" data-i18n="status_lede">The reference is on the confirmation we sent you.</p>
   </section>
 
   <section class="tile">
     <form id="lookup" autocomplete="off">
       <div>
-        <label for="reference">Reference</label>
+        <label for="reference" data-i18n="f_reference">Reference</label>
         <input id="reference" name="reference" required spellcheck="false" placeholder="ORD-20261024-AB12">
       </div>
       <div>
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@company.com">
+        <label for="email" data-i18n="f_email">Email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" data-i18n-placeholder="ph_email" placeholder="you@company.com">
       </div>
-      <button type="submit" id="go">Look it up</button>
+      <button type="submit" id="go" data-i18n="btn_lookup">Look it up</button>
     </form>
     <p class="note" id="note" hidden></p>
   </section>
@@ -226,9 +245,8 @@ footer {
     <dl id="rows"></dl>
   </section>
 
-  <footer>
-    Nothing here shows your billing details. If something looks wrong, reply to the
-    confirmation email and the desk will pick it up.
+  <footer data-i18n="status_footer">
+    Nothing here shows your billing details.
   </footer>
 
 </main>
@@ -240,11 +258,368 @@ footer {
    question about one order. */
 var ORDERS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbxkQZuUjzsYWSpCs0DFl9gvUvT9sJkN2rIdePy2pZ9xpeRDRyhBVH6zQQUyTmhH143Rjw/exec';
 
+/* Nine strings of its own; the labels it shares with the quote desk are
+   lifted from the desk's dictionaries so the two cannot drift apart. */
+var T = {
+  en: {
+    an_words: "Words",
+    btn_looking: "Looking…",
+    btn_lookup: "Look it up",
+    f_email: "Email",
+    f_reference: "Reference",
+    h_yourorder: "Your order",
+    ph_email: "you@company.com",
+    status_footer: "Nothing here shows your billing details. If something looks wrong, reply to the confirmation email and the desk will pick it up.",
+    status_lede: "The reference is on the confirmation we sent you. The email is the one the order was placed with.",
+    status_notfound: "We cannot find an order with that reference and that email together. Check both against the confirmation we sent you.",
+    status_placed: "Placed",
+    status_unreachable: "We could not reach the desk just now. Try again in a moment.",
+    sum_delivery: "Delivery",
+    sum_from: "From",
+    sum_into: "Into",
+    sum_solution: "Solution",
+    sum_total: "Total due",
+  },
+  it: {
+    an_words: "Parole",
+    btn_looking: "Cerco…",
+    btn_lookup: "Cerca",
+    f_email: "Email",
+    f_reference: "Riferimento",
+    h_yourorder: "Il tuo ordine",
+    ph_email: "tu@azienda.com",
+    status_footer: "Qui non compare nessun dato di fatturazione. Se qualcosa non torna, rispondi alla email di conferma e il desk se ne occupa.",
+    status_lede: "Il riferimento è sulla conferma che ti abbiamo mandato. L'email è quella con cui hai fatto l'ordine.",
+    status_notfound: "Non troviamo nessun ordine con quel riferimento e quell'email insieme. Controlla entrambi sulla conferma che ti abbiamo mandato.",
+    status_placed: "Ordinato il",
+    status_unreachable: "Non siamo riusciti a raggiungere il desk in questo momento. Riprova fra un momento.",
+    sum_delivery: "Consegna",
+    sum_from: "Da",
+    sum_into: "Verso",
+    sum_solution: "Soluzione",
+    sum_total: "Totale dovuto",
+  },
+  fr: {
+    an_words: "Mots",
+    btn_looking: "Recherche…",
+    btn_lookup: "Rechercher",
+    f_email: "E-mail",
+    f_reference: "Référence",
+    h_yourorder: "Votre commande",
+    ph_email: "vous@entreprise.com",
+    status_footer: "Aucune donnée de facturation n'apparaît ici. Si quelque chose ne va pas, répondez à l'e-mail de confirmation et le bureau s'en chargera.",
+    status_lede: "La référence figure sur la confirmation que nous vous avons envoyée. L'e-mail est celui avec lequel la commande a été passée.",
+    status_notfound: "Nous ne trouvons aucune commande avec cette référence et cet e-mail ensemble. Vérifiez les deux sur la confirmation que nous vous avons envoyée.",
+    status_placed: "Passée le",
+    status_unreachable: "Nous n'avons pas pu joindre le bureau à l'instant. Réessayez dans un moment.",
+    sum_delivery: "Livraison",
+    sum_from: "De",
+    sum_into: "Vers",
+    sum_solution: "Solution",
+    sum_total: "Total à payer",
+  },
+  es: {
+    an_words: "Palabras",
+    btn_looking: "Buscando…",
+    btn_lookup: "Buscar",
+    f_email: "Correo electrónico",
+    f_reference: "Referencia",
+    h_yourorder: "Tu pedido",
+    ph_email: "tu@empresa.com",
+    status_footer: "Aquí no aparece ningún dato de facturación. Si algo no cuadra, responde al correo de confirmación y el equipo se encarga.",
+    status_lede: "La referencia está en la confirmación que te enviamos. El correo es aquel con el que hiciste el pedido.",
+    status_notfound: "No encontramos ningún pedido con esa referencia y ese correo juntos. Comprueba ambos en la confirmación que te enviamos.",
+    status_placed: "Realizado el",
+    status_unreachable: "No hemos podido contactar con el equipo en este momento. Inténtalo de nuevo en un momento.",
+    sum_delivery: "Entrega",
+    sum_from: "De",
+    sum_into: "Hacia",
+    sum_solution: "Solución",
+    sum_total: "Total a pagar",
+  },
+  de: {
+    an_words: "Wörter",
+    btn_looking: "Wird gesucht…",
+    btn_lookup: "Nachsehen",
+    f_email: "E-Mail",
+    f_reference: "Referenz",
+    h_yourorder: "Ihr Auftrag",
+    ph_email: "sie@firma.com",
+    status_footer: "Hier erscheinen keine Rechnungsdaten. Stimmt etwas nicht, antworten Sie auf die Bestätigungsmail, dann kümmern wir uns darum.",
+    status_lede: "Die Referenz steht auf der Bestätigung, die wir Ihnen geschickt haben. Die E-Mail ist die, mit der der Auftrag erteilt wurde.",
+    status_notfound: "Wir finden keinen Auftrag mit dieser Referenz und dieser E-Mail zusammen. Prüfen Sie beides auf der Bestätigung, die wir Ihnen geschickt haben.",
+    status_placed: "Erteilt am",
+    status_unreachable: "Wir konnten uns gerade nicht verbinden. Versuchen Sie es gleich noch einmal.",
+    sum_delivery: "Lieferung",
+    sum_from: "Von",
+    sum_into: "Nach",
+    sum_solution: "Lösung",
+    sum_total: "Zu zahlen",
+  },
+  pt: {
+    an_words: "Palavras",
+    btn_looking: "A procurar…",
+    btn_lookup: "Procurar",
+    f_email: "E-mail",
+    f_reference: "Referência",
+    h_yourorder: "A sua encomenda",
+    ph_email: "voce@empresa.com",
+    status_footer: "Aqui não aparece nenhum dado de faturação. Se algo não estiver certo, responda ao e-mail de confirmação e tratamos disso.",
+    status_lede: "A referência está na confirmação que lhe enviámos. O e-mail é aquele com que a encomenda foi feita.",
+    status_notfound: "Não encontramos nenhuma encomenda com essa referência e esse e-mail em conjunto. Verifique ambos na confirmação que lhe enviámos.",
+    status_placed: "Feita em",
+    status_unreachable: "Não conseguimos contactar o serviço neste momento. Tente novamente dentro de momentos.",
+    sum_delivery: "Entrega",
+    sum_from: "De",
+    sum_into: "Para",
+    sum_solution: "Solução",
+    sum_total: "Total a pagar",
+  },
+  nl: {
+    an_words: "Woorden",
+    btn_looking: "Bezig met zoeken…",
+    btn_lookup: "Opzoeken",
+    f_email: "E-mail",
+    f_reference: "Referentie",
+    h_yourorder: "Uw opdracht",
+    ph_email: "u@bedrijf.com",
+    status_footer: "Hier staan geen factuurgegevens. Klopt er iets niet, beantwoord dan de bevestigingsmail en wij pakken het op.",
+    status_lede: "De referentie staat op de bevestiging die wij u hebben gestuurd. Het e-mailadres is het adres waarmee de opdracht is geplaatst.",
+    status_notfound: "Wij vinden geen opdracht met die referentie en dat e-mailadres samen. Controleer beide op de bevestiging die wij u hebben gestuurd.",
+    status_placed: "Geplaatst op",
+    status_unreachable: "Wij konden zojuist geen verbinding maken. Probeer het zo meteen opnieuw.",
+    sum_delivery: "Levering",
+    sum_from: "Van",
+    sum_into: "Naar",
+    sum_solution: "Oplossing",
+    sum_total: "Te betalen",
+  },
+  no: {
+    an_words: "Ord",
+    btn_looking: "Søker…",
+    btn_lookup: "Søk opp",
+    f_email: "E-post",
+    f_reference: "Referanse",
+    h_yourorder: "Bestillingen din",
+    ph_email: "du@firma.com",
+    status_footer: "Her vises ingen fakturaopplysninger. Stemmer noe ikke, svar på bekreftelsesmeldingen, så tar vi det derfra.",
+    status_lede: "Referansen står på bekreftelsen vi sendte deg. E-postadressen er den bestillingen ble lagt inn med.",
+    status_notfound: "Vi finner ingen bestilling med den referansen og den e-postadressen sammen. Sjekk begge mot bekreftelsen vi sendte deg.",
+    status_placed: "Lagt inn",
+    status_unreachable: "Vi fikk ikke kontakt akkurat nå. Prøv igjen om et øyeblikk.",
+    sum_delivery: "Levering",
+    sum_from: "Fra",
+    sum_into: "Til",
+    sum_solution: "Løsning",
+    sum_total: "Å betale",
+  },
+  fi: {
+    an_words: "Sanat",
+    btn_looking: "Haetaan…",
+    btn_lookup: "Hae",
+    f_email: "Sähköposti",
+    f_reference: "Viite",
+    h_yourorder: "Tilauksesi",
+    ph_email: "sina@yritys.com",
+    status_footer: "Täällä ei näy laskutustietoja. Jos jokin ei täsmää, vastaa vahvistusviestiin, niin hoidamme asian.",
+    status_lede: "Viite on lähettämässämme vahvistuksessa. Sähköpostiosoite on se, jolla tilaus tehtiin.",
+    status_notfound: "Emme löydä tilausta, jossa olisivat sekä tuo viite että tuo sähköpostiosoite. Tarkista molemmat lähettämästämme vahvistuksesta.",
+    status_placed: "Tilattu",
+    status_unreachable: "Emme saaneet juuri nyt yhteyttä. Yritä hetken kuluttua uudelleen.",
+    sum_delivery: "Toimitus",
+    sum_from: "Kielestä",
+    sum_into: "Kielelle",
+    sum_solution: "Ratkaisu",
+    sum_total: "Maksettava",
+  },
+  sv: {
+    an_words: "Ord",
+    btn_looking: "Söker…",
+    btn_lookup: "Sök upp",
+    f_email: "E-post",
+    f_reference: "Referens",
+    h_yourorder: "Din beställning",
+    ph_email: "du@foretag.com",
+    status_footer: "Här visas inga faktureringsuppgifter. Stämmer något inte, svara på bekräftelsemejlet så tar vi det därifrån.",
+    status_lede: "Referensen står på bekräftelsen vi skickade till dig. E-postadressen är den som beställningen lades med.",
+    status_notfound: "Vi hittar ingen beställning med den referensen och den e-postadressen tillsammans. Kontrollera båda mot bekräftelsen vi skickade till dig.",
+    status_placed: "Lagd",
+    status_unreachable: "Vi fick ingen kontakt just nu. Försök igen om en stund.",
+    sum_delivery: "Leverans",
+    sum_from: "Från",
+    sum_into: "Till",
+    sum_solution: "Lösning",
+    sum_total: "Att betala",
+  },
+  zh: {
+    an_words: "字数",
+    btn_looking: "查询中…",
+    btn_lookup: "查询",
+    f_email: "电子邮箱",
+    f_reference: "参考编号",
+    h_yourorder: "您的订单",
+    ph_email: "you@company.com",
+    status_footer: "此页面不显示您的账单信息。如有不符，请回复确认邮件，我们会跟进处理。",
+    status_lede: "参考编号在我们发送给您的确认函上。邮箱是下单时所使用的邮箱。",
+    status_notfound: "找不到同时符合该参考编号和该邮箱的订单。请对照我们发送的确认函核对这两项。",
+    status_placed: "下单时间",
+    status_unreachable: "暂时无法连接。请稍后再试。",
+    sum_delivery: "交付",
+    sum_from: "源语言",
+    sum_into: "目标语言",
+    sum_solution: "方案",
+    sum_total: "应付总额",
+  },
+  da: {
+    an_words: "Ord",
+    btn_looking: "Søger…",
+    btn_lookup: "Slå op",
+    f_email: "E-mail",
+    f_reference: "Reference",
+    h_yourorder: "Din bestilling",
+    ph_email: "dig@firma.com",
+    status_footer: "Her vises ingen faktureringsoplysninger. Er der noget galt, så svar på bekræftelsesmailen, så tager vi den derfra.",
+    status_lede: "Referencen står på den bekræftelse, vi sendte dig. E-mailadressen er den, bestillingen blev afgivet med.",
+    status_notfound: "Vi finder ingen bestilling med den reference og den e-mailadresse sammen. Tjek begge dele på den bekræftelse, vi sendte dig.",
+    status_placed: "Afgivet",
+    status_unreachable: "Vi kunne ikke få forbindelse lige nu. Prøv igen om et øjeblik.",
+    sum_delivery: "Levering",
+    sum_from: "Fra",
+    sum_into: "Til",
+    sum_solution: "Løsning",
+    sum_total: "At betale",
+  },
+  tr: {
+    an_words: "Kelime",
+    btn_looking: "Aranıyor…",
+    btn_lookup: "Sorgula",
+    f_email: "E-posta",
+    f_reference: "Referans",
+    h_yourorder: "Siparişiniz",
+    ph_email: "siz@firma.com",
+    status_footer: "Burada fatura bilgileriniz görünmez. Bir şey yanlış görünüyorsa onay e-postasını yanıtlayın, gerisini biz hallederiz.",
+    status_lede: "Referans, size gönderdiğimiz onayda yer alıyor. E-posta ise siparişin verildiği adrestir.",
+    status_notfound: "Bu referans ve bu e-posta birlikte olan bir sipariş bulamıyoruz. İkisini de size gönderdiğimiz onaydan kontrol edin.",
+    status_placed: "Verildiği tarih",
+    status_unreachable: "Şu anda bağlantı kuramadık. Birazdan tekrar deneyin.",
+    sum_delivery: "Teslim",
+    sum_from: "Kaynak",
+    sum_into: "Hedef",
+    sum_solution: "Çözüm",
+    sum_total: "Ödenecek tutar",
+  },
+  ru: {
+    an_words: "Слова",
+    btn_looking: "Ищем…",
+    btn_lookup: "Найти",
+    f_email: "Эл. почта",
+    f_reference: "Референс",
+    h_yourorder: "Ваш заказ",
+    ph_email: "vy@kompaniya.com",
+    status_footer: "Здесь не показываются ваши платёжные данные. Если что-то не так, ответьте на письмо с подтверждением — мы разберёмся.",
+    status_lede: "Референс указан в подтверждении, которое мы вам отправили. Электронная почта — та, с которой был оформлен заказ.",
+    status_notfound: "Мы не находим заказ, в котором совпадают и этот референс, и этот адрес почты. Сверьте оба с подтверждением, которое мы вам отправили.",
+    status_placed: "Оформлен",
+    status_unreachable: "Сейчас не удалось связаться. Попробуйте ещё раз через минуту.",
+    sum_delivery: "Сдача",
+    sum_from: "С языка",
+    sum_into: "На язык",
+    sum_solution: "Решение",
+    sum_total: "К оплате",
+  },
+  ja: {
+    an_words: "文字数",
+    btn_looking: "照会中…",
+    btn_lookup: "照会する",
+    f_email: "メールアドレス",
+    f_reference: "参照番号",
+    h_yourorder: "ご注文の状況",
+    ph_email: "you@company.com",
+    status_footer: "このページに請求情報は表示されません。内容に相違がある場合は、確認メールにご返信ください。担当が対応いたします。",
+    status_lede: "参照番号は、お送りした確認書に記載されています。メールアドレスは、ご注文時にお使いのものです。",
+    status_notfound: "その参照番号とメールアドレスの両方が一致するご注文が見つかりません。お送りした確認書で両方をご確認ください。",
+    status_placed: "ご注文日",
+    status_unreachable: "ただいま接続できませんでした。少し時間をおいてお試しください。",
+    sum_delivery: "納品",
+    sum_from: "原文言語",
+    sum_into: "訳文言語",
+    sum_solution: "プラン",
+    sum_total: "お支払い総額",
+  }
+};
+
 function $(id) { return document.getElementById(id); }
+
+/* The same arrangement as the quote desk, in miniature: data-i18n keys, one
+   dictionary per language, textContent. The language arrives in the address
+   when the receipt links here, so the page opens in the language the order was
+   placed in; failing that it is remembered, or guessed from the browser. */
+var LANGS = [
+  ['en', 'EN'], ['it', 'IT'], ['fr', 'FR'], ['es', 'ES'], ['de', 'DE'], ['pt', 'PT'],
+  ['nl', 'NL'], ['no', 'NO'], ['da', 'DA'], ['fi', 'FI'], ['sv', 'SV'],
+  ['tr', 'TR'], ['ru', 'RU'], ['zh', 'ZH'], ['ja', 'JA']
+];
+
+var LANG = 'en';
+
+/** The order last looked up, so a change of language can draw it again. */
+var shown = null;
+
+function t(key) {
+  var dict = T[LANG] || {};
+  if (dict[key] !== undefined) return dict[key];
+  if (T.en[key] !== undefined) return T.en[key];
+  return key;
+}
+
+function locale() { return LANG === 'en' ? 'en-GB' : LANG; }
+
+function applyTranslation(lang) {
+  LANG = T[lang] ? lang : 'en';
+  document.documentElement.lang = LANG;
+  try { localStorage.setItem('quote-desk-lang', LANG); } catch (err) {}
+
+  document.querySelectorAll('[data-i18n]').forEach(function (el) {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('.lang-btn').forEach(function (b) {
+    var on = b.getAttribute('data-lang') === LANG;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+
+  if (shown) show(shown);
+}
+
+function buildLangs() {
+  var box = $('langs');
+  if (!box) return;
+  box.innerHTML = LANGS.filter(function (l) { return T[l[0]]; }).map(function (l) {
+    return '<button type="button" class="lang-btn" data-lang="' + l[0] + '">' + l[1] + '</button>';
+  }).join('');
+  box.addEventListener('click', function (event) {
+    var b = event.target.closest ? event.target.closest('.lang-btn') : null;
+    if (b) applyTranslation(b.getAttribute('data-lang'));
+  });
+}
+
+function startingLang() {
+  var named = /[?&]lang=([a-z]{2})/.exec(location.search);
+  if (named && T[named[1]]) return named[1];
+  try {
+    var kept = localStorage.getItem('quote-desk-lang');
+    if (kept && T[kept]) return kept;
+  } catch (err) {}
+  var guess = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  return T[guess] ? guess : 'en';
+}
 
 function money(amount, currency) {
   try {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat(locale(), {
       style: 'currency', currency: currency || 'EUR', currencyDisplay: 'code'
     }).format(amount);
   } catch (err) {
@@ -256,7 +631,7 @@ function when(iso) {
   if (!iso) return '';
   var d = new Date(iso);
   if (isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(locale(), {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   }).format(d);
 }
@@ -268,10 +643,13 @@ function dueWords(iso) {
   var a = new Date(); a.setHours(0, 0, 0, 0);
   var b = new Date(d.getTime()); b.setHours(0, 0, 0, 0);
   var days = Math.round((b - a) / 86400000);
-  if (days === 0) return 'today';
-  if (days === 1) return 'tomorrow';
-  if (days < 0) return (-days) + ' days ago';
-  return 'in ' + days + ' days';
+  /* "in 6 days" and "2 days ago" come localised from the browser rather than
+     from four more dictionary keys nobody would keep in step. */
+  try {
+    return new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' }).format(days, 'day');
+  } catch (err) {
+    return days === 0 ? 'today' : (days < 0 ? (-days) + ' days ago' : 'in ' + days + ' days');
+  }
 }
 
 function escapeHtml(value) {
@@ -301,6 +679,7 @@ function numRow(label, value) {
 }
 
 function show(order) {
+  shown = order;
   $('status').textContent = order.status || 'Received';
   $('status').className = statusClass(order.status);
   $('ref').textContent = order.reference;
@@ -309,13 +688,13 @@ function show(order) {
 
   var due = when(order.delivery);
   $('rows').innerHTML =
-    row('Solution', order.solution) +
-    row('From', order.from) +
-    row('Into', order.into) +
-    numRow('Words', order.words ? order.words.toLocaleString('en-GB') : '') +
-    numRow('Delivery', due ? due + ' · ' + dueWords(order.delivery) : '') +
-    numRow('Total', order.total ? money(order.total, order.currency) : '') +
-    numRow('Placed', when(order.received));
+    row(t('sum_solution'), order.solution) +
+    row(t('sum_from'), order.from) +
+    row(t('sum_into'), order.into) +
+    numRow(t('an_words'), order.words ? order.words.toLocaleString(locale()) : '') +
+    numRow(t('sum_delivery'), due ? due + ' · ' + dueWords(order.delivery) : '') +
+    numRow(t('sum_total'), order.total ? money(order.total, order.currency) : '') +
+    numRow(t('status_placed'), when(order.received));
 
   $('answer').hidden = false;
 }
@@ -337,7 +716,7 @@ $('lookup').addEventListener('submit', function (event) {
   var button = $('go');
   var was = button.textContent;
   button.disabled = true;
-  button.textContent = 'Looking…';
+  button.textContent = t('btn_looking');
   $('note').hidden = true;
 
   /* text/plain keeps this a simple request, so the browser asks for no
@@ -356,11 +735,9 @@ $('lookup').addEventListener('submit', function (event) {
     }
     /* The desk answers a wrong pair exactly as it answers an unknown one, so
        this page cannot be used to find out which references exist. */
-    trouble('We cannot find an order with that reference and that email together. ' +
-      'Check both against the confirmation we sent you.');
+    trouble(t('status_notfound'));
   }).catch(function (err) {
-    trouble('We could not reach the desk just now: ' + (err && err.message ? err.message : err) +
-      '. Try again in a moment.');
+    trouble(t('status_unreachable'));
   }).then(function () {
     button.disabled = false;
     button.textContent = was;
@@ -369,6 +746,8 @@ $('lookup').addEventListener('submit', function (event) {
 
 /* A link in the confirmation can carry the reference, so it arrives filled in. */
 (function boot() {
+  buildLangs();
+  applyTranslation(startingLang());
   var match = /[?&]ref=([^&]+)/.exec(location.search);
   if (match) $('reference').value = decodeURIComponent(match[1]);
 })();

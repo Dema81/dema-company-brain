@@ -4489,8 +4489,11 @@ function showReceipt(id, record, answer) {
   var track = $('doneTrack');
   if (track) {
     track.hidden = false;
+    /* The language travels with the link, so the page the customer lands on
+       opens in the language they ordered in. */
     track.innerHTML = t('done_track') + ' <a href="../status/?ref=' +
-      encodeURIComponent(id) + '">ai-dema-solutions.com/quote/status/</a>';
+      encodeURIComponent(id) + '&lang=' + encodeURIComponent(LANG) +
+      '">ai-dema-solutions.com/quote/status/</a>';
   }
   $('doneMail').textContent = answer.delivered
     ? t('done_mail_sent').replace('{email}', record.customer.email)

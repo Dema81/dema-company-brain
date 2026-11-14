@@ -1062,9 +1062,19 @@ const lang = (code) => LANGUAGES.find((l) => l.code === code);
 
 /* ─────────────────────────────────────────────── names the browser knows
 
-   Languages and countries are not kept in the dictionaries. Every browser
-   ships their names in every language the page speaks, so an Italian visitor
-   reads "Francese (Francia)" without a single line being translated here.
+   Languages and countries are not kept in the dictionaries: every browser
+   ships their names already, so nothing here has to be translated fifteen
+   times.
+
+   THEY ARE ASKED FOR IN ENGLISH, IN EVERY LANGUAGE THE PAGE SPEAKS. That is
+   the client's instruction (2026-11-14), and the same one the deadline
+   calendar follows: its months and weekdays are English whatever the visitor
+   is reading in. The menus - the language pair, the subject, the country -
+   read the same way for a visitor, for the desk and in the sheet, so a
+   request discussed on the telephone is discussed in one set of words. Asked
+   for in [LANG] - as it was until this date - an Italian visitor picked
+   "Isole Aland" from a list whose first line still said "Choose a country",
+   and the desk read something else again.
 
    These are display names only. The order sent to the desk is built from
    lang(code).name and subjectOf(code).name, which stay English, so the sheet,
@@ -1073,7 +1083,7 @@ const lang = (code) => LANGUAGES.find((l) => l.code === code);
 
 function intlName(value, kind) {
   try {
-    const out = new Intl.DisplayNames([LANG], { type: kind }).of(value);
+    const out = new Intl.DisplayNames(['en'], { type: kind }).of(value);
     if (out && out !== value) return out.charAt(0).toUpperCase() + out.slice(1);
   } catch (err) {}
   return null;

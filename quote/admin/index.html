@@ -377,6 +377,41 @@ tbody tr:hover > td { background: var(--surface-2); }
   color: #fff;
   margin-left: 6px;
 }
+.acts {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.acts .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.acts .said {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}
+
+.acts .said:empty { margin: 0; }
+
+.act {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.act:hover { border-color: currentColor; }
 
 .trouble {
   border-left: 3px solid var(--warn);
@@ -612,7 +647,8 @@ function forget() {
 
 /* ───────────────────────────────────────────────────────────── what is held */
 
-var state = { who: null, headers: [], index: {}, rows: [], loadedAt: null, openRef: null };
+var state = { who: null, headers: [], index: {}, rows: [], unreadable: 0,
+  loadedAt: null, openRef: null };
 
 /*
  * Read the sheet.
@@ -664,6 +700,33 @@ function cell(row, name) {
   if (i === undefined) return '';
   var value = row[i];
   return value === undefined || value === null ? '' : value;
+}
+
+/*
+ * Is this row readable at all?
+ *
+ * The sheet has grown columns over time, and a row written under an earlier,
+ * shorter layout sits one or more cells to the left of where this page looks.
+ * Six of them were in the book on 14 November 2026: their `Status` held a
+ * person's name, their `Solution` held a price, and their `Words` held the
+ * sentence about VAT. Nothing complained - the page reads by position, so a
+ * crooked row reads as a real one with absurd values, and `1.1`, `6.12`, `8.8`
+ * and `13.2` turned up in the chart of solutions as though they were products.
+ *
+ * The test is deliberately structural rather than a list of names. Statuses and
+ * solution names are open vocabularies - the desk invents a status by hand when
+ * it needs one, and a new tier may be added any day - so matching against a
+ * list would start throwing away good rows the moment the business changed.
+ * A word count and a net amount, on the other hand, are numbers in every
+ * well-formed row and in no crooked one. If the columns ever shift again, these
+ * two stop being numbers and the row drops out of the counts instead of
+ * poisoning them.
+ */
+function readable(row) {
+  var words = cell(row, 'Words');
+  var net = cell(row, 'Net');
+  if (words === '' || net === '') return false;
+  return !isNaN(Number(words)) && !isNaN(Number(net));
 }
 
 /* ─────────────────────────────────────────────────────────────── the format */
@@ -1108,7 +1171,112 @@ function detailRow(row) {
 
   return '<tr class="detail"><td colspan="' + COLUMNS + '">' + warning + '<dl class="pairs">' +
     (parts || '<div><dd class="empty">Nothing further was recorded.</dd></div>') +
-    '</dl></td></tr>';
+    '</dl>' + detailActions(row) + '</td></tr>';
+}
+
+/*
+ * What the desk can do with a request it is looking at.
+ *
+ * The point of these is traceability. A request used to be a line of text and
+ * nothing else: no way back to the document that was sent, to what the
+ * customer sees, or to the files - and when Graph refused, as it did for
+ * every request on 14 November 2026, there was nothing anywhere to go back
+ * to. The quote is redrawn from the row rather than fetched from storage, so
+ * it can be produced whatever happened to the folder.
+ *
+ * The two decision links are deliberately NOT here. Putting them in front of
+ * the desk would hand it the power to accept a quote on the customer's
+ * behalf, and that is the whole reason the token leaves the sheet as '(set)'.
+ * The state of the decision is shown instead; changing it is a conversation,
+ * not a button.
+ */
+function detailActions(row) {
+  var ref = String(cell(row, 'Reference') || '');
+  if (!ref) return '';
+
+  var status = String(cell(row, 'Status') || '');
+  var decided = String(cell(row, 'Decided') || '');
+  var answered = status === 'Accepted' || status === 'Declined';
+
+  var said = answered
+    ? 'The customer ' + (status === 'Accepted' ? 'accepted' : 'declined') +
+      ' this quote' + (decided ? ' on ' + escapeHtml(stamp(decided)) : '') + '.'
+    : status === 'Expired'
+      ? 'This quote lapsed before anyone answered it.'
+      : 'Waiting for the customer to answer. Nothing is agreed yet.';
+
+  var files = String(cell(row, 'Files') || '');
+  var where = files
+    ? '<a class="act" href="' + escapeHtml(files) + '" target="_blank" rel="noopener">' +
+      (files.indexOf('drive.google.com') !== -1 ? 'Folder (Google Drive)' : 'Folder (OneDrive)') +
+      '</a>'
+    : '';
+
+  /* The page the customer is looking at, opened exactly as they see it: the
+     same reference, the same language. It answers "what have they got?"
+     without anybody having to describe it down a telephone. */
+  var lang = String(cell(row, 'Language') || '');
+  var track = '<a class="act" target="_blank" rel="noopener" href="../status/?ref=' +
+    encodeURIComponent(ref) + (lang ? '&lang=' + encodeURIComponent(lang) : '') +
+    '">What the customer sees</a>';
+
+  return '<div class="acts">' +
+    '<p class="said">' + said + '</p>' +
+    '<div class="row">' +
+      '<button type="button" class="act" data-do="quotePdf" data-ref="' + escapeHtml(ref) +
+        '">Download the quote (PDF)</button>' +
+      (answered ? '' :
+        '<button type="button" class="act" data-do="resend" data-ref="' + escapeHtml(ref) +
+        '">Send the quote again</button>') +
+      '<button type="button" class="act" data-do="retryFiles" data-ref="' + escapeHtml(ref) +
+        '">Try the folder again</button>' +
+      track + where +
+    '</div>' +
+    '<p class="said" data-said="' + escapeHtml(ref) + '"></p>' +
+  '</div>';
+}
+
+/* One of the three, asked of the desk's own endpoint under the same login. */
+function deskDo(what, ref, say) {
+  if (!state.who) return;
+  say('Working…');
+  fetch(ORDERS_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: what, id: ref, user: state.who.user, pass: state.who.pass })
+  }).then(function (res) { return res.json(); }).then(function (answer) {
+    if (!answer || answer.ok !== true) {
+      say('That did not work: ' + ((answer && answer.error) || 'refused') + '.');
+      return;
+    }
+    if (what === 'quotePdf') {
+      /* Straight to a file. The quote is a document somebody files, forwards
+         or prints - not something to read in a browser tab. */
+      var bytes = atob(answer.data);
+      var buffer = new Uint8Array(bytes.length);
+      for (var i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([buffer], { type: 'application/pdf' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = answer.name || (ref + '.pdf');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      say('Downloaded ' + (answer.name || 'the quote') + '.');
+      return;
+    }
+    if (what === 'resend') {
+      say('Sent again to ' + answer.sent + '.');
+      return;
+    }
+    say(answer.drive
+      ? 'Microsoft still refuses, so the folder is on Google Drive. The row still needs a hand.'
+      : 'The folder is on OneDrive' + (answer.filed ? ', with the quote filed beside it.' : '.'));
+    load(state.who, false);
+  }).catch(function (err) {
+    say('That did not work: ' + String(err && err.message ? err.message : err) + '.');
+  });
 }
 
 function paintBook(rows) {
@@ -1181,8 +1349,15 @@ function paint() {
   $('tally').textContent = rows.length === state.rows.length
     ? thousands(rows.length) + ' shown'
     : thousands(rows.length) + ' of ' + thousands(state.rows.length) + ' shown';
+  /* Rows left out are said out loud. A number that quietly drops is how this
+     page would hide the next column shift instead of showing it. */
   $('foot').textContent = 'Read ' + stamp(state.loadedAt) +
-    '. The book is the Quote Desk orders sheet; this page only reads it.';
+    '. The book is the Quote Desk orders sheet; this page only reads it.' +
+    (state.unreadable
+      ? ' ' + thousands(state.unreadable) + ' older ' +
+        (state.unreadable === 1 ? 'row is' : 'rows are') +
+        ' written against a shorter version of the sheet and cannot be read here.'
+      : '');
 }
 
 /* ────────────────────────────────────────────────────────────────── the CSV */
@@ -1241,7 +1416,9 @@ function load(who, fromGate) {
     state.who = who;
     state.headers = answer.headers || [];
     state.index = indexOf(state.headers);
-    state.rows = answer.orders || [];
+    var book = answer.orders || [];
+    state.rows = book.filter(readable);
+    state.unreadable = book.length - state.rows.length;
     state.loadedAt = new Date().toISOString();
     remember(who);
     fillSolutions(state.rows);
@@ -1296,6 +1473,17 @@ $('sort').addEventListener('change', paint);
 /* One row open at a time: the detail is wide, and two open rows push the money
    column off the screen on a laptop. */
 $('book').addEventListener('click', function (event) {
+  var act = event.target.closest ? event.target.closest('[data-do]') : null;
+  if (act) {
+    var doing = act.getAttribute('data-do');
+    var on = act.getAttribute('data-ref');
+    /* The note belongs to the row it was asked from, so two rows opened one
+       after the other cannot write over each other's answer. */
+    var note = document.querySelector('[data-said="' + on + '"]');
+    deskDo(doing, on, function (text) { if (note) note.textContent = text; });
+    return;
+  }
+
   var button = event.target.closest ? event.target.closest('.open') : null;
   if (!button) return;
   var ref = button.getAttribute('data-ref');

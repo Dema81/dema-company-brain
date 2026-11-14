@@ -147,7 +147,83 @@ function graphRoute(url, opts) {
   return null;
 }
 
+/*
+ * Google Drive, in memory.
+ *
+ * The fallback writes here when Graph refuses, so the tests need a Drive that
+ * behaves like the real one in the two ways the code depends on: a folder
+ * looked up by name is made once and found thereafter, and a file dropped in
+ * a folder is listed back with its name and its size.
+ */
+const drive = { folders: {}, files: {} };
+
+function driveFolderStub(id, name) {
+  if (drive.folders[id]) return drive.folders[id];
+  const made = {
+    _id: id, _name: name, _children: [], _files: [],
+    getId() { return this._id; },
+    getName() { return this._name; },
+    getUrl() { return 'https://drive.google.com/drive/folders/' + this._id; },
+    getFoldersByName(wanted) {
+      const hit = this._children.map((cid) => drive.folders[cid])
+        .filter((f) => f.getName() === wanted);
+      let i = 0;
+      return { hasNext: () => i < hit.length, next: () => hit[i++] };
+    },
+    createFolder(childName) {
+      const cid = this._id + '/' + childName;
+      const child = driveFolderStub(cid, childName);
+      child._parent = this._id;
+      if (this._children.indexOf(cid) === -1) this._children.push(cid);
+      return child;
+    },
+    getParents() {
+      const up = this._parent ? [drive.folders[this._parent]] : [];
+      let i = 0;
+      return { hasNext: () => i < up.length, next: () => up[i++] };
+    },
+    createFile(blob) {
+      const fid = 'file:' + this._id + '/' + blob.getName();
+      drive.files[fid] = { id: fid, name: blob.getName(), blob };
+      this._files.push(fid);
+      return {
+        getId: () => fid,
+        setName(n) { drive.files[fid].name = n; return this; },
+        getSize: () => 10
+      };
+    },
+    getFiles() {
+      const list = this._files.map((fid) => ({
+        getId: () => fid,
+        getName: () => drive.files[fid].name,
+        getSize: () => 10
+      }));
+      let i = 0;
+      return { hasNext: () => i < list.length, next: () => list[i++] };
+    },
+    getFolders() {
+      const list = this._children.map((cid) => drive.folders[cid]);
+      let i = 0;
+      return { hasNext: () => i < list.length, next: () => list[i++] };
+    }
+  };
+  drive.folders[id] = made;
+  return made;
+}
+
+driveFolderStub('ORDERS-ROOT', 'Quote Desk — Orders');
+
 const sandbox = {
+  DriveApp: {
+    getFolderById: (id) => {
+      if (!drive.folders[id]) throw new Error('No item with the given ID could be found: ' + id);
+      return drive.folders[id];
+    },
+    getFileById: (id) => {
+      if (!drive.files[id]) throw new Error('No file ' + id);
+      return { getBlob: () => drive.files[id].blob };
+    }
+  },
   PropertiesService: { getScriptProperties: () => ({
     getProperty: (k) => props[k] || null, setProperty: (k, v) => { props[k] = v; },
     deleteProperty: (k) => { delete props[k]; } }) },
@@ -223,6 +299,8 @@ const eq = (got, want, what) => { assert.strictEqual(got, want, what + ': atteso
 const configure = () => {
   props.GRAPH_TENANT = 'ten'; props.GRAPH_CLIENT = 'cli'; props.GRAPH_SECRET = 'sec';
   props.ONEDRIVE_TARGET = 'user:g.gambuto@dema-solutions.com';
+  /* Where the fallback writes when Graph refuses. */
+  props.ORDERS_FOLDER_ID = 'ORDERS-ROOT';
 };
 configure();
 heading = HEADERS.slice();
@@ -409,15 +487,21 @@ assert.deepStrictEqual(plain(again.getPath()), ['Quote Desk', 'Esempio Srl', fol
 checks++;
 
 /*
- * Gli ordini presi prima del passaggio a OneDrive hanno un link a Drive nella
- * colonna Files e nessun id. Non si inventa una cartella vuota: si dice dove
- * sono i file davvero, altrimenti qualcuno consegna una cartella vuota.
+ * Una riga con un link a Google Drive nella colonna Files si apre su Drive.
+ *
+ * Prima lanciava un errore - "before the move to OneDrive" - e aveva senso
+ * finche Drive era fuori dal progetto. Ora il ripiego ci scrive davvero,
+ * quindi quell'errore avrebbe rifiutato di toccare proprio le richieste che
+ * gia avevano avuto un problema. L id si prende dalla colonna 'Drive item'
+ * se c'e, altrimenti si legge dall URL, che e il caso degli ordini vecchi.
  */
+driveFolderStub('1AbC', 'cartella vecchia');
 sheetRows[0][HEADERS.indexOf('Drive item')] = '';
 sheetRows[0][HEADERS.indexOf('Files')] = 'https://drive.google.com/drive/folders/1AbC';
-assert.throws(() => orderFolder('QD-0042', '', '', '', '', ''),
-  /before the move to OneDrive/, 'un ordine vecchio lo dice, non finge');
-checks++;
+const vecchia = orderFolder('QD-0042', '', '', '', '', '');
+eq(vecchia.isDrive, true, 'una riga con link Drive si apre su Drive');
+eq(vecchia.getId(), '1AbC', "e l id si legge dall URL quando la colonna e vuota");
+checks += 2;
 sheetRows[0][HEADERS.indexOf('Files')] = '';
 sheetRows[0][HEADERS.indexOf('Drive item')] = made.getId();
 
@@ -825,15 +909,18 @@ const refused = JSON.parse(doPost({ postData: { contents: JSON.stringify(
 graphRefuses = false;
 
 eq(refused.ok, true, 'la richiesta e accettata anche se Microsoft rifiuta');
-eq(refused.files, false, 'ma la pagina viene avvisata che non ce una cartella');
+eq(refused.files, true, 'e i file hanno dove andare lo stesso: il ripiego su Drive');
+ok(/drive\.google\.com/.test(String(sheetRows[0][HEADERS.indexOf('Files')])),
+  'la colonna Files punta alla cartella Drive: ' +
+  sheetRows[0][HEADERS.indexOf('Files')]);
 eq(sheetRows.length, 1, 'e soprattutto: la riga nel foglio ce');
 eq(sheetRows[0][HEADERS.indexOf('Reference')], 'QD-0099', 'con il suo riferimento');
 eq(sheetRows[0][HEADERS.indexOf('Status')], 'Quoted', 'e lo stato giusto');
 eq(sheetRows[0][HEADERS.indexOf('Email')], 'm@example.it', 'e il cliente dentro');
 ok(Number(sheetRows[0][HEADERS.indexOf('Total')]) >= 732,
   'e il prezzo dentro, mai sotto il listino: ' + sheetRows[0][HEADERS.indexOf('Total')]);
-ok(/OneDrive/.test(String(sheetRows[0][HEADERS.indexOf('Trouble')])),
-  'la colonna Trouble dice cosa non ha funzionato: ' +
+ok(/Google Drive/.test(String(sheetRows[0][HEADERS.indexOf('Trouble')])),
+  'e Trouble dice che sono sul disco sbagliato, cosi qualcuno li sposta: ' +
   sheetRows[0][HEADERS.indexOf('Trouble')]);
 ok(sentMail.length >= 2,
   'e le mail partono lo stesso, dal conto Gmail: ' + sentMail.length);
@@ -861,6 +948,80 @@ ok(/Manuale X/.test(rebuilt.getPath()[2]),
   'e il progetto, come le altre: ' + rebuilt.getPath()[2]);
 eq(String(sheetRows[0][HEADERS.indexOf('Trouble')]).indexOf('OneDrive') !== -1, true,
   'e il guaio di prima resta scritto: non si cancella da se');
+
+/*
+ * -- quello che il desk puo fare su una richiesta gia presa -----------------
+ *
+ * Tre azioni, tutte dietro il login che apre il libro e mai dietro il solo
+ * riferimento. Esistono perche il 14 novembre 2026 una richiesta era
+ * irraggiungibile: Graph rifiutava, la cartella non c'era, e del preventivo
+ * restava solo l allegato in una mail. Il PDF pero si ridisegna dalla riga,
+ * quindi la tracciabilita non ha mai avuto bisogno di un archivio.
+ */
+const deskCall = (body) => JSON.parse(doPost({ postData: { contents: JSON.stringify(body) } }).body);
+
+props.ADMIN_USER = 'desk@example.it';
+props.ADMIN_PASS = 'segreta';
+const asDesk = (extra) => Object.assign(
+  { user: 'desk@example.it', pass: 'segreta' }, extra);
+
+// senza credenziali non si passa, e la risposta non distingue i casi
+eq(deskCall({ action: 'quotePdf', id: 'QD-0099' }).error, 'refused',
+  'il PDF non si scarica senza login');
+eq(deskCall({ action: 'resend', id: 'QD-0099', user: 'desk@example.it', pass: 'sbagliata' }).error,
+  'refused', 'ne con la password sbagliata');
+eq(deskCall(asDesk({ action: 'quotePdf', id: 'NON-ESISTE' })).error, 'not found',
+  'e una richiesta inventata non esiste');
+checks += 3;
+
+// il preventivo si ricostruisce dalla riga, senza che nulla sia stato archiviato
+const rebuiltPdf = deskCall(asDesk({ action: 'quotePdf', id: 'QD-0099' }));
+eq(rebuiltPdf.ok, true, 'il PDF del preventivo si rigenera dalla riga');
+eq(rebuiltPdf.mime, 'application/pdf', 'ed e un PDF');
+ok(rebuiltPdf.data && rebuiltPdf.data.length > 0, 'con dei byte dentro');
+ok(/2127|QD-0099/.test(String(rebuiltPdf.name)),
+  'e il nome porta il numero di preventivo o il riferimento: ' + rebuiltPdf.name);
+checks += 4;
+
+// rimandare la mail: stesso documento, stessi due link, stessa lingua
+sentMail = []; fetchCalls = [];
+const again2 = deskCall(asDesk({ action: 'resend', id: 'QD-0099' }));
+eq(again2.ok, true, 'la mail di preventivo si rimanda');
+eq(again2.sent, 'm@example.it', 'al cliente della riga, non a chi lo chiede');
+checks += 2;
+
+// una decisione presa non si rimanda: si parla col desk, non si ripreme un bottone
+sheetRows[0][HEADERS.indexOf('Status')] = 'Accepted';
+eq(deskCall(asDesk({ action: 'resend', id: 'QD-0099' })).error, 'already decided',
+  'un preventivo gia deciso non si rimanda');
+checks++;
+sheetRows[0][HEADERS.indexOf('Status')] = 'Quoted';
+
+/*
+ * Riprovare la cartella. Con Graph ancora in rifiuto il ripiego la fa su
+ * Drive e lo dice; la colonna Trouble non si svuota, perche una cartella sul
+ * disco sbagliato e meta recupero e sparire sarebbe peggio che restare.
+ */
+graphRefuses = true;
+const retried = deskCall(asDesk({ action: 'retryFiles', id: 'QD-0099' }));
+graphRefuses = false;
+eq(retried.ok, true, 'il secondo tentativo risponde');
+eq(retried.drive, true, 'e dice che e finito su Drive, non su OneDrive');
+ok(/drive\.google\.com/.test(String(retried.url)), 'con il suo link: ' + retried.url);
+ok(String(sheetRows[0][HEADERS.indexOf('Trouble')]).length > 0,
+  'e il guaio resta scritto finche i file non sono dove devono stare');
+checks += 4;
+
+// con Graph che risponde, la cartella si fa davvero e la riga si ripulisce
+sheetRows[0][HEADERS.indexOf('Files')] = '';
+sheetRows[0][HEADERS.indexOf('Drive item')] = '';
+const recovered = deskCall(asDesk({ action: 'retryFiles', id: 'QD-0099' }));
+eq(recovered.ok, true, 'con Graph che risponde il recupero riesce');
+eq(recovered.drive, false, 'e la cartella e su OneDrive');
+eq(recovered.filed, true, 'col preventivo archiviato accanto');
+eq(String(sheetRows[0][HEADERS.indexOf('Trouble')]), '',
+  'e solo allora la riga smette di chiedere aiuto');
+checks += 4;
 
 // -- which grant Microsoft is asked for ------------------------------------
 const tokenCalls = () => fetchCalls.filter(

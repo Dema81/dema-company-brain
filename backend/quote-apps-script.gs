@@ -64,6 +64,14 @@ var SHEET = 'orders';
 var ONEDRIVE_ROOT = 'Quote Desk';
 
 /*
+ * The most a file may be when the bytes have to pass through Apps Script
+ * rather than go straight to OneDrive. A web app request will not carry much
+ * beyond this, and base64 costs a third on top of the file itself, so a
+ * larger file is refused with a reason rather than failing halfway.
+ */
+var RELAY_MAX_BYTES = 25 * 1024 * 1024;
+
+/*
  * How big one file may be: 2 GB, which is the WeTransfer-sized archive this
  * desk exists to receive. It is a decision, not a limit - OneDrive itself
  * takes 250 GB per file, and nothing between here and there cares, because the
@@ -467,14 +475,124 @@ function itemPath(item) {
   return segments;
 }
 
+/*
+ * A folder, whichever drive it is on.
+ *
+ * There are two backings now. OneDrive is the one the project chose and the
+ * one every finished request should end up on. Google Drive is the fallback
+ * that catches a request while Graph is refusing - without it a customer's
+ * documents have nowhere at all to go, which is what happened on 14 November
+ * 2026: the folder could not be made, so the files stayed on the customer's
+ * own machine and the quote PDF existed only as an attachment in a mail.
+ *
+ * The two handles answer the same four questions and do the same two things,
+ * so the callers - the delivery menu, Trados, the PDF filing, the uploads -
+ * do not ask which drive they are on. `isDrive` is there for the one place
+ * that has to care: the browser cannot be handed an upload session for a
+ * Google folder, so it is told to send the bytes through here instead.
+ */
 function folderHandle(item, segments) {
   return {
+    isDrive: false,
     getId: function () { return item.id; },
     getUrl: function () { return item.webUrl || ''; },
     getName: function () { return item.name || ''; },
     getPath: function () { return segments; },
+    put: function (blob, name) {
+      return graphUpload(segments.concat([name || blob.getName()]), blob);
+    },
+    list: function () { return graphChildren(item.id); },
     item: item
   };
+}
+
+/** The Google folder the fallback writes into, from ORDERS_FOLDER_ID. */
+function driveRoot() {
+  var id = PropertiesService.getScriptProperties().getProperty('ORDERS_FOLDER_ID');
+  if (!id) throw new Error('ORDERS_FOLDER_ID is not set, so there is no fallback folder.');
+  return DriveApp.getFolderById(id);
+}
+
+/** Find a child folder by name, or make it. Drive has no path addressing. */
+function driveChild(parent, name) {
+  var found = parent.getFoldersByName(name);
+  return found.hasNext() ? found.next() : parent.createFolder(name);
+}
+
+/*
+ * The same shape as folderHandle, over a Google folder.
+ *
+ * `list()` answers driveItem-shaped objects on purpose: `name`, `id`, `size`
+ * and a `folder` that is truthy for folders, which is what every caller was
+ * already written against. The extra `drive: true` is how fetchChild knows
+ * which side to download from.
+ */
+function driveHandle(folder) {
+  return {
+    isDrive: true,
+    getId: function () { return folder.getId(); },
+    getUrl: function () { return folder.getUrl(); },
+    getName: function () { return folder.getName(); },
+    getPath: function () { return drivePath(folder); },
+    put: function (blob, name) {
+      var made = folder.createFile(blob);
+      if (name) made.setName(name);
+      return made;
+    },
+    list: function () { return driveChildren(folder); },
+    folder: folder
+  };
+}
+
+/*
+ * The three names of a Google folder, outermost first.
+ *
+ * Google addresses a folder by id and has no path, but everything downstream -
+ * the naming checks, what the desk is shown - was written against the three
+ * OneDrive segments. Walking up to the fallback root gives the same shape:
+ * the root's own name, the customer, the request.
+ */
+function drivePath(folder) {
+  var stop = PropertiesService.getScriptProperties().getProperty('ORDERS_FOLDER_ID') || '';
+  var segments = [folder.getName()];
+  var up = folder;
+  for (var i = 0; i < 5; i++) {
+    var parents = up.getParents();
+    if (!parents || !parents.hasNext()) break;
+    up = parents.next();
+    segments.unshift(up.getName());
+    if (up.getId() === stop) break;
+  }
+  return segments;
+}
+
+function driveChildren(folder) {
+  var out = [];
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var f = files.next();
+    out.push({ id: f.getId(), name: f.getName(), size: f.getSize(), drive: true });
+  }
+  var folders = folder.getFolders();
+  while (folders.hasNext()) {
+    var d = folders.next();
+    out.push({ id: d.getId(), name: d.getName(), folder: {}, drive: true });
+  }
+  return out;
+}
+
+/** The children of a child folder, from either side. */
+function childrenIn(child) {
+  return child && child.drive
+    ? driveChildren(DriveApp.getFolderById(child.id))
+    : graphChildren(child.id);
+}
+
+/** One child's bytes, from either side. */
+function fetchChild(child) {
+  return child && child.drive
+    ? DriveApp.getFileById(child.id).getBlob().setName(child.name)
+    : graphDownload(child.id, child.name);
 }
 
 function orderFolder(id, customerName, code, project, quote, company) {
@@ -485,16 +603,45 @@ function orderFolder(id, customerName, code, project, quote, company) {
   var row = findOrderRow(id);
   if (row) {
     var known = String(row[HEADERS.indexOf('Drive item')] || '').trim();
-    if (known) {
-      var found = graphCall('get', requireDrive().base + '/items/' +
-        encodeURIComponent(known) + '?$select=id,name,webUrl,parentReference',
-        { allow404: true }).body;
-      if (found) return folderHandle(found, itemPath(found));
+    var filedOnDrive = String(row[HEADERS.indexOf('Files')] || '')
+      .indexOf('drive.google.com') !== -1;
+
+    /*
+     * The Files link is read before the id is tried, because the id alone
+     * does not say which drive it belongs to: a Google id asked of Graph is
+     * a wasted call at best and a confusing error at worst.
+     *
+     * And the call is wrapped, because this is the one place a refusal must
+     * not end the journey. Graph answering 403 for the whole tenant is
+     * exactly the moment the fallback is needed; letting the throw out here
+     * would mean the request with a folder already made is the one that
+     * cannot be reopened.
+     */
+    if (known && !filedOnDrive) {
+      try {
+        var found = graphCall('get', requireDrive().base + '/items/' +
+          encodeURIComponent(known) + '?$select=id,name,webUrl,parentReference',
+          { allow404: true }).body;
+        if (found) return folderHandle(found, itemPath(found));
+      } catch (err) {}
     }
+    /*
+     * A Google link in `Files` used to be a dead end - the function threw and
+     * said the order predated the move to OneDrive. It is not a dead end any
+     * more: the fallback writes Google folders too, and an order filed there
+     * has to be openable, or the delivery menu and Trados would refuse to
+     * touch exactly the requests that already needed a hand. Old orders from
+     * before the move open the same way, which is a gain and not a loss.
+     */
     var old = String(row[HEADERS.indexOf('Files')] || '');
-    if (old.indexOf('drive.google.com') !== -1) {
-      throw new Error('Order ' + id + ' was taken before the move to OneDrive: ' +
-        'its files are still on Google Drive, at ' + old);
+    if (filedOnDrive) {
+      var fromUrl = (old.match(/\/folders\/([A-Za-z0-9_-]+)/) || [])[1];
+      var driveId = known || fromUrl;
+      if (!driveId) {
+        throw new Error('Order ' + id + ' is filed on Google Drive at ' + old +
+          ', but the row does not say which folder.');
+      }
+      return driveHandle(DriveApp.getFolderById(driveId));
     }
 
     /*
@@ -535,12 +682,27 @@ function orderFolder(id, customerName, code, project, quote, company) {
     .filter(function (part) { return part; })
     .join('_');
 
-  /* Three folders, outermost first: a path cannot be made in one call, and
-     asking for a child of a folder that is not there yet answers 404. */
-  graphFolder([], ONEDRIVE_ROOT);
-  graphFolder([ONEDRIVE_ROOT], who);
-  var made = graphFolder([ONEDRIVE_ROOT, who], name);
-  return folderHandle(made, [ONEDRIVE_ROOT, who, name]);
+  /*
+   * Three folders, outermost first: a path cannot be made in one call, and
+   * asking for a child of a folder that is not there yet answers 404.
+   *
+   * If Graph refuses - which it does for the whole tenant until an
+   * administrator consents - the same three folders are made on Google Drive
+   * instead. That is deliberately a fallback and not a second home: the row
+   * records which drive it landed on through the `Files` link, the desk is
+   * told in `Trouble`, and when consent arrives the folders are moved across
+   * by hand. One request is on one drive, never on two.
+   */
+  try {
+    graphFolder([], ONEDRIVE_ROOT);
+    graphFolder([ONEDRIVE_ROOT], who);
+    var made = graphFolder([ONEDRIVE_ROOT, who], name);
+    return folderHandle(made, [ONEDRIVE_ROOT, who, name]);
+  } catch (err) {
+    var fallback = driveChild(driveChild(driveRoot(), who), name);
+    fallback.refused = String(err);
+    return driveHandle(fallback);
+  }
 }
 var DESK = 'g.gambuto@dema-solutions.com';   // where the desk's copy goes
 var SENDER_NAME = 'DEMA Solutions';
@@ -1402,7 +1564,7 @@ function decide(req) {
       var pdf = confirmationPdf(order, net, vat, gross, language, 'order', quote);
       try {
         var folder = orderFolder(id, '');
-        graphUpload(folder.getPath().concat([pdf.getName()]), pdf);
+        folder.put(pdf);
       } catch (err) {}
       send({
         to: at('Email'), name: SENDER_NAME, replyTo: DESK,
@@ -1535,6 +1697,20 @@ function doPost(e) {
       return json({ ok: true, headers: HEADERS, orders: orders() });
     }
 
+    /*
+     * The desk's own actions. They read and rewrite other people's requests,
+     * so they are behind exactly the login that opens the book, and never
+     * behind the reference alone.
+     */
+    if (order.action === 'quotePdf' || order.action === 'resend' ||
+        order.action === 'retryFiles') {
+      var mayDesk = order.user ? adminLogin(order.user, order.pass) : sameToken(order.token);
+      if (!mayDesk) return json({ ok: false, error: 'refused' });
+      if (order.action === 'quotePdf') return json(deskQuotePdf(order));
+      if (order.action === 'resend') return json(deskResend(order));
+      return json(deskRetryFiles(order));
+    }
+
     if (order.action === 'upload') return json(receiveFile(order));
     if (order.action === 'uploadUrl') return json(uploadTicket(order));
     if (order.action === 'uploadDone') return json(uploadDone(order));
@@ -1585,8 +1761,18 @@ function doPost(e) {
         billing.company ? billing.companyName : '');
       /* The row learns where its folder is the moment there is one. */
       rememberFolder(order.id, folder);
+      /* A folder on Google Drive is a folder, and the request is safe - but it
+         is not where this work belongs, and nobody would notice from a link
+         alone. The desk is told, so the folder gets moved once Graph answers
+         again rather than being left behind quietly. */
+      if (folder.isDrive) {
+        trouble.push('Microsoft refused the folder, so the files went to Google Drive ' +
+          'instead (' + folder.getUrl() + '). Move them to OneDrive once the ' +
+          'administrator has given consent.');
+      }
     } catch (err) {
-      trouble.push('The OneDrive folder could not be made (' + err + ').');
+      trouble.push('No folder could be made for this request, on either drive (' +
+        err + '). The customer was asked to send the documents by mail.');
     }
 
     var pdf = null;
@@ -1599,9 +1785,9 @@ function doPost(e) {
        that cannot be produced when it is asked for. */
     if (folder && pdf) {
       try {
-        graphUpload(folder.getPath().concat([pdf.getName()]), pdf);
+        folder.put(pdf);
       } catch (err) {
-        trouble.push('The quote PDF was not filed on OneDrive (' + err + ').');
+        trouble.push('The quote PDF was not filed beside the request (' + err + ').');
       }
     }
 
@@ -1982,7 +2168,7 @@ function deliverSelected() {
 
   var folder = orderFolder(id, '');
   var out = null;
-  graphChildren(folder.getId()).forEach(function (child) {
+  folder.list().forEach(function (child) {
     if (child.folder && child.name === DELIVERY_FOLDER) out = child;
   });
   if (!out) {
@@ -1994,7 +2180,7 @@ function deliverSelected() {
   /* Weighed before anything is fetched: the mail limit is the smallest limit in
      the chain, so a folder too heavy to send is also a folder there is no
      reason to download. */
-  var listed = graphChildren(out.id).filter(function (child) { return !child.folder; });
+  var listed = childrenIn(out).filter(function (child) { return !child.folder; });
   var bytes = 0;
   listed.forEach(function (child) { bytes += Number(child.size) || 0; });
   if (!listed.length) { ui.alert('That delivery folder is empty.'); return; }
@@ -2012,7 +2198,7 @@ function deliverSelected() {
 
   /* Fetched only now: a no at that prompt should not have cost a download. */
   var files = listed.map(function (child) {
-    return graphDownload(child.id, child.name);
+    return fetchChild(child);
   });
 
   send({
@@ -2313,7 +2499,7 @@ function createTradosProject() {
   /* Listed and weighed before anything is fetched: UrlFetchApp will not carry
      much over 50 MB, and a folder too heavy to send is also a folder there is
      no point downloading one file at a time to find that out. */
-  var listed = graphChildren(folder.getId()).filter(function (child) {
+  var listed = folder.list().filter(function (child) {
     if (child.folder) return false;
     /* The paperwork the customer was sent lives in the same folder and is not
        part of the job. */
@@ -2343,7 +2529,7 @@ function createTradosProject() {
   /* Fetched only now, for the same reason as in the delivery menu: a no at that
      prompt should not have cost a download. */
   var files = listed.map(function (child) {
-    return graphDownload(child.id, child.name);
+    return fetchChild(child);
   });
 
   var body = {
@@ -2431,7 +2617,7 @@ function uploadAllowed(req) {
 /** How many files are in a request's folder already. */
 function uploadCount(folder) {
   try {
-    return graphChildren(folder.getId()).length;
+    return folder.list().length;
   } catch (err) {
     /* A folder that cannot be listed must not be filled blindly: that is how
        thirty turns into three hundred. */
@@ -2463,6 +2649,19 @@ function uploadTicket(req) {
   var folder = orderFolder(allowed.id, '');
   if (uploadCount(folder) >= MAX_FILES) return { ok: false, error: 'too many files' };
 
+  /*
+   * An upload session is a OneDrive thing. When the fallback has put this
+   * request on Google Drive there is no URL to hand the browser, so the
+   * browser is told to send the bytes through here instead, the old way:
+   * base64, one file per request, action 'upload'. It is slower and it is
+   * bounded by what a single Apps Script request will hold, which is why it
+   * is the fallback and not the road - but a customer who cannot upload at
+   * all is worse than a customer who uploads slowly.
+   */
+  if (folder.isDrive) {
+    return { ok: true, name: name, relay: true, limit: RELAY_MAX_BYTES };
+  }
+
   var session = graphUploadSession(folder.getPath().concat([name]), name, size);
   return { ok: true, name: name, uploadUrl: session.uploadUrl,
     chunk: session.chunk, expires: session.expires };
@@ -2483,7 +2682,7 @@ function uploadDone(req) {
 
   var listed = [];
   try {
-    listed = graphChildren(folder.getId()).filter(function (child) { return !child.folder; });
+    listed = folder.list().filter(function (child) { return !child.folder; });
   } catch (err) {}
 
   /* The desk is told the moment the files are actually there, which is not the
@@ -2613,6 +2812,21 @@ function receiveFile(req) {
   var row = findOrderRow(id);
   if (!row) return { ok: false, error: 'unknown order' };
 
+  /*
+   * The page now live sends its email with the upload, because this path is
+   * no longer only the old one: it is also the relay the fallback uses when
+   * the files are going to Google Drive. When an email is sent it has to
+   * match the row, exactly as a status lookup does - the reference on its own
+   * is four random characters on a known date. An upload that carries no
+   * email is the old page, and keeps the old rule.
+   */
+  if (req.email) {
+    var owner = String(row[HEADERS.indexOf('Email')] || '').trim().toLowerCase();
+    if (owner !== String(req.email).trim().toLowerCase()) {
+      return { ok: false, error: 'unknown order' };
+    }
+  }
+
   var received = Object.prototype.toString.call(row[0]) === '[object Date]' ? row[0].getTime() : 0;
   if (!received || Date.now() - received > UPLOAD_WINDOW_HOURS * 3600 * 1000) {
     return { ok: false, error: 'order closed to uploads' };
@@ -2623,14 +2837,14 @@ function receiveFile(req) {
   if (!data) return { ok: false, error: 'empty file' };
   /* What a single Apps Script request can hold, not what OneDrive can: this
      path is the limited one, which is why the chunked path exists. */
-  if (data.length > 20 * 1024 * 1024 * 1.4) return { ok: false, error: 'file too large' };
+  if (data.length > RELAY_MAX_BYTES * 1.4) return { ok: false, error: 'file too large' };
 
   var folder = orderFolder(id, '');
   if (uploadCount(folder) >= MAX_FILES) return { ok: false, error: 'too many files' };
 
   var blob = Utilities.newBlob(Utilities.base64Decode(data),
     req.mime || 'application/octet-stream', name);
-  graphUpload(folder.getPath().concat([name]), blob);
+  folder.put(blob, name);
   rememberFolder(id, folder);
   return { ok: true, stored: name };
 }
@@ -2855,6 +3069,151 @@ function record(order, net, vat, gross, repriced, folderUrl, quote, extra) {
  * Dates come back as ISO strings so the back office can format them in the
  * reader's own locale; everything else is handed over as the sheet holds it.
  */
+/*
+ * A row, read back for the desk.
+ *
+ * The three actions below all begin the same way: find the request, and
+ * refuse the same way whether it is missing or the reference is nonsense.
+ */
+function deskRow(id) {
+  if (!/^[A-Za-z0-9-]{4,40}$/.test(String(id || ''))) return null;
+  var row = findOrderRow(String(id));
+  if (!row) return null;
+  return function (name) { return row[HEADERS.indexOf(name)]; };
+}
+
+/** The money of a row, as the documents want it. */
+function deskMoney(at) {
+  var net = Number(at('Net')) || 0;
+  var vat = Number(at('VAT')) || 0;
+  return { net: net, vat: vat, gross: Number(at('Total')) || round2(net + vat) };
+}
+
+/*
+ * The quote, rebuilt.
+ *
+ * Nothing is stored and nothing needs to be: the PDF is drawn from the row,
+ * so it can be produced today, after a refusal from Graph, or in a year. That
+ * is what makes a request traceable even when the folder was never made - and
+ * on 14 November 2026 that was every request, because Graph was refusing and
+ * the only copy of the document was an attachment in somebody's mail.
+ *
+ * It is handed back as base64 because this is a web app answering JSON, not a
+ * file server.
+ */
+function deskQuotePdf(req) {
+  var at = deskRow((req || {}).id);
+  if (!at) return { ok: false, error: 'not found' };
+
+  var money = deskMoney(at);
+  var quote = at('Quote number') || at('Reference');
+  var language = mailLang(at('Language'));
+  var decided = String(at('Status') || '') === 'Accepted';
+  var pdf = confirmationPdf(orderFromRow(at), money.net, money.vat, money.gross,
+    language, decided ? 'order' : 'quote', quote);
+
+  return { ok: true, name: pdf.getName(), mime: 'application/pdf',
+    data: Utilities.base64Encode(pdf.getBytes()) };
+}
+
+/*
+ * The quote, sent again.
+ *
+ * Same document, same two links, same language: this is not a new quote and
+ * it must not read as one, because the customer may already be holding the
+ * first copy. It is for the case where the first never arrived - which is
+ * common enough while the mail is leaving from a Gmail account rather than
+ * from the desk's own, as it does until an administrator consents.
+ *
+ * A quote already answered is not sent again. Reopening a decision by email
+ * is a conversation with the desk, not a button.
+ */
+function deskResend(req) {
+  var at = deskRow((req || {}).id);
+  if (!at) return { ok: false, error: 'not found' };
+
+  var status = String(at('Status') || '');
+  if (status === 'Accepted' || status === 'Declined') {
+    return { ok: false, error: 'already decided', status: status };
+  }
+
+  var id = String(at('Reference'));
+  var token = String(at('Decision token') || '');
+  if (!token) return { ok: false, error: 'no decision token on this row' };
+
+  var money = deskMoney(at);
+  var quote = at('Quote number') || id;
+  var language = mailLang(at('Language'));
+  var order = orderFromRow(at);
+  var pdf = confirmationPdf(order, money.net, money.vat, money.gross,
+    language, 'quote', quote);
+
+  send({
+    to: at('Email'), name: SENDER_NAME, replyTo: DESK,
+    subject: mail('quote_subject', language, { quote: quote, id: id }),
+    htmlBody: quoteBody(order, money.net, money.vat, money.gross, language, quote, token),
+    attachments: [pdf]
+  });
+
+  return { ok: true, sent: String(at('Email')) };
+}
+
+/*
+ * The folder, tried again.
+ *
+ * For the backlog: every request whose folder Graph refused is still sitting
+ * in the book with its `Trouble` filled in, and the day consent arrives they
+ * all want making. This remakes the folder, files the quote PDF beside it,
+ * and writes down where it ended up.
+ *
+ * It says plainly which drive it landed on, because a folder made on the
+ * fallback is not the same answer as a folder made on OneDrive, and the desk
+ * should not have to read a URL to tell them apart.
+ */
+function deskRetryFiles(req) {
+  var at = deskRow((req || {}).id);
+  if (!at) return { ok: false, error: 'not found' };
+
+  var id = String(at('Reference'));
+  var folder;
+  try {
+    folder = orderFolder(id, '');
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+  rememberFolder(id, folder);
+
+  var filed = false;
+  try {
+    var money = deskMoney(at);
+    var quote = at('Quote number') || id;
+    var language = mailLang(at('Language'));
+    var kind = String(at('Status') || '') === 'Accepted' ? 'order' : 'quote';
+    var wanted = confirmationPdf(orderFromRow(at), money.net, money.vat, money.gross,
+      language, kind, quote);
+    var already = folder.list().some(function (child) {
+      return !child.folder && child.name === wanted.getName();
+    });
+    if (!already) folder.put(wanted);
+    filed = true;
+  } catch (err) {
+    noteTrouble(id, 'A second attempt made the folder but could not file the quote (' +
+      err + ').');
+  }
+
+  /* The reason is cleared only when there is nothing left to say. Half a
+     recovery that reads as a whole one is how a missing file goes unnoticed. */
+  if (folder.isDrive) {
+    noteTrouble(id, 'Tried again on ' + when(new Date().toISOString()) +
+      ': Microsoft still refuses, so the folder is on Google Drive.');
+  } else if (filed) {
+    var where = rowIndexFor(id);
+    if (where) where.sheet.getRange(where.row, HEADERS.indexOf('Trouble') + 1).setValue('');
+  }
+
+  return { ok: true, drive: !!folder.isDrive, filed: filed, url: folder.getUrl() };
+}
+
 function orders() {
   var book = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = book.getSheetByName(SHEET);

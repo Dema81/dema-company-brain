@@ -5084,6 +5084,34 @@ async function sendOneFile(id, email, file, onProgress) {
     throw new Error(ticket && ticket.error ? ticket.error : 'refused');
   }
 
+  /*
+   * No upload session: the desk has this request filed on Google Drive,
+   * because Microsoft refused to make the folder. A Google folder cannot be
+   * written to from here, so the bytes go through the desk instead - base64,
+   * the whole file in one request. It is the slow road and it has a ceiling,
+   * which is why it is only taken when the fast one is shut.
+   */
+  if (ticket.relay) {
+    const ceiling = Number(ticket.limit) || 0;
+    if (ceiling && file.size > ceiling) {
+      throw new Error('file too large for the slow route');
+    }
+    const relayed = await fetch(ORDERS_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'upload', id: id, email: email, name: file.name,
+        mime: file.type, data: await asBase64(file)
+      })
+    });
+    const put = await relayed.json();
+    if (!put || put.ok !== true) {
+      throw new Error(put && put.error ? put.error : 'refused');
+    }
+    if (onProgress) onProgress(100);
+    return;
+  }
+
   const chunk = Number(ticket.chunk) || CHUNK;
   let at = 0;
   let resumed = 0;
@@ -5127,6 +5155,26 @@ async function sendOneFile(id, email, file, onProgress) {
       }
     }
   }
+}
+
+/*
+ * A file as base64, for the slow route.
+ *
+ * FileReader rather than a loop over the bytes: a loop builds a string one
+ * character at a time and blows the stack on anything but a small file, and
+ * this route exists precisely for the files that could not go the fast way.
+ */
+function asBase64(file) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+    reader.onerror = function () { reject(new Error('could not read the file')); };
+    reader.onload = function () {
+      const out = String(reader.result || '');
+      const comma = out.indexOf(',');
+      resolve(comma === -1 ? out : out.slice(comma + 1));
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 /**
@@ -5239,7 +5287,17 @@ async function countFiles(files) {
   state.analysis = report;
   state.files = files;
   renderAnalysis(report);
-  briefChanged();
+
+  /* Counting a file rewrites the word count, so a quote that is already on
+     screen is now a price for a job nobody asked for. It used to stay there:
+     a customer who priced 1,000 words and then dropped in a 79,900-word
+     workbook still read 60,00 EUR, when the job was 4,074,90 EUR and due
+     seven weeks later. Nothing on the page said the number had gone stale.
+     So re-price, but only when a quote is standing - before the first
+     "Show prices" the cards are meant to be absent, and counting a file is
+     not the moment to decide the brief is complete. */
+  if (state.quote) refresh();
+  else briefChanged();
 }
 
 function renderAnalysis(report) {

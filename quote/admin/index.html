@@ -344,6 +344,9 @@ tbody tr:hover > td { background: var(--surface-2); }
 .chip.new { border-color: var(--accent); color: var(--accent-text); }
 .chip.doing { border-color: var(--warn); color: var(--warn); }
 .chip.done { border-color: var(--good); color: var(--good); }
+/* A quote that was declined or left to lapse: nothing is owed and nothing is
+   due, so it should read as closed rather than as a thing to chase. */
+.chip.shut { border-color: var(--line); color: var(--muted); }
 
 .folder {
   font-family: var(--mono);
@@ -365,6 +368,27 @@ tbody tr:hover > td { background: var(--surface-2); }
   color: var(--warn);
   padding: 2px 7px;
   margin-top: 5px;
+}
+
+/* The same shape as the re-priced flag, filled rather than outlined: one of
+   these is a note, the other is a job somebody has to pick up. */
+.flag.warn {
+  background: var(--warn);
+  color: #fff;
+  margin-left: 6px;
+}
+
+.trouble {
+  border-left: 3px solid var(--warn);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .trouble { background: rgba(255, 255, 255, 0.05); }
 }
 
 .open {
@@ -453,7 +477,7 @@ footer {
         <input type="password" id="token" name="password" required autocomplete="current-password"
                spellcheck="false">
       </div>
-      <p class="note" id="gate-note">Only the desk sees this. A customer never does: the
+      <p class="note" id="gate-note" role="status" aria-live="polite">Only the desk sees this. A customer never does: the
         quote page records orders and never lists one back.</p>
       <button type="submit" class="filled" id="gate-go">Open the book</button>
     </form>
@@ -1029,11 +1053,19 @@ function sieve() {
 
 /* ───────────────────────────────────────────────────────────────── the book */
 
+/* 'Decision token' is deliberately not here. The desk has no use for it and the
+   back end does not send it anyway: it is the key to answering a quote in the
+   customer's name, and a page is a poor place to keep one. */
 var DETAIL = ['Email', 'Telephone', 'Company', 'VAT number', 'Address', 'City',
   'Postal code', 'Country', 'Subject', 'Desktop publishing', 'Net', 'VAT', 'VAT treatment',
-  'Customer reference', 'Notes'];
+  'Customer reference', 'Notes', 'Quote number', 'Language', 'Decided'];
 
 var COLUMNS = 12;
+
+/* Everything the sheet records is shown: the columns above in the table, the
+   rest of them when a row is opened. Nothing a customer sends is dropped on
+   the way, except the decision token, which the back end masks before it
+   leaves the sheet. */
 
 /* A word the desk typed, shown as it was typed; the class is a guess at what
    it means, and an unknown word simply gets no colour. */
@@ -1042,7 +1074,16 @@ function statusChip(value) {
   if (!text) return '<span class="sub">—</span>';
   const low = text.toLowerCase();
   let kind = '';
-  if (low.indexOf('receiv') === 0 || low.indexOf('ricev') === 0 || low.indexOf('new') === 0) kind = ' new';
+  /* 'Quoted' is the state a quote sits in while nobody has answered it, and it
+     is the one the desk looks for in the morning - so it reads like a new
+     order used to. 'Declined' and 'Expired' are closed and shown as closed:
+     chasing them is the mistake this colour prevents. */
+  if (low.indexOf('quot') === 0 || low.indexOf('preventiv') === 0 ||
+      low.indexOf('receiv') === 0 || low.indexOf('ricev') === 0 ||
+      low.indexOf('new') === 0) kind = ' new';
+  else if (low.indexOf('declin') === 0 || low.indexOf('rifiut') === 0 ||
+           low.indexOf('expir') === 0 || low.indexOf('scadut') === 0 ||
+           low.indexOf('lost') === 0) kind = ' shut';
   else if (low.indexOf('deliver') === 0 || low.indexOf('conseg') === 0 || low.indexOf('done') === 0 ||
            low.indexOf('complet') === 0) kind = ' done';
   else kind = ' doing';
@@ -1050,6 +1091,8 @@ function statusChip(value) {
 }
 
 function detailRow(row) {
+  /* Written here rather than in the stylesheet above because this page has had
+     the same block twice before, and the second copy won the cascade. */
   var parts = DETAIL.map(function (name) {
     var value = cell(row, name);
     if (name === 'Net' || name === 'VAT') value = money(value, cell(row, 'Currency'));
@@ -1057,7 +1100,13 @@ function detailRow(row) {
     return '<div><dt>' + escapeHtml(name) + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
   }).filter(Boolean).join('');
 
-  return '<tr class="detail"><td colspan="' + COLUMNS + '"><dl class="pairs">' +
+  var trouble = String(cell(row, 'Trouble') || '');
+  var warning = trouble
+    ? '<p class="trouble"><strong>This one did not go through cleanly.</strong> ' +
+      escapeHtml(trouble) + '</p>'
+    : '';
+
+  return '<tr class="detail"><td colspan="' + COLUMNS + '">' + warning + '<dl class="pairs">' +
     (parts || '<div><dd class="empty">Nothing further was recorded.</dd></div>') +
     '</dl></td></tr>';
 }
@@ -1080,8 +1129,13 @@ function paintBook(rows) {
 
     out += '<tr>';
     out += '<td class="num">' + escapeHtml(stamp(cell(row, 'Received'))) + '</td>';
+    /* A request that needs a hand says so in the list, not only when somebody
+       opens it: a folder Microsoft refused or a quote that never left is the
+       kind of thing that is only ever found by looking. */
+    var trouble = String(cell(row, 'Trouble') || '');
     out += '<td class="ref">' + escapeHtml(ref) +
-      (String(cell(row, 'Re-priced')) ? '<span class="flag">re-priced</span>' : '') + '</td>';
+      (String(cell(row, 'Re-priced')) ? '<span class="flag">re-priced</span>' : '') +
+      (trouble ? '<span class="flag warn">needs a hand</span>' : '') + '</td>';
     out += '<td>' + statusChip(cell(row, 'Status')) + '</td>';
     out += '<td><span class="strong">' +
       escapeHtml([cell(row, 'First name'), cell(row, 'Last name')].filter(Boolean).join(' ')) +
@@ -1098,10 +1152,14 @@ function paintBook(rows) {
       '<span class="sub">' + escapeHtml(dueWords(cell(row, 'Delivery'))) + '</span></td>';
     out += '<td class="num strong">' +
       escapeHtml(money(cell(row, 'Total'), cell(row, 'Currency'))) + '</td>';
+    /* The folder is on OneDrive now. Orders taken before that move still carry
+       a Drive link and still open: the label says which, so nobody goes looking
+       for an old job in the wrong place. */
     var folder = String(cell(row, 'Files'));
+    var onDrive = folder.indexOf('drive.google.com') !== -1;
     out += '<td>' + (folder
       ? '<a class="folder" href="' + escapeHtml(folder) + '" target="_blank" rel="noopener">' +
-        'Files</a>'
+        (onDrive ? 'Drive' : 'OneDrive') + '</a>'
       : '<span class="sub">—</span>') + '</td>';
     out += '<td><button type="button" class="open" data-ref="' + escapeHtml(ref) +
       '" aria-expanded="' + (open ? 'true' : 'false') + '">' +

@@ -113,7 +113,7 @@ body {
 
 /* The board is square everywhere by design; the logo is the one thing on it
    that belongs to DEMA rather than to the board, so its plate is rounded. */
-.logo-plate { background: #ffffff; padding: 12px 16px; align-self: flex-start; border-radius: 10px; }
+.logo-plate { background: #ffffff; color: var(--accent-ink); padding: 12px 16px; align-self: flex-start; border-radius: 10px; }
 .logo-plate img { display: block; width: auto; height: 34px; }
 
 .standfirst { font-size: var(--step-lead); line-height: 1.3; margin: 0; max-width: 26ch; }
@@ -124,7 +124,7 @@ body {
 
 .lang-btn {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.06em;
   line-height: 1;
   min-height: 28px;
@@ -189,7 +189,7 @@ input, select, textarea {
   padding: 10px 11px;
   width: 100%;
   min-width: 0;
-  min-height: 42px;
+  min-height: 44px;
 }
 
 input:focus-visible,
@@ -200,6 +200,88 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 input:hover, select:hover, textarea:hover { border-color: var(--accent); }
 ::placeholder { color: #8b94b8; opacity: 1; }
+
+/* The date field's own calendar. Its months and weekdays are English in every
+   language, on purpose: the browser's picker draws them from the browser's
+   interface language and cannot be told otherwise, which is why it was given
+   up when the page took over the format. English everywhere is the same
+   choice the language pair, the subject and the country menus already make -
+   one wording the desk, the sheet and the confirmation all share. */
+.date-field { position: relative; display: flex; }
+.date-field input { padding-right: 46px; }
+
+.calendar-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.calendar-button:hover { color: var(--accent); }
+.calendar-button svg { width: 18px; height: 18px; }
+
+.calendar {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 272px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+}
+.calendar[hidden] { display: none; }
+
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.cal-title { font-family: var(--display); font-weight: 700; font-size: var(--step-small); color: var(--ink); }
+
+.cal-nav {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--mono);
+  cursor: pointer;
+}
+.cal-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.cal-nav:disabled { opacity: .35; cursor: default; }
+
+/* minmax(0, 1fr), not 1fr: a wide cell would stretch the column and drag the
+   whole page sideways, the way the back office's table once did. */
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.cal-dow {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 4px;
+}
+.cal-empty { min-height: 34px; }
+.cal-day {
+  min-height: 34px;
+  background: var(--bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--step-small);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.cal-day:hover:not(:disabled) { border-color: var(--accent); }
+.cal-day:disabled { background: none; color: #6b74a0; cursor: default; }
+.cal-day.chosen { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 
 /* The parts of the page the browser draws belong to the board too. */
 ::selection { background: var(--accent); color: var(--accent-ink); }
@@ -271,7 +353,7 @@ input, select, textarea { caret-color: var(--accent); }
 .pages-field input { width: 5.5rem; font-family: var(--mono); }
 .pages-unit { font-size: var(--step-small); color: var(--muted); }
 .price-parts { font-family: var(--mono); font-size: var(--step-small); color: var(--muted); margin: 6px 0 14px; }
-.terms { grid-column: 1 / -1; font-size: var(--step-small); color: var(--muted); margin: 14px 0 0; max-width: 78ch; }
+.terms { max-width: 72ch; grid-column: 1 / -1; font-size: var(--step-small); color: var(--muted); margin: 14px 0 0; max-width: 78ch; }
 
 .hint { font-size: var(--step-small); color: var(--muted); margin: 0; }
 
@@ -301,85 +383,7 @@ input, select, textarea { caret-color: var(--accent); }
 .price-button.standing:hover { background: rgba(52, 169, 238, .14); color: var(--accent); }
 .price-button:hover { background: var(--accent-text); }
 
-.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; }
-.hint strong { font-family: var(--mono); font-weight: 400; }
-
-.notice {
-  grid-column: 1 / -1;
-  margin: 0;
-  padding: 10px 12px;
-  font-size: var(--step-small);
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-/* ─────────────────────────────────────── the plans, stepped like a bar chart */
-
-.solutions-head { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 10px 0 0; }
-.solutions-head h2 { font-family: var(--display); font-weight: 700; font-size: var(--step-head); line-height: 0.9; letter-spacing: -0.04em; margin: 0; }
-.solutions-head .status { font-family: var(--mono); font-size: var(--step-small); color: var(--muted); margin: 0; }
-
-.solutions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); align-items: end; }
-
-/* Each plan is literally bigger than the one below it. */
-.solution {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  border-radius: var(--radius);
-  padding: 26px 24px 0;
-  min-height: 380px;
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.solution.step-2 { min-height: 470px; background: var(--surface-2); }
-.solution.unfeasible { opacity: 0.6; }
-
-.badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: var(--step-small);
-  padding: 5px 10px;
-}
-
-.solution h3 { font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem); line-height: 0.9; letter-spacing: -0.03em; margin: 0 0 6px; }
-.tagline { font-size: var(--step-small); margin: 0 0 20px; color: var(--muted); }
-
-.pipeline { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
-.pipeline li { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 10px; font-size: var(--step-small); }
-.step { font-family: var(--mono); font-size: var(--step-small); width: 20px; height: 20px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
-.pipeline li.off { color: var(--muted); }
-.pipeline li.off .step { background: transparent; border: 1px solid currentColor; color: inherit; }
-.pipeline li.off span:last-child { text-decoration: line-through; text-decoration-thickness: 1px; }
-
-/* The workflow drawing: the same pipeline, pictured. One panel per solution, each
-   its own width, all the same height, so the three sit on one line across the row. */
-.workflow {
-  display: block;
-  width: 100%;
-  height: clamp(190px, 15vw, 248px);
-  object-fit: contain;
-  object-position: center;
-  margin: 0 0 18px;
-}
-
-.throughput { display: flex; align-items: center; gap: 9px; margin: 0 0 18px; font-family: var(--mono); font-size: var(--step-small); color: var(--muted); white-space: nowrap; }
-.meter { flex: 1 1 auto; height: 2px; background: var(--line); min-width: 2rem; }
-.meter i { display: block; height: 100%; background: var(--accent); }
-
-.spacer { flex: 1 1 auto; min-height: 10px; }
-
-/* Hover answers on every tile and control: 150ms, one curve, no bounce. */
-.solution { transition: transform .15s cubic-bezier(.32,.72,0,1), box-shadow .15s cubic-bezier(.32,.72,0,1); }
-.solution:hover { transform: translateY(-4px); box-shadow: 0 10px 0 -4px var(--accent); }
-.chip:hover { outline: 1px solid var(--accent); }
+.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; max-width: 72ch; }
 .link-button:hover { color: var(--accent); }
 .link-button { position: relative; }
 .link-button::after { content: ''; position: absolute; inset: -13px -10px; }
@@ -390,54 +394,6 @@ input, select, textarea { caret-color: var(--accent); }
 
 .price { font-family: var(--display); font-weight: 700; font-size: clamp(2.4rem, 1.6rem + 2.4vw, 3.5rem); line-height: 0.88; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; margin: 0; }
 .per-word { font-family: var(--mono); font-size: var(--step-small); margin: 6px 0 0; color: var(--muted); }
-.saving { color: var(--good); }
-.delta { font-family: var(--mono); font-size: var(--step-small); margin: 8px 0 14px; color: var(--muted); }
-
-/* The bottom strip of every tile is the button. */
-.cta {
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 1rem;
-  text-align: left;
-  width: calc(100% + 48px);
-  margin: 0 -24px;
-  min-height: 64px;
-  border: 0;
-  border-radius: 0;
-  padding: 0 24px;
-  cursor: pointer;
-  background: var(--accent);
-  color: var(--accent-ink);
-  transition: filter .2s cubic-bezier(.32,.72,0,1);
-}
-
-.cta:hover { background: var(--accent-text); color: var(--accent-ink); }
-.cta[disabled] { background: var(--line); color: var(--muted); cursor: not-allowed; }
-
-.solution details { font-size: var(--step-small); margin: 0 0 16px; color: var(--muted); }
-.solution summary { cursor: pointer; font-family: var(--display); font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
-.solution details ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; }
-.maths { font-family: var(--mono); font-size: var(--step-small); margin-top: 10px; line-height: 1.6; }
-
-/* ────────────────────────────────────────────── the analysis, as a tile board */
-
-.analysis .empty { padding: 22px 12px; color: var(--muted); font-size: var(--step-small); }
-.analysis .empty strong { display: block; font-family: var(--display); color: var(--ink); font-size: 1rem; margin-bottom: 4px; }
-
-.analysis-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-.analysis { overflow-x: auto; }
-.analysis table { border-collapse: collapse; width: 100%; font-size: var(--step-small); min-width: 460px; }
-.analysis th, .analysis td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
-.analysis th { font-family: var(--display); font-weight: 700; color: var(--muted); }
-.analysis td.num, .analysis th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.analysis td.name { max-width: 24rem; overflow-wrap: anywhere; }
-.analysis td.name small { display: block; color: var(--muted); }
-.analysis tr.uncounted td { color: var(--muted); }
-.analysis tr.totals td { font-family: var(--display); font-weight: 700; border-bottom: 0; }
-.analysis tbody tr:hover td { background: var(--bg); }
-.analysis-note { font-size: var(--step-small); color: var(--muted); margin: 10px 0 0; }
-.analysis-note.warn { color: var(--accent-text); }
-
 /* ────────────────────────────────────────────────────── the checkout, in two
    steps with the order summary standing beside them the whole way, the shape
    the client's reference uses: project information, then billing, then done. */
@@ -518,7 +474,7 @@ input, select, textarea { caret-color: var(--accent); }
   .order-summary { position: static; }
 }
 
-.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; }
+.unpriced { font-size: var(--step-small); color: var(--muted); margin: 0; padding: 26px 0 8px; max-width: 72ch; }
 
 /* While the new quote is on its way the cards keep their shape and only the
    numbers go blank, the way the reference does it. */
@@ -600,7 +556,11 @@ input, select, textarea { caret-color: var(--accent); }
   width: 100%;
   height: clamp(190px, 15vw, 248px);
   object-fit: contain;
-  object-position: center;
+  /* Left, not centre: the three drawings share their first panel (AI Translator)
+     and grow rightwards, one panel per stage. Centring them in equal boxes put
+     that shared panel at a different offset in every card. Left-aligned, the
+     stages line up across the row and the progression reads. */
+  object-position: left center;
   margin: 0 0 18px;
 }
 
@@ -722,8 +682,21 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
   .dialog-body .two { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 520px) {
+  /* Two columns at 390px left every select too narrow for its own options. */
+  .brief { grid-template-columns: 1fr; }
+  .brief .field { grid-column: 1 / -1; }
+  .lang-btn { min-height: 44px; padding: 12px 11px; }
+  .checkout { grid-template-columns: 1fr; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  /* Drop the travel, keep the state change: a colour or opacity shift still
+     tells the visitor the board answered. Only movement is removed. */
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  *, *::before, *::after { transition-property: color, background-color, border-color, outline-color, opacity !important;
+    transition-duration: 120ms !important; }
+  [class*="slide"], [class*="rise"] { transform: none !important; }
 }
 </style>
 </head>
@@ -732,7 +705,7 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
 <main class="board">
 
   <section class="tile t-name">
-    <div class="logo-plate"><img src="dema-logo.webp" alt="DEMA Solutions" width="359" height="120"></div>
+    <div class="logo-plate"><img src="data:image/webp;base64,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" alt="DEMA Solutions" width="359" height="120"></div>
     <h1 class="wordmark">Quote<br><mark>Desk</mark></h1>
     <nav class="langs" id="langs" aria-label="Language"></nav>
     <p class="standfirst" data-i18n="standfirst">One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.</p>
@@ -782,7 +755,16 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
           <label for="deadline" data-i18n="f_deadline">Needed by</label>
           <button type="button" class="link-button" id="clearDeadline" data-i18n="btn_clear" hidden>Clear</button>
         </header>
-        <input id="deadline" name="deadline" type="text" inputmode="numeric" autocomplete="off" spellcheck="false">
+        <div class="date-field">
+          <input id="deadline" name="deadline" type="text" inputmode="numeric" autocomplete="off" spellcheck="false">
+          <button type="button" class="calendar-button" id="calendarButton" aria-haspopup="dialog" aria-expanded="false" data-i18n-aria="aria_calendar" aria-label="Open the calendar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false">
+              <rect x="3" y="5" width="18" height="16"></rect>
+              <path d="M3 10h18M8 3v4M16 3v4"></path>
+            </svg>
+          </button>
+          <div class="calendar" id="calendar" role="dialog" data-i18n-aria="aria_calendar" aria-label="Open the calendar" hidden></div>
+        </div>
       </div>
 
       <div class="field">
@@ -807,13 +789,13 @@ dialog::backdrop { background: rgba(10, 10, 10, 0.82); }
       </div>
 
       <p class="hint field wide" id="briefHint" data-i18n="hint_deadline">Leave the date empty for the earliest delivery at list price.</p>
-      <p class="notice" id="briefError" hidden></p>
+      <p class="notice" id="briefError" hidden role="alert" aria-live="assertive"></p>
     </form>
   </section>
 
   <div class="solutions-head" id="solutionsHead">
     <h2 data-i18n="h_threeways">Three ways</h2>
-    <p class="status" id="quoteStatus"></p>
+    <p class="status" id="quoteStatus" role="status" aria-live="polite"></p>
   </div>
 
   <section class="tile t-solutions" id="solutionsTile">
@@ -1077,6 +1059,42 @@ const RUSH_CAP = 1.9, RUSH_SLOPE = 0.6, MIN_FEASIBLE = 0.45, DEADLINE_HOUR = 18,
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const lang = (code) => LANGUAGES.find((l) => l.code === code);
+
+/* ─────────────────────────────────────────────── names the browser knows
+
+   Languages and countries are not kept in the dictionaries. Every browser
+   ships their names in every language the page speaks, so an Italian visitor
+   reads "Francese (Francia)" without a single line being translated here.
+
+   These are display names only. The order sent to the desk is built from
+   lang(code).name and subjectOf(code).name, which stay English, so the sheet,
+   the order document and the back office keep reading one language whoever
+   placed the order.                                                        */
+
+function intlName(value, kind) {
+  try {
+    const out = new Intl.DisplayNames([LANG], { type: kind }).of(value);
+    if (out && out !== value) return out.charAt(0).toUpperCase() + out.slice(1);
+  } catch (err) {}
+  return null;
+}
+
+function langLabel(codeOrName) {
+  const row = LANGUAGES.find((l) => l.code === codeOrName || l.name === codeOrName);
+  if (!row) return codeOrName;
+  return intlName(row.code, 'language') || row.name;
+}
+
+function countryLabel(code, fallback) {
+  return intlName(code, 'region') || fallback;
+}
+
+function subjectLabel(code) {
+  const row = subjectOf(code);
+  if (!row) return code;
+  const dict = T[LANG] || {};
+  return dict['subj_' + code] || row.name;
+}
 const subjectOf = (code) => SUBJECTS.find((s) => s.code === code);
 const currencyOf = (code) => CURRENCIES.find((c) => c.code === code);
 const volumeDiscount = (words) => VOLUME_BREAKS.find((b) => words >= b[0])[1];
@@ -1321,6 +1339,7 @@ const T = {
     an_segments: "Segments",
     an_total: "Total",
     an_words: "Words",
+    aria_calendar: "Open the calendar",
     aria_pages: "Pages in the document",
     back_details: "← Back to your details",
     back_prices: "← Back to the prices",
@@ -1334,13 +1353,16 @@ const T = {
     btn_edit: "Edit",
     btn_placing: "Placing…",
     btn_price: "Show prices",
-    btn_submit: "Submit order",
+    btn_submit: "Request the quote",
     btn_update: "Update prices",
     consent: "I have read and agree to the privacy policy and the conditions of sale.",
     done_deliver: "We deliver by",
     done_into: "into",
-    done_mail_client: "Your mail client is opening with the order ready to send to {inbox}. Send it and we will have everything we need.",
+    done_mail_client: "Your mail client is opening with the request ready to send to {inbox}. Send it and we will have everything we need.",
     done_mail_sent: "The confirmation is on its way to {email}, with the order document attached.",
+    done_quote_sent: "The quote is on its way to {email}, with the PDF attached.",
+    done_quote_next: "Nothing is agreed yet: the email carries a link to accept and a link to decline, and the work starts only when you accept.",
+    files_percent: "{n}%",
     done_send: "and send the files to",
     dtp_toggle: "Lay out the translated files",
     err_address: "Enter the billing address.",
@@ -1349,7 +1371,7 @@ const T = {
     err_consent: "Accept the privacy policy and the conditions of sale.",
     err_country: "Choose the billing country.",
     err_email: "Enter an email address we can send the files to.",
-    err_name: "Enter the first and last name the order is for.",
+    err_name: "Enter the first and last name the quote is for.",
     err_order: "The order could not be saved. Try once more in a moment.",
     err_pages: "Enter how many pages the document has.",
     err_pages_max: "For documents above {n} pages, talk to us directly.",
@@ -1385,8 +1407,8 @@ const T = {
     h_analysis: "File analysis",
     h_billing: "Billing information",
     h_details: "Project information",
-    h_done: "Order received",
-    h_summary: "Order summary",
+    h_done: "Request received",
+    h_summary: "Quote summary",
     h_threeways: "Three ways",
     hint_deadline: "Leave the date empty for the earliest delivery at list price.",
     lbl_delivered: "Delivered by",
@@ -1394,7 +1416,7 @@ const T = {
     lbl_later: "later than your date",
     lbl_layout: "layout",
     lbl_lowest: "lowest price",
-    lbl_order: "Order",
+    lbl_order: "Choose",
     lbl_pages: "pages",
     lbl_perword: "per word",
     lbl_tootight: "Date too tight",
@@ -1418,7 +1440,7 @@ const T = {
     st_language: "language",
     st_languages: "languages",
     files_sending: "Sending your files… {done} of {total}.",
-    files_sent: "Your files are with us: {n} sent with the order.",
+    files_sent: "Your files are with us: {n} sent with your request.",
     files_failed: "We could not send {n} of your files. Reply to the confirmation email and attach them.",
     files_none: "No files were attached. Reply to the confirmation email with the documents to translate.",
     pay_private: "Pay now, by card or bank transfer, quoting {ref}. We confirm the order once the payment is in.",
@@ -1429,7 +1451,7 @@ const T = {
     err_taxcode: "Enter the tax code the invoice is made out to.",
     err_vat_company: "Enter the company's VAT number.",
     pay_how: "To pay, transfer the total to the IBAN on the confirmation, quoting {ref} as the reference. Work starts when payment is received.",
-    done_track: "You can check this order at any time:",
+    done_track: "You can check this request at any time:",
     done_mail_desk: "The order is in the book. The desk sends the confirmation and the order document to {email}.",
     st_words: "words",
     standfirst: "One job, priced three ways: AI Translator; AI Translator checked by Senior AI Reviewer; Senior AI Reviewer signed off by a native specialist.",
@@ -1489,6 +1511,7 @@ const T = {
     an_segments: "Segmenti",
     an_total: "Totale",
     an_words: "Parole",
+    aria_calendar: "Apri il calendario",
     aria_pages: "Pagine del documento",
     back_details: "← Torna ai tuoi dati",
     back_prices: "← Torna ai prezzi",
@@ -1502,13 +1525,16 @@ const T = {
     btn_edit: "Modifica",
     btn_placing: "Invio in corso…",
     btn_price: "Mostra i prezzi",
-    btn_submit: "Invia l'ordine",
+    btn_submit: "Richiedi il preventivo",
     btn_update: "Aggiorna i prezzi",
     consent: "Ho letto e accetto l'informativa sulla privacy e le condizioni di vendita.",
     done_deliver: "Consegniamo entro il",
     done_into: "verso",
-    done_mail_client: "Si sta aprendo il tuo programma di posta con l'ordine pronto da inviare a {inbox}. Invialo e avremo tutto il necessario.",
+    done_mail_client: "Si sta aprendo il tuo programma di posta con la richiesta pronta da inviare a {inbox}. Invialo e avremo tutto il necessario.",
     done_mail_sent: "La conferma sta arrivando a {email}, con il documento d'ordine allegato.",
+    done_quote_sent: "Il preventivo sta arrivando a {email}, con il PDF allegato.",
+    done_quote_next: "Non è ancora accettato nulla: nella mail ci sono un link per accettare e uno per rifiutare, e il lavoro parte solo quando accetti.",
+    files_percent: "{n}%",
     done_send: "e inviamo i file a",
     dtp_toggle: "Impagina i file tradotti",
     err_address: "Inserisci l'indirizzo di fatturazione.",
@@ -1517,7 +1543,7 @@ const T = {
     err_consent: "Accetta l'informativa sulla privacy e le condizioni di vendita.",
     err_country: "Scegli il paese di fatturazione.",
     err_email: "Inserisci un indirizzo email a cui possiamo inviare i file.",
-    err_name: "Inserisci il nome e il cognome a cui intestare l'ordine.",
+    err_name: "Inserisci nome e cognome a cui intestare il preventivo.",
     err_order: "Non è stato possibile salvare l'ordine. Riprova fra un momento.",
     err_pages: "Inserisci quante pagine ha il documento.",
     err_pages_max: "Per documenti oltre {n} pagine, parlane direttamente con noi.",
@@ -1553,8 +1579,8 @@ const T = {
     h_analysis: "Analisi dei file",
     h_billing: "Dati di fatturazione",
     h_details: "Informazioni sul progetto",
-    h_done: "Ordine ricevuto",
-    h_summary: "Riepilogo dell'ordine",
+    h_done: "Richiesta ricevuta",
+    h_summary: "Riepilogo del preventivo",
     h_threeways: "Tre vie",
     hint_deadline: "Lascia la data vuota per la consegna più rapida a prezzo di listino.",
     lbl_delivered: "Consegna entro",
@@ -1562,7 +1588,7 @@ const T = {
     lbl_later: "oltre la tua data",
     lbl_layout: "impaginazione",
     lbl_lowest: "prezzo più basso",
-    lbl_order: "Ordina",
+    lbl_order: "Scegli",
     lbl_pages: "pagine",
     lbl_perword: "a parola",
     lbl_tootight: "Data troppo stretta",
@@ -1586,7 +1612,7 @@ const T = {
     st_language: "lingua",
     st_languages: "lingue",
     files_sending: "Invio dei tuoi file… {done} di {total}.",
-    files_sent: "I tuoi file sono arrivati: {n} inviati con l'ordine.",
+    files_sent: "I tuoi file sono arrivati: {n} inviati con la richiesta.",
     files_failed: "Non siamo riusciti a inviare {n} dei tuoi file. Rispondi alla email di conferma allegandoli.",
     files_none: "Nessun file allegato. Rispondi alla email di conferma con i documenti da tradurre.",
     pay_private: "Paga subito, con carta o bonifico, citando {ref}. Confermiamo l'ordine appena il pagamento è arrivato.",
@@ -1597,7 +1623,7 @@ const T = {
     err_taxcode: "Inserisci il codice fiscale a cui intestare la fattura.",
     err_vat_company: "Inserisci la partita IVA dell'azienda.",
     pay_how: "Per pagare, bonifica il totale sull'IBAN indicato nella conferma, citando {ref} come causale. Il lavoro inizia dal ricevimento del pagamento.",
-    done_track: "Puoi controllare questo ordine quando vuoi:",
+    done_track: "Puoi controllare questa richiesta quando vuoi:",
     done_mail_desk: "L'ordine è registrato. Il desk invia la conferma e il documento d'ordine a {email}.",
     st_words: "parole",
     standfirst: "Un lavoro, tre prezzi: AI Translator; AI Translator verificato da Senior AI Reviewer; Senior AI Reviewer approvato da uno specialista madrelingua.",
@@ -1657,6 +1683,7 @@ const T = {
     an_segments: "Segments",
     an_total: "Total",
     an_words: "Mots",
+    aria_calendar: "Ouvrir le calendrier",
     aria_pages: "Pages du document",
     back_details: "← Retour à vos informations",
     back_prices: "← Retour aux tarifs",
@@ -1670,13 +1697,16 @@ const T = {
     btn_edit: "Modifier",
     btn_placing: "Envoi en cours…",
     btn_price: "Afficher les tarifs",
-    btn_submit: "Envoyer la commande",
+    btn_submit: "Demander le devis",
     btn_update: "Actualiser les tarifs",
     consent: "J'ai lu et j'accepte la politique de confidentialité et les conditions de vente.",
     done_deliver: "Nous livrons le",
     done_into: "vers",
-    done_mail_client: "Votre messagerie s'ouvre avec la commande prête à envoyer à {inbox}. Envoyez-la et nous aurons tout ce qu'il faut.",
+    done_mail_client: "Votre messagerie s'ouvre avec la demande prête à envoyer à {inbox}. Envoyez-la et nous aurons tout ce qu'il faut.",
     done_mail_sent: "La confirmation est en route vers {email}, avec le document de commande en pièce jointe.",
+    done_quote_sent: "Le devis est en route vers {email}, avec le PDF en pièce jointe.",
+    done_quote_next: "Rien n'est encore accepté : l'e-mail contient un lien pour accepter et un pour refuser, et le travail ne démarre qu'à votre acceptation.",
+    files_percent: "{n}%",
     done_send: "et nous envoyons les fichiers à",
     dtp_toggle: "Mettre en page les fichiers traduits",
     err_address: "Saisissez l'adresse de facturation.",
@@ -1685,7 +1715,7 @@ const T = {
     err_consent: "Acceptez la politique de confidentialité et les conditions de vente.",
     err_country: "Choisissez le pays de facturation.",
     err_email: "Saisissez une adresse e-mail à laquelle nous pouvons envoyer les fichiers.",
-    err_name: "Saisissez le prénom et le nom au nom desquels établir la commande.",
+    err_name: "Indiquez le nom et le prénom auxquels adresser le devis.",
     err_order: "La commande n'a pas pu être enregistrée. Réessayez dans un instant.",
     err_pages: "Saisissez le nombre de pages du document.",
     err_pages_max: "Au-delà de {n} pages, parlons-en directement.",
@@ -1721,8 +1751,8 @@ const T = {
     h_analysis: "Analyse des fichiers",
     h_billing: "Informations de facturation",
     h_details: "Informations sur le projet",
-    h_done: "Commande reçue",
-    h_summary: "Récapitulatif de la commande",
+    h_done: "Demande reçue",
+    h_summary: "Récapitulatif du devis",
     h_threeways: "Trois voies",
     hint_deadline: "Laissez la date vide pour la livraison la plus rapide au tarif public.",
     lbl_delivered: "Livraison le",
@@ -1730,7 +1760,7 @@ const T = {
     lbl_later: "au-delà de votre date",
     lbl_layout: "mise en page",
     lbl_lowest: "tarif le plus bas",
-    lbl_order: "Commander",
+    lbl_order: "Choisir",
     lbl_pages: "pages",
     lbl_perword: "par mot",
     lbl_tootight: "Délai trop court",
@@ -1754,11 +1784,11 @@ const T = {
     st_language: "langue",
     st_languages: "langues",
     files_sending: "Envoi de vos fichiers… {done} sur {total}.",
-    files_sent: "Vos fichiers nous sont parvenus : {n} envoyés avec la commande.",
+    files_sent: "Vos fichiers sont arrivés : {n} envoyés avec votre demande.",
     files_failed: "Nous n'avons pas pu envoyer {n} de vos fichiers. Répondez à l'e-mail de confirmation en les joignant.",
     files_none: "Aucun fichier joint. Répondez à l'e-mail de confirmation avec les documents à traduire.",
     pay_how: "Pour payer, virez le total sur l'IBAN indiqué sur la confirmation, en mentionnant {ref} comme référence. Le travail commence à réception du paiement.",
-    done_track: "Vous pouvez suivre cette commande à tout moment :",
+    done_track: "Vous pouvez suivre cette demande à tout moment :",
     done_mail_desk: "La commande est enregistrée. Le bureau envoie la confirmation et le document de commande à {email}.",
     st_words: "mots",
     standfirst: "Un projet, trois tarifs : AI Translator ; AI Translator vérifié par Senior AI Reviewer ; Senior AI Reviewer validé par un spécialiste de langue maternelle.",
@@ -1818,6 +1848,7 @@ const T = {
     an_segments: "Segmentos",
     an_total: "Total",
     an_words: "Palabras",
+    aria_calendar: "Abrir el calendario",
     aria_pages: "Páginas del documento",
     back_details: "← Volver a tus datos",
     back_prices: "← Volver a los precios",
@@ -1831,13 +1862,16 @@ const T = {
     btn_edit: "Modificar",
     btn_placing: "Enviando…",
     btn_price: "Ver los precios",
-    btn_submit: "Enviar el pedido",
+    btn_submit: "Solicitar el presupuesto",
     btn_update: "Actualizar los precios",
     consent: "He leído y acepto la política de privacidad y las condiciones de venta.",
     done_deliver: "Entregamos el",
     done_into: "hacia",
-    done_mail_client: "Se está abriendo tu programa de correo con el pedido listo para enviar a {inbox}. Envíalo y tendremos todo lo necesario.",
+    done_mail_client: "Se está abriendo tu programa de correo con la solicitud lista para enviar a {inbox}. Envíala y tendremos todo lo necesario.",
     done_mail_sent: "La confirmación va camino de {email}, con el documento de pedido adjunto.",
+    done_quote_sent: "El presupuesto va camino de {email}, con el PDF adjunto.",
+    done_quote_next: "Todavía no hay nada aceptado: el correo lleva un enlace para aceptar y otro para rechazar, y el trabajo empieza solo cuando aceptas.",
+    files_percent: "{n}%",
     done_send: "y enviamos los archivos a",
     dtp_toggle: "Maquetar los archivos traducidos",
     err_address: "Introduce la dirección de facturación.",
@@ -1846,7 +1880,7 @@ const T = {
     err_consent: "Acepta la política de privacidad y las condiciones de venta.",
     err_country: "Elige el país de facturación.",
     err_email: "Introduce un correo electrónico al que podamos enviar los archivos.",
-    err_name: "Introduce el nombre y los apellidos a los que emitir el pedido.",
+    err_name: "Indica el nombre y el apellido a los que va dirigido el presupuesto.",
     err_order: "No ha sido posible guardar el pedido. Inténtalo de nuevo en un momento.",
     err_pages: "Introduce cuántas páginas tiene el documento.",
     err_pages_max: "Para documentos de más de {n} páginas, háblalo directamente con nosotros.",
@@ -1882,8 +1916,8 @@ const T = {
     h_analysis: "Análisis de los archivos",
     h_billing: "Datos de facturación",
     h_details: "Información del proyecto",
-    h_done: "Pedido recibido",
-    h_summary: "Resumen del pedido",
+    h_done: "Solicitud recibida",
+    h_summary: "Resumen del presupuesto",
     h_threeways: "Tres vías",
     hint_deadline: "Deja la fecha vacía para la entrega más rápida a precio de tarifa.",
     lbl_delivered: "Entrega el",
@@ -1891,7 +1925,7 @@ const T = {
     lbl_later: "más allá de tu fecha",
     lbl_layout: "maquetación",
     lbl_lowest: "precio más bajo",
-    lbl_order: "Pedir",
+    lbl_order: "Elegir",
     lbl_pages: "páginas",
     lbl_perword: "por palabra",
     lbl_tootight: "Fecha demasiado ajustada",
@@ -1915,11 +1949,11 @@ const T = {
     st_language: "idioma",
     st_languages: "idiomas",
     files_sending: "Enviando tus archivos… {done} de {total}.",
-    files_sent: "Tus archivos han llegado: {n} enviados con el pedido.",
+    files_sent: "Tus archivos han llegado: {n} enviados con la solicitud.",
     files_failed: "No hemos podido enviar {n} de tus archivos. Responde al correo de confirmación adjuntándolos.",
     files_none: "No se ha adjuntado ningún archivo. Responde al correo de confirmación con los documentos que hay que traducir.",
     pay_how: "Para pagar, transfiere el total al IBAN que figura en la confirmación, indicando {ref} como concepto. El trabajo empieza al recibir el pago.",
-    done_track: "Puedes consultar este pedido cuando quieras:",
+    done_track: "Puedes consultar esta solicitud cuando quieras:",
     done_mail_desk: "El pedido está registrado. El equipo envía la confirmación y el documento de pedido a {email}.",
     st_words: "palabras",
     standfirst: "Un trabajo, tres precios: AI Translator; AI Translator verificado por Senior AI Reviewer; Senior AI Reviewer aprobado por un especialista nativo.",
@@ -1979,6 +2013,7 @@ const T = {
     an_segments: "Segmente",
     an_total: "Gesamt",
     an_words: "Wörter",
+    aria_calendar: "Kalender öffnen",
     aria_pages: "Seiten des Dokuments",
     back_details: "← Zurück zu Ihren Angaben",
     back_prices: "← Zurück zu den Preisen",
@@ -1992,13 +2027,16 @@ const T = {
     btn_edit: "Ändern",
     btn_placing: "Wird gesendet…",
     btn_price: "Preise anzeigen",
-    btn_submit: "Auftrag senden",
+    btn_submit: "Angebot anfordern",
     btn_update: "Preise aktualisieren",
     consent: "Ich habe die Datenschutzerklärung und die Verkaufsbedingungen gelesen und stimme ihnen zu.",
     done_deliver: "Wir liefern bis",
     done_into: "nach",
-    done_mail_client: "Ihr E-Mail-Programm öffnet sich mit dem fertigen Auftrag an {inbox}. Senden Sie ihn ab, dann haben wir alles.",
+    done_mail_client: "Ihr E-Mail-Programm öffnet sich mit der Anfrage, fertig zum Senden an {inbox}. Senden Sie sie, dann haben wir alles.",
     done_mail_sent: "Die Bestätigung ist unterwegs an {email}, mit dem Auftragsdokument im Anhang.",
+    done_quote_sent: "Das Angebot ist unterwegs an {email}, mit dem PDF im Anhang.",
+    done_quote_next: "Noch ist nichts angenommen: die E-Mail enthält einen Link zum Annehmen und einen zum Ablehnen, und die Arbeit beginnt erst mit Ihrer Annahme.",
+    files_percent: "{n}%",
     done_send: "und senden die Dateien an",
     dtp_toggle: "Die übersetzten Dateien setzen",
     err_address: "Geben Sie die Rechnungsadresse ein.",
@@ -2007,7 +2045,7 @@ const T = {
     err_consent: "Stimmen Sie der Datenschutzerklärung und den Verkaufsbedingungen zu.",
     err_country: "Wählen Sie das Rechnungsland.",
     err_email: "Geben Sie eine E-Mail-Adresse an, an die wir die Dateien senden können.",
-    err_name: "Geben Sie Vor- und Nachnamen für den Auftrag ein.",
+    err_name: "Geben Sie Vor- und Nachnamen an, auf die das Angebot lauten soll.",
     err_order: "Der Auftrag konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal.",
     err_pages: "Geben Sie an, wie viele Seiten das Dokument hat.",
     err_pages_max: "Ab {n} Seiten sprechen Sie bitte direkt mit uns.",
@@ -2043,8 +2081,8 @@ const T = {
     h_analysis: "Dateianalyse",
     h_billing: "Rechnungsdaten",
     h_details: "Angaben zum Projekt",
-    h_done: "Auftrag eingegangen",
-    h_summary: "Auftragsübersicht",
+    h_done: "Anfrage erhalten",
+    h_summary: "Angebotsübersicht",
     h_threeways: "Drei Wege",
     hint_deadline: "Lassen Sie das Datum leer für die schnellste Lieferung zum Listenpreis.",
     lbl_delivered: "Lieferung bis",
@@ -2052,7 +2090,7 @@ const T = {
     lbl_later: "später als Ihr Datum",
     lbl_layout: "Layout",
     lbl_lowest: "günstigster Preis",
-    lbl_order: "Bestellen:",
+    lbl_order: "Wählen",
     lbl_pages: "Seiten",
     lbl_perword: "pro Wort",
     lbl_tootight: "Termin zu knapp",
@@ -2076,11 +2114,11 @@ const T = {
     st_language: "Sprache",
     st_languages: "Sprachen",
     files_sending: "Ihre Dateien werden gesendet… {done} von {total}.",
-    files_sent: "Ihre Dateien sind bei uns: {n} mit dem Auftrag gesendet.",
+    files_sent: "Ihre Dateien sind da: {n} mit der Anfrage gesendet.",
     files_failed: "{n} Ihrer Dateien konnten wir nicht senden. Antworten Sie auf die Bestätigungsmail und hängen Sie sie an.",
     files_none: "Es wurden keine Dateien angehängt. Antworten Sie auf die Bestätigungsmail mit den zu übersetzenden Dokumenten.",
     pay_how: "Überweisen Sie den Gesamtbetrag auf die IBAN auf der Bestätigung und geben Sie {ref} als Verwendungszweck an. Die Arbeit beginnt mit Zahlungseingang.",
-    done_track: "Sie können diesen Auftrag jederzeit nachsehen:",
+    done_track: "Sie können diese Anfrage jederzeit nachsehen:",
     done_mail_desk: "Der Auftrag ist erfasst. Wir senden die Bestätigung und das Auftragsdokument an {email}.",
     st_words: "Wörter",
     standfirst: "Ein Auftrag, drei Preise: AI Translator; AI Translator geprüft von Senior AI Reviewer; Senior AI Reviewer freigegeben von einer muttersprachlichen Fachkraft.",
@@ -2140,6 +2178,7 @@ const T = {
     an_segments: "Segmentos",
     an_total: "Total",
     an_words: "Palavras",
+    aria_calendar: "Abrir o calendário",
     aria_pages: "Páginas do documento",
     back_details: "← Voltar aos seus dados",
     back_prices: "← Voltar aos preços",
@@ -2153,13 +2192,16 @@ const T = {
     btn_edit: "Alterar",
     btn_placing: "A enviar…",
     btn_price: "Ver os preços",
-    btn_submit: "Enviar a encomenda",
+    btn_submit: "Pedir o orçamento",
     btn_update: "Atualizar os preços",
     consent: "Li e aceito a política de privacidade e as condições de venda.",
     done_deliver: "Entregamos até",
     done_into: "para",
-    done_mail_client: "O seu programa de correio está a abrir com a encomenda pronta a enviar para {inbox}. Envie-a e teremos tudo o que precisamos.",
+    done_mail_client: "O seu programa de e-mail está a abrir com o pedido pronto a enviar para {inbox}. Envie-o e teremos tudo o que precisamos.",
     done_mail_sent: "A confirmação segue para {email}, com o documento da encomenda em anexo.",
+    done_quote_sent: "O orçamento segue para {email}, com o PDF em anexo.",
+    done_quote_next: "Ainda não há nada aceite: o e-mail traz uma ligação para aceitar e outra para recusar, e o trabalho só começa quando aceitar.",
+    files_percent: "{n}%",
     done_send: "e enviamos os ficheiros para",
     dtp_toggle: "Paginar os ficheiros traduzidos",
     err_address: "Introduza a morada de faturação.",
@@ -2168,7 +2210,7 @@ const T = {
     err_consent: "Aceite a política de privacidade e as condições de venda.",
     err_country: "Escolha o país de faturação.",
     err_email: "Introduza um e-mail para o qual possamos enviar os ficheiros.",
-    err_name: "Introduza o nome e o apelido a que emitir a encomenda.",
+    err_name: "Indique o nome e o apelido a que se destina o orçamento.",
     err_order: "Não foi possível guardar a encomenda. Tente novamente dentro de momentos.",
     err_pages: "Introduza quantas páginas tem o documento.",
     err_pages_max: "Para documentos acima de {n} páginas, fale diretamente connosco.",
@@ -2204,8 +2246,8 @@ const T = {
     h_analysis: "Análise dos ficheiros",
     h_billing: "Dados de faturação",
     h_details: "Informações do projeto",
-    h_done: "Encomenda recebida",
-    h_summary: "Resumo da encomenda",
+    h_done: "Pedido recebido",
+    h_summary: "Resumo do orçamento",
     h_threeways: "Três vias",
     hint_deadline: "Deixe a data vazia para a entrega mais rápida a preço de tabela.",
     lbl_delivered: "Entrega até",
@@ -2213,7 +2255,7 @@ const T = {
     lbl_later: "para lá da sua data",
     lbl_layout: "paginação",
     lbl_lowest: "preço mais baixo",
-    lbl_order: "Encomendar",
+    lbl_order: "Escolher",
     lbl_pages: "páginas",
     lbl_perword: "por palavra",
     lbl_tootight: "Prazo demasiado curto",
@@ -2237,11 +2279,11 @@ const T = {
     st_language: "idioma",
     st_languages: "idiomas",
     files_sending: "A enviar os seus ficheiros… {done} de {total}.",
-    files_sent: "Os seus ficheiros chegaram: {n} enviados com a encomenda.",
+    files_sent: "Os seus ficheiros chegaram: {n} enviados com o pedido.",
     files_failed: "Não conseguimos enviar {n} dos seus ficheiros. Responda ao e-mail de confirmação anexando-os.",
     files_none: "Não foi anexado nenhum ficheiro. Responda ao e-mail de confirmação com os documentos a traduzir.",
     pay_how: "Para pagar, transfira o total para o IBAN indicado na confirmação, indicando {ref} como referência. O trabalho começa com a receção do pagamento.",
-    done_track: "Pode consultar esta encomenda quando quiser:",
+    done_track: "Pode consultar este pedido quando quiser:",
     done_mail_desk: "A encomenda está registada. Enviamos a confirmação e o documento da encomenda para {email}.",
     st_words: "palavras",
     standfirst: "Um trabalho, três preços: AI Translator; AI Translator verificado por Senior AI Reviewer; Senior AI Reviewer aprovado por um especialista nativo.",
@@ -2301,6 +2343,7 @@ const T = {
     an_segments: "Segmenten",
     an_total: "Totaal",
     an_words: "Woorden",
+    aria_calendar: "Open de kalender",
     aria_pages: "Pagina's van het document",
     back_details: "← Terug naar uw gegevens",
     back_prices: "← Terug naar de prijzen",
@@ -2314,13 +2357,16 @@ const T = {
     btn_edit: "Wijzigen",
     btn_placing: "Bezig met verzenden…",
     btn_price: "Prijzen tonen",
-    btn_submit: "Opdracht versturen",
+    btn_submit: "Prijsopgave aanvragen",
     btn_update: "Prijzen bijwerken",
     consent: "Ik heb het privacybeleid en de verkoopvoorwaarden gelezen en ga ermee akkoord.",
     done_deliver: "Wij leveren uiterlijk",
     done_into: "naar",
-    done_mail_client: "Uw e-mailprogramma opent met de opdracht klaar om te versturen naar {inbox}. Verstuur hem en wij hebben alles.",
+    done_mail_client: "Uw e-mailprogramma opent met de aanvraag klaar om te versturen naar {inbox}. Verstuur die en we hebben alles wat we nodig hebben.",
     done_mail_sent: "De bevestiging is onderweg naar {email}, met het opdrachtdocument als bijlage.",
+    done_quote_sent: "De prijsopgave is onderweg naar {email}, met de pdf als bijlage.",
+    done_quote_next: "Er is nog niets afgesproken: in de e-mail staat een link om te accepteren en een om te weigeren, en het werk begint pas als u accepteert.",
+    files_percent: "{n}%",
     done_send: "en sturen de bestanden naar",
     dtp_toggle: "De vertaalde bestanden opmaken",
     err_address: "Voer het factuuradres in.",
@@ -2329,7 +2375,7 @@ const T = {
     err_consent: "Ga akkoord met het privacybeleid en de verkoopvoorwaarden.",
     err_country: "Kies het factuurland.",
     err_email: "Voer een e-mailadres in waar wij de bestanden naartoe kunnen sturen.",
-    err_name: "Voer de voor- en achternaam in waarop de opdracht staat.",
+    err_name: "Vul de voor- en achternaam in waarvoor de prijsopgave is.",
     err_order: "De opdracht kon niet worden opgeslagen. Probeer het zo meteen opnieuw.",
     err_pages: "Voer in hoeveel pagina's het document heeft.",
     err_pages_max: "Boven {n} pagina's: neem rechtstreeks contact met ons op.",
@@ -2365,8 +2411,8 @@ const T = {
     h_analysis: "Bestandsanalyse",
     h_billing: "Factuurgegevens",
     h_details: "Projectgegevens",
-    h_done: "Opdracht ontvangen",
-    h_summary: "Overzicht van de opdracht",
+    h_done: "Aanvraag ontvangen",
+    h_summary: "Overzicht prijsopgave",
     h_threeways: "Drie wegen",
     hint_deadline: "Laat de datum leeg voor de snelste levering tegen lijstprijs.",
     lbl_delivered: "Levering uiterlijk",
@@ -2374,7 +2420,7 @@ const T = {
     lbl_later: "later dan uw datum",
     lbl_layout: "opmaak",
     lbl_lowest: "laagste prijs",
-    lbl_order: "Bestellen:",
+    lbl_order: "Kies",
     lbl_pages: "pagina's",
     lbl_perword: "per woord",
     lbl_tootight: "Datum te krap",
@@ -2398,11 +2444,11 @@ const T = {
     st_language: "taal",
     st_languages: "talen",
     files_sending: "Uw bestanden worden verstuurd… {done} van {total}.",
-    files_sent: "Uw bestanden zijn binnen: {n} met de opdracht meegestuurd.",
+    files_sent: "Uw bestanden zijn binnen: {n} met de aanvraag verzonden.",
     files_failed: "{n} van uw bestanden konden wij niet versturen. Beantwoord de bevestigingsmail en voeg ze bij.",
     files_none: "Er zijn geen bestanden bijgevoegd. Beantwoord de bevestigingsmail met de te vertalen documenten.",
     pay_how: "Maak het totaalbedrag over op het IBAN op de bevestiging, met {ref} als kenmerk. Het werk begint zodra de betaling binnen is.",
-    done_track: "U kunt deze opdracht altijd nakijken:",
+    done_track: "U kunt deze aanvraag altijd bekijken:",
     done_mail_desk: "De opdracht is vastgelegd. Wij sturen de bevestiging en het opdrachtdocument naar {email}.",
     st_words: "woorden",
     standfirst: "Eén opdracht, drie prijzen: AI Translator; AI Translator gecontroleerd door Senior AI Reviewer; Senior AI Reviewer goedgekeurd door een moedertaalspecialist.",
@@ -2462,6 +2508,7 @@ const T = {
     an_segments: "Segmenter",
     an_total: "Totalt",
     an_words: "Ord",
+    aria_calendar: "Åpne kalenderen",
     aria_pages: "Sider i dokumentet",
     back_details: "← Tilbake til opplysningene dine",
     back_prices: "← Tilbake til prisene",
@@ -2475,13 +2522,16 @@ const T = {
     btn_edit: "Endre",
     btn_placing: "Sender…",
     btn_price: "Vis prisene",
-    btn_submit: "Send bestillingen",
+    btn_submit: "Be om tilbud",
     btn_update: "Oppdater prisene",
     consent: "Jeg har lest og godtar personvernerklæringen og salgsvilkårene.",
     done_deliver: "Vi leverer innen",
     done_into: "til",
-    done_mail_client: "E-postprogrammet ditt åpnes med bestillingen klar til å sendes til {inbox}. Send den, så har vi alt vi trenger.",
+    done_mail_client: "E-postprogrammet ditt åpnes med forespørselen klar til å sendes til {inbox}. Send den, og vi har alt vi trenger.",
     done_mail_sent: "Bekreftelsen er på vei til {email}, med bestillingsdokumentet vedlagt.",
+    done_quote_sent: "Tilbudet er på vei til {email}, med PDF-en vedlagt.",
+    done_quote_next: "Ingenting er avtalt ennå: e-posten har én lenke for å godta og én for å avslå, og arbeidet starter først når du godtar.",
+    files_percent: "{n}%",
     done_send: "og sender filene til",
     dtp_toggle: "Sett de oversatte filene",
     err_address: "Skriv inn fakturaadressen.",
@@ -2490,7 +2540,7 @@ const T = {
     err_consent: "Godta personvernerklæringen og salgsvilkårene.",
     err_country: "Velg fakturaland.",
     err_email: "Skriv inn en e-postadresse vi kan sende filene til.",
-    err_name: "Skriv inn fornavn og etternavn bestillingen skal stå på.",
+    err_name: "Oppgi fornavn og etternavn tilbudet skal stiles til.",
     err_order: "Bestillingen kunne ikke lagres. Prøv igjen om et øyeblikk.",
     err_pages: "Skriv inn hvor mange sider dokumentet har.",
     err_pages_max: "Over {n} sider: ta kontakt med oss direkte.",
@@ -2526,8 +2576,8 @@ const T = {
     h_analysis: "Filanalyse",
     h_billing: "Fakturaopplysninger",
     h_details: "Opplysninger om prosjektet",
-    h_done: "Bestillingen er mottatt",
-    h_summary: "Oversikt over bestillingen",
+    h_done: "Forespørsel mottatt",
+    h_summary: "Tilbudssammendrag",
     h_threeways: "Tre veier",
     hint_deadline: "La datoen stå tom for raskest mulig levering til listepris.",
     lbl_delivered: "Levering innen",
@@ -2535,7 +2585,7 @@ const T = {
     lbl_later: "senere enn datoen din",
     lbl_layout: "ombrekking",
     lbl_lowest: "laveste pris",
-    lbl_order: "Bestill",
+    lbl_order: "Velg",
     lbl_pages: "sider",
     lbl_perword: "per ord",
     lbl_tootight: "For knapp frist",
@@ -2559,11 +2609,11 @@ const T = {
     st_language: "språk",
     st_languages: "språk",
     files_sending: "Sender filene dine… {done} av {total}.",
-    files_sent: "Filene dine er kommet fram: {n} sendt med bestillingen.",
+    files_sent: "Filene dine er kommet: {n} sendt med forespørselen.",
     files_failed: "Vi klarte ikke å sende {n} av filene dine. Svar på bekreftelsesmeldingen og legg dem ved.",
     files_none: "Ingen filer ble lagt ved. Svar på bekreftelsesmeldingen med dokumentene som skal oversettes.",
     pay_how: "Overfør totalbeløpet til IBAN-nummeret på bekreftelsen, og oppgi {ref} som referanse. Arbeidet starter når betalingen er mottatt.",
-    done_track: "Du kan se på denne bestillingen når som helst:",
+    done_track: "Du kan se denne forespørselen når som helst:",
     done_mail_desk: "Bestillingen er registrert. Vi sender bekreftelsen og bestillingsdokumentet til {email}.",
     st_words: "ord",
     standfirst: "Én jobb, tre priser: AI Translator; AI Translator kontrollert av Senior AI Reviewer; Senior AI Reviewer godkjent av en morsmålsspesialist.",
@@ -2623,6 +2673,7 @@ const T = {
     an_segments: "Segmentit",
     an_total: "Yhteensä",
     an_words: "Sanat",
+    aria_calendar: "Avaa kalenteri",
     aria_pages: "Asiakirjan sivut",
     back_details: "← Takaisin tietoihisi",
     back_prices: "← Takaisin hintoihin",
@@ -2636,13 +2687,16 @@ const T = {
     btn_edit: "Muuta",
     btn_placing: "Lähetetään…",
     btn_price: "Näytä hinnat",
-    btn_submit: "Lähetä tilaus",
+    btn_submit: "Pyydä tarjous",
     btn_update: "Päivitä hinnat",
     consent: "Olen lukenut tietosuojaselosteen ja myyntiehdot ja hyväksyn ne.",
     done_deliver: "Toimitamme viimeistään",
     done_into: "kielelle",
-    done_mail_client: "Sähköpostiohjelmasi avautuu tilaus valmiina lähetettäväksi osoitteeseen {inbox}. Lähetä se, niin meillä on kaikki tarvittava.",
+    done_mail_client: "Sähköpostiohjelmasi avautuu, ja pyyntö on valmis lähetettäväksi osoitteeseen {inbox}. Lähetä se, niin meillä on kaikki tarvittava.",
     done_mail_sent: "Vahvistus on matkalla osoitteeseen {email}, tilausasiakirja liitteenä.",
+    done_quote_sent: "Tarjous on matkalla osoitteeseen {email}, PDF liitteenä.",
+    done_quote_next: "Mitään ei ole vielä sovittu: viestissä on linkki hyväksymiseen ja linkki hylkäämiseen, ja työ alkaa vasta kun hyväksyt.",
+    files_percent: "{n}%",
     done_send: "ja lähetämme tiedostot osoitteeseen",
     dtp_toggle: "Taita käännetyt tiedostot",
     err_address: "Syötä laskutusosoite.",
@@ -2651,7 +2705,7 @@ const T = {
     err_consent: "Hyväksy tietosuojaseloste ja myyntiehdot.",
     err_country: "Valitse laskutusmaa.",
     err_email: "Syötä sähköpostiosoite, johon voimme lähettää tiedostot.",
-    err_name: "Syötä etu- ja sukunimi, jolle tilaus tehdään.",
+    err_name: "Anna etu- ja sukunimi, jolle tarjous osoitetaan.",
     err_order: "Tilausta ei voitu tallentaa. Yritä hetken kuluttua uudelleen.",
     err_pages: "Syötä, montako sivua asiakirjassa on.",
     err_pages_max: "Yli {n} sivun töistä sovitaan suoraan kanssamme.",
@@ -2687,8 +2741,8 @@ const T = {
     h_analysis: "Tiedostojen analyysi",
     h_billing: "Laskutustiedot",
     h_details: "Projektin tiedot",
-    h_done: "Tilaus vastaanotettu",
-    h_summary: "Tilauksen yhteenveto",
+    h_done: "Pyyntö vastaanotettu",
+    h_summary: "Tarjouksen yhteenveto",
     h_threeways: "Kolme tietä",
     hint_deadline: "Jätä päivä tyhjäksi, niin saat nopeimman toimituksen listahintaan.",
     lbl_delivered: "Toimitus viimeistään",
@@ -2696,7 +2750,7 @@ const T = {
     lbl_later: "myöhemmin kuin päivämääräsi",
     lbl_layout: "taitto",
     lbl_lowest: "edullisin hinta",
-    lbl_order: "Tilaa",
+    lbl_order: "Valitse",
     lbl_pages: "sivua",
     lbl_perword: "sanalta",
     lbl_tootight: "Aikataulu liian tiukka",
@@ -2720,11 +2774,11 @@ const T = {
     st_language: "kieli",
     st_languages: "kieltä",
     files_sending: "Lähetetään tiedostojasi… {done} / {total}.",
-    files_sent: "Tiedostosi ovat perillä: {n} lähetetty tilauksen mukana.",
+    files_sent: "Tiedostosi ovat perillä: {n} lähetetty pyynnön mukana.",
     files_failed: "{n} tiedostoasi ei saatu lähetettyä. Vastaa vahvistusviestiin ja liitä ne mukaan.",
     files_none: "Tiedostoja ei liitetty. Vastaa vahvistusviestiin ja liitä käännettävät asiakirjat.",
     pay_how: "Maksa tilisiirrolla vahvistuksessa olevalle IBAN-tilille ja käytä viitteenä {ref}. Työ alkaa, kun maksu on vastaanotettu.",
-    done_track: "Voit tarkistaa tämän tilauksen milloin tahansa:",
+    done_track: "Voit tarkistaa tämän pyynnön milloin tahansa:",
     done_mail_desk: "Tilaus on kirjattu. Lähetämme vahvistuksen ja tilausasiakirjan osoitteeseen {email}.",
     st_words: "sanaa",
     standfirst: "Yksi työ, kolme hintaa: AI Translator; AI Translator tarkastettuna Senior AI Reviewerin toimesta; Senior AI Reviewer hyväksyttynä äidinkielisen asiantuntijan toimesta.",
@@ -2784,6 +2838,7 @@ const T = {
     an_segments: "Segment",
     an_total: "Totalt",
     an_words: "Ord",
+    aria_calendar: "Öppna kalendern",
     aria_pages: "Sidor i dokumentet",
     back_details: "← Tillbaka till dina uppgifter",
     back_prices: "← Tillbaka till priserna",
@@ -2797,13 +2852,16 @@ const T = {
     btn_edit: "Ändra",
     btn_placing: "Skickar…",
     btn_price: "Visa priserna",
-    btn_submit: "Skicka beställningen",
+    btn_submit: "Begär offert",
     btn_update: "Uppdatera priserna",
     consent: "Jag har läst och godkänner integritetspolicyn och försäljningsvillkoren.",
     done_deliver: "Vi levererar senast",
     done_into: "till",
-    done_mail_client: "Ditt e-postprogram öppnas med beställningen redo att skickas till {inbox}. Skicka den så har vi allt vi behöver.",
+    done_mail_client: "Ditt e-postprogram öppnas med förfrågan klar att skickas till {inbox}. Skicka den, så har vi allt vi behöver.",
     done_mail_sent: "Bekräftelsen är på väg till {email}, med beställningsdokumentet bifogat.",
+    done_quote_sent: "Offerten är på väg till {email}, med PDF:en bifogad.",
+    done_quote_next: "Inget är överenskommet än: e-posten har en länk för att godkänna och en för att avslå, och arbetet börjar först när du godkänner.",
+    files_percent: "{n}%",
     done_send: "och skickar filerna till",
     dtp_toggle: "Sätt de översatta filerna",
     err_address: "Ange faktureringsadressen.",
@@ -2812,7 +2870,7 @@ const T = {
     err_consent: "Godkänn integritetspolicyn och försäljningsvillkoren.",
     err_country: "Välj faktureringsland.",
     err_email: "Ange en e-postadress dit vi kan skicka filerna.",
-    err_name: "Ange för- och efternamn som beställningen ska stå på.",
+    err_name: "Ange för- och efternamn som offerten ska ställas till.",
     err_order: "Beställningen kunde inte sparas. Försök igen om en stund.",
     err_pages: "Ange hur många sidor dokumentet har.",
     err_pages_max: "Över {n} sidor: hör av dig direkt till oss.",
@@ -2848,8 +2906,8 @@ const T = {
     h_analysis: "Filanalys",
     h_billing: "Faktureringsuppgifter",
     h_details: "Uppgifter om projektet",
-    h_done: "Beställningen är mottagen",
-    h_summary: "Sammanfattning av beställningen",
+    h_done: "Förfrågan mottagen",
+    h_summary: "Sammanfattning av offerten",
     h_threeways: "Tre vägar",
     hint_deadline: "Lämna datumet tomt för snabbast möjliga leverans till listpris.",
     lbl_delivered: "Leverans senast",
@@ -2857,7 +2915,7 @@ const T = {
     lbl_later: "senare än ditt datum",
     lbl_layout: "layout",
     lbl_lowest: "lägsta pris",
-    lbl_order: "Beställ",
+    lbl_order: "Välj",
     lbl_pages: "sidor",
     lbl_perword: "per ord",
     lbl_tootight: "För snävt datum",
@@ -2881,11 +2939,11 @@ const T = {
     st_language: "språk",
     st_languages: "språk",
     files_sending: "Skickar dina filer… {done} av {total}.",
-    files_sent: "Dina filer har kommit fram: {n} skickade med beställningen.",
+    files_sent: "Dina filer har kommit: {n} skickade med förfrågan.",
     files_failed: "{n} av dina filer kunde vi inte skicka. Svara på bekräftelsemejlet och bifoga dem.",
     files_none: "Inga filer bifogades. Svara på bekräftelsemejlet med dokumenten som ska översättas.",
     pay_how: "Betala genom att föra över totalbeloppet till IBAN-numret på bekräftelsen och ange {ref} som referens. Arbetet börjar när betalningen har kommit in.",
-    done_track: "Du kan se på den här beställningen när som helst:",
+    done_track: "Du kan se den här förfrågan när du vill:",
     done_mail_desk: "Beställningen är registrerad. Vi skickar bekräftelsen och beställningsdokumentet till {email}.",
     st_words: "ord",
     standfirst: "Ett uppdrag, tre priser: AI Translator; AI Translator kontrollerad av Senior AI Reviewer; Senior AI Reviewer godkänd av en specialist med språket som modersmål.",
@@ -2945,6 +3003,7 @@ const T = {
     an_segments: "句段",
     an_total: "合计",
     an_words: "字数",
+    aria_calendar: "打开日历",
     aria_pages: "文档页数",
     back_details: "← 返回您的资料",
     back_prices: "← 返回价格",
@@ -2958,13 +3017,16 @@ const T = {
     btn_edit: "修改",
     btn_placing: "正在提交…",
     btn_price: "显示价格",
-    btn_submit: "提交订单",
+    btn_submit: "获取报价",
     btn_update: "更新价格",
     consent: "我已阅读并同意隐私政策和销售条款。",
     done_deliver: "我们将在以下时间前交付：",
     done_into: "译入",
-    done_mail_client: "您的邮件程序正在打开，订单已备好发送至 {inbox}。发送后我们即可开始。",
+    done_mail_client: "您的邮件程序正在打开，请求已准备好发送至 {inbox}。发送后我们就有了所需的一切。",
     done_mail_sent: "确认函正在发往 {email}，并附上订单文件。",
+    done_quote_sent: "报价正在发往 {email}，并附上 PDF。",
+    done_quote_next: "目前尚未达成任何约定：邮件中有一个接受链接和一个拒绝链接，只有您接受后工作才会开始。",
+    files_percent: "{n}%",
     done_send: "并将文件发送至",
     dtp_toggle: "为译文文件排版",
     err_address: "请输入账单地址。",
@@ -2973,7 +3035,7 @@ const T = {
     err_consent: "请同意隐私政策和销售条款。",
     err_country: "请选择账单国家/地区。",
     err_email: "请输入我们可以发送文件的电子邮箱。",
-    err_name: "请输入订单抬头的名字和姓氏。",
+    err_name: "请填写报价的收件人姓名。",
     err_order: "订单未能保存。请稍后再试一次。",
     err_pages: "请输入文档有多少页。",
     err_pages_max: "超过 {n} 页的文档，请直接与我们联系。",
@@ -3009,8 +3071,8 @@ const T = {
     h_analysis: "文件分析",
     h_billing: "账单信息",
     h_details: "项目信息",
-    h_done: "订单已收到",
-    h_summary: "订单摘要",
+    h_done: "已收到您的请求",
+    h_summary: "报价摘要",
     h_threeways: "三种方案",
     hint_deadline: "日期留空即可按标价获得最快交付。",
     lbl_delivered: "交付时间",
@@ -3018,7 +3080,7 @@ const T = {
     lbl_later: "晚于您的日期",
     lbl_layout: "排版",
     lbl_lowest: "最低价",
-    lbl_order: "订购",
+    lbl_order: "选择",
     lbl_pages: "页",
     lbl_perword: "每字",
     lbl_tootight: "日期过紧",
@@ -3042,11 +3104,11 @@ const T = {
     st_language: "种语言",
     st_languages: "种语言",
     files_sending: "正在发送您的文件… 共 {total} 个，已发送 {done} 个。",
-    files_sent: "您的文件已送达：随订单发送了 {n} 个。",
+    files_sent: "您的文件已收到：随请求发送了 {n} 个。",
     files_failed: "有 {n} 个文件未能发送。请回复确认邮件并附上这些文件。",
     files_none: "未附带任何文件。请回复确认邮件并附上需要翻译的文档。",
     pay_how: "付款请将总额汇至确认函上的 IBAN 账号，并注明 {ref} 作为汇款备注。收到付款后即开始工作。",
-    done_track: "您可以随时查看此订单：",
+    done_track: "您可以随时查看此请求：",
     done_mail_desk: "订单已登记。我们会将确认函和订单文件发送至 {email}。",
     st_words: "字",
     standfirst: "一个项目，三种价格：AI Translator；AI Translator 经 Senior AI Reviewer 校验；Senior AI Reviewer 经母语专家审定。",
@@ -3106,6 +3168,7 @@ const T = {
     an_segments: "Segmenter",
     an_total: "I alt",
     an_words: "Ord",
+    aria_calendar: "Åbn kalenderen",
     aria_pages: "Sider i dokumentet",
     back_details: "← Tilbage til dine oplysninger",
     back_prices: "← Tilbage til priserne",
@@ -3119,13 +3182,16 @@ const T = {
     btn_edit: "Ændr",
     btn_placing: "Sender…",
     btn_price: "Vis priserne",
-    btn_submit: "Send bestillingen",
+    btn_submit: "Bed om tilbud",
     btn_update: "Opdatér priserne",
     consent: "Jeg har læst og accepterer privatlivspolitikken og salgsbetingelserne.",
     done_deliver: "Vi leverer senest",
     done_into: "til",
-    done_mail_client: "Dit mailprogram åbner med bestillingen klar til at sende til {inbox}. Send den, så har vi alt, hvad vi skal bruge.",
+    done_mail_client: "Dit mailprogram åbner med forespørgslen klar til at sende til {inbox}. Send den, så har vi alt, hvad vi skal have.",
     done_mail_sent: "Bekræftelsen er på vej til {email} med ordredokumentet vedhæftet.",
+    done_quote_sent: "Tilbuddet er på vej til {email} med PDF'en vedhæftet.",
+    done_quote_next: "Der er endnu ikke aftalt noget: mailen indeholder et link til at acceptere og et til at afvise, og arbejdet starter først, når du accepterer.",
+    files_percent: "{n}%",
     done_send: "og sender filerne til",
     dtp_toggle: "Sæt de oversatte filer op",
     err_address: "Indtast faktureringsadressen.",
@@ -3134,7 +3200,7 @@ const T = {
     err_consent: "Accepter privatlivspolitikken og salgsbetingelserne.",
     err_country: "Vælg faktureringsland.",
     err_email: "Indtast en e-mailadresse, vi kan sende filerne til.",
-    err_name: "Indtast for- og efternavn, bestillingen skal stå i.",
+    err_name: "Angiv for- og efternavn, som tilbuddet skal stiles til.",
     err_order: "Bestillingen kunne ikke gemmes. Prøv igen om et øjeblik.",
     err_pages: "Indtast, hvor mange sider dokumentet har.",
     err_pages_max: "Over {n} sider: kontakt os direkte.",
@@ -3170,8 +3236,8 @@ const T = {
     h_analysis: "Filanalyse",
     h_billing: "Faktureringsoplysninger",
     h_details: "Oplysninger om projektet",
-    h_done: "Bestillingen er modtaget",
-    h_summary: "Oversigt over bestillingen",
+    h_done: "Forespørgsel modtaget",
+    h_summary: "Tilbudsoversigt",
     h_threeways: "Tre veje",
     hint_deadline: "Lad datoen stå tom for hurtigst mulig levering til listepris.",
     lbl_delivered: "Levering senest",
@@ -3179,7 +3245,7 @@ const T = {
     lbl_later: "senere end din dato",
     lbl_layout: "ombrydning",
     lbl_lowest: "laveste pris",
-    lbl_order: "Bestil",
+    lbl_order: "Vælg",
     lbl_pages: "sider",
     lbl_perword: "pr. ord",
     lbl_tootight: "For stram frist",
@@ -3203,11 +3269,11 @@ const T = {
     st_language: "sprog",
     st_languages: "sprog",
     files_sending: "Sender dine filer… {done} af {total}.",
-    files_sent: "Dine filer er kommet frem: {n} sendt med bestillingen.",
+    files_sent: "Dine filer er kommet: {n} sendt med forespørgslen.",
     files_failed: "Vi kunne ikke sende {n} af dine filer. Svar på bekræftelsesmailen og vedhæft dem.",
     files_none: "Der blev ikke vedhæftet nogen filer. Svar på bekræftelsesmailen med dokumenterne, der skal oversættes.",
     pay_how: "Betal ved at overføre beløbet til IBAN-nummeret på bekræftelsen og angiv {ref} som reference. Arbejdet starter, når betalingen er modtaget.",
-    done_track: "Du kan se på denne bestilling når som helst:",
+    done_track: "Du kan se denne forespørgsel når som helst:",
     done_mail_desk: "Bestillingen er registreret. Vi sender bekræftelsen og ordredokumentet til {email}.",
     st_words: "ord",
     standfirst: "Én opgave, tre priser: AI Translator; AI Translator kontrolleret af Senior AI Reviewer; Senior AI Reviewer godkendt af en specialist med sproget som modersmål.",
@@ -3267,6 +3333,7 @@ const T = {
     an_segments: "Segment",
     an_total: "Toplam",
     an_words: "Kelime",
+    aria_calendar: "Takvimi aç",
     aria_pages: "Belgedeki sayfa sayısı",
     back_details: "← Bilgilerinize dönün",
     back_prices: "← Fiyatlara dönün",
@@ -3280,13 +3347,16 @@ const T = {
     btn_edit: "Değiştir",
     btn_placing: "Gönderiliyor…",
     btn_price: "Fiyatları göster",
-    btn_submit: "Siparişi gönder",
+    btn_submit: "Teklif isteyin",
     btn_update: "Fiyatları güncelle",
     consent: "Gizlilik politikasını ve satış koşullarını okudum ve kabul ediyorum.",
     done_deliver: "Teslim tarihi:",
     done_into: "şu dile:",
-    done_mail_client: "E-posta programınız, sipariş {inbox} adresine gönderilmeye hazır olarak açılıyor. Gönderin, gereken her şey bizde olsun.",
+    done_mail_client: "E-posta programınız, talebiniz {inbox} adresine gönderilmeye hazır olarak açılıyor. Gönderin, böylece ihtiyacımız olan her şey bizde olur.",
     done_mail_sent: "Onay, sipariş belgesi ekli olarak {email} adresine yolda.",
+    done_quote_sent: "Teklif, PDF ekli olarak {email} adresine yolda.",
+    done_quote_next: "Henüz bir şey kabul edilmedi: e-postada biri kabul biri ret için iki bağlantı var ve iş yalnızca siz kabul ettiğinizde başlar.",
+    files_percent: "{n}%",
     done_send: "ve dosyaları şu adrese gönderiyoruz:",
     dtp_toggle: "Çevrilen dosyaları sayfala",
     err_address: "Fatura adresini girin.",
@@ -3295,7 +3365,7 @@ const T = {
     err_consent: "Gizlilik politikasını ve satış koşullarını kabul edin.",
     err_country: "Fatura ülkesini seçin.",
     err_email: "Dosyaları gönderebileceğimiz bir e-posta adresi girin.",
-    err_name: "Siparişin düzenleneceği adı ve soyadı girin.",
+    err_name: "Teklifin düzenleneceği ad ve soyadı girin.",
     err_order: "Sipariş kaydedilemedi. Birazdan tekrar deneyin.",
     err_pages: "Belgenin kaç sayfa olduğunu girin.",
     err_pages_max: "{n} sayfanın üzerindeki belgeler için doğrudan bizimle görüşün.",
@@ -3331,8 +3401,8 @@ const T = {
     h_analysis: "Dosya çözümlemesi",
     h_billing: "Fatura bilgileri",
     h_details: "Proje bilgileri",
-    h_done: "Sipariş alındı",
-    h_summary: "Sipariş özeti",
+    h_done: "Talebiniz alındı",
+    h_summary: "Teklif özeti",
     h_threeways: "Üç yol",
     hint_deadline: "Liste fiyatıyla en hızlı teslim için tarihi boş bırakın.",
     lbl_delivered: "Teslim tarihi",
@@ -3340,7 +3410,7 @@ const T = {
     lbl_later: "tarihinizden sonra",
     lbl_layout: "sayfa düzeni",
     lbl_lowest: "en düşük fiyat",
-    lbl_order: "Sipariş:",
+    lbl_order: "Seçin",
     lbl_pages: "sayfa",
     lbl_perword: "kelime başına",
     lbl_tootight: "Tarih çok dar",
@@ -3364,11 +3434,11 @@ const T = {
     st_language: "dil",
     st_languages: "dil",
     files_sending: "Dosyalarınız gönderiliyor… {total} dosyadan {done} tanesi.",
-    files_sent: "Dosyalarınız bize ulaştı: siparişle birlikte {n} dosya gönderildi.",
+    files_sent: "Dosyalarınız bizde: talebinizle {n} dosya gönderildi.",
     files_failed: "Dosyalarınızdan {n} tanesini gönderemedik. Onay e-postasını yanıtlayıp bunları ekleyin.",
     files_none: "Hiç dosya eklenmedi. Onay e-postasını yanıtlayıp çevrilecek belgeleri ekleyin.",
     pay_how: "Ödeme için toplam tutarı onayda belirtilen IBAN'a havale edin ve açıklamaya {ref} yazın. Çalışma, ödeme alındığında başlar.",
-    done_track: "Bu siparişi istediğiniz zaman görebilirsiniz:",
+    done_track: "Bu talebi istediğiniz zaman görebilirsiniz:",
     done_mail_desk: "Sipariş kaydedildi. Onayı ve sipariş belgesini {email} adresine gönderiyoruz.",
     st_words: "kelime",
     standfirst: "Tek iş, üç fiyat: AI Translator; Senior AI Reviewer tarafından denetlenen AI Translator; ana dili hedef dil olan bir uzman tarafından onaylanan Senior AI Reviewer.",
@@ -3428,6 +3498,7 @@ const T = {
     an_segments: "Сегменты",
     an_total: "Итого",
     an_words: "Слова",
+    aria_calendar: "Открыть календарь",
     aria_pages: "Количество страниц в документе",
     back_details: "← Назад к вашим данным",
     back_prices: "← Назад к ценам",
@@ -3441,13 +3512,16 @@ const T = {
     btn_edit: "Изменить",
     btn_placing: "Отправляем…",
     btn_price: "Показать цены",
-    btn_submit: "Отправить заказ",
+    btn_submit: "Запросить предложение",
     btn_update: "Обновить цены",
     consent: "Я прочитал(а) политику конфиденциальности и условия продажи и принимаю их.",
     done_deliver: "Сдаём не позднее",
     done_into: "на",
-    done_mail_client: "Открывается ваша почтовая программа с готовым заказом для отправки на {inbox}. Отправьте его, и у нас будет всё необходимое.",
+    done_mail_client: "Ваша почтовая программа открывается с готовым запросом для отправки на {inbox}. Отправьте его, и у нас будет всё необходимое.",
     done_mail_sent: "Подтверждение уже в пути на {email}, документ заказа во вложении.",
+    done_quote_sent: "Коммерческое предложение уже в пути на {email}, PDF во вложении.",
+    done_quote_next: "Пока ничего не согласовано: в письме есть ссылка «принять» и ссылка «отклонить», работа начнётся только после вашего согласия.",
+    files_percent: "{n}%",
     done_send: "и отправим файлы на",
     dtp_toggle: "Сверстать переведённые файлы",
     err_address: "Укажите адрес для выставления счёта.",
@@ -3456,7 +3530,7 @@ const T = {
     err_consent: "Примите политику конфиденциальности и условия продажи.",
     err_country: "Выберите страну для счёта.",
     err_email: "Укажите адрес электронной почты, на который можно отправить файлы.",
-    err_name: "Укажите имя и фамилию, на которые оформляется заказ.",
+    err_name: "Укажите имя и фамилию, на которые оформить предложение.",
     err_order: "Не удалось сохранить заказ. Попробуйте ещё раз через минуту.",
     err_pages: "Укажите, сколько страниц в документе.",
     err_pages_max: "Документы свыше {n} страниц — обсудим напрямую.",
@@ -3492,8 +3566,8 @@ const T = {
     h_analysis: "Анализ файлов",
     h_billing: "Данные для счёта",
     h_details: "Сведения о проекте",
-    h_done: "Заказ получен",
-    h_summary: "Сводка заказа",
+    h_done: "Запрос получен",
+    h_summary: "Сводка предложения",
     h_threeways: "Три пути",
     hint_deadline: "Оставьте дату пустой — получите самый быстрый срок по прейскуранту.",
     lbl_delivered: "Сдача не позднее",
@@ -3501,7 +3575,7 @@ const T = {
     lbl_later: "позже вашей даты",
     lbl_layout: "вёрстка",
     lbl_lowest: "самая низкая цена",
-    lbl_order: "Заказать",
+    lbl_order: "Выбрать",
     lbl_pages: "стр.",
     lbl_perword: "за слово",
     lbl_tootight: "Срок слишком сжат",
@@ -3525,11 +3599,11 @@ const T = {
     st_language: "язык",
     st_languages: "языков",
     files_sending: "Отправляем ваши файлы… {done} из {total}.",
-    files_sent: "Ваши файлы получены: {n} отправлено вместе с заказом.",
+    files_sent: "Ваши файлы получены: {n} отправлено вместе с запросом.",
     files_failed: "Не удалось отправить {n} из ваших файлов. Ответьте на письмо с подтверждением и приложите их.",
     files_none: "Файлы не приложены. Ответьте на письмо с подтверждением и приложите документы для перевода.",
     pay_how: "Для оплаты переведите сумму на IBAN, указанный в подтверждении, указав {ref} в назначении платежа. Работа начинается после получения оплаты.",
-    done_track: "Вы можете посмотреть этот заказ в любое время:",
+    done_track: "Вы можете проверить этот запрос в любое время:",
     done_mail_desk: "Заказ зарегистрирован. Подтверждение и документ заказа отправим на {email}.",
     st_words: "слов",
     standfirst: "Один заказ, три цены: AI Translator; AI Translator с проверкой Senior AI Reviewer; Senior AI Reviewer с утверждением носителем языка.",
@@ -3589,6 +3663,7 @@ const T = {
     an_segments: "セグメント",
     an_total: "合計",
     an_words: "文字数",
+    aria_calendar: "カレンダーを開く",
     aria_pages: "ドキュメントのページ数",
     back_details: "← 入力内容に戻る",
     back_prices: "← 料金に戻る",
@@ -3602,13 +3677,16 @@ const T = {
     btn_edit: "変更",
     btn_placing: "送信中…",
     btn_price: "料金を表示",
-    btn_submit: "注文を送信",
+    btn_submit: "見積りを依頼する",
     btn_update: "料金を更新",
     consent: "プライバシーポリシーおよび販売条件を読み、同意します。",
     done_deliver: "納品予定：",
     done_into: "訳文言語：",
-    done_mail_client: "メールソフトが開き、{inbox} 宛の注文が送信できる状態になっています。送信いただければ、必要なものはすべて揃います。",
+    done_mail_client: "メールソフトが開き、ご依頼の内容が {inbox} 宛に送信できる状態になっています。送信いただければ、必要なものはすべて揃います。",
     done_mail_sent: "確認書を {email} にお送りしています。注文書を添付しています。",
+    done_quote_sent: "お見積りを {email} にお送りしています。PDF を添付しています。",
+    done_quote_next: "まだ何も確定していません。メールに承諾と辞退のリンクがあり、ご承諾の時点で作業を開始します。",
+    files_percent: "{n}%",
     done_send: "ファイルの送付先：",
     dtp_toggle: "翻訳後のファイルをレイアウトする",
     err_address: "請求先住所を入力してください。",
@@ -3617,7 +3695,7 @@ const T = {
     err_consent: "プライバシーポリシーと販売条件に同意してください。",
     err_country: "請求先の国を選択してください。",
     err_email: "ファイルをお送りできるメールアドレスを入力してください。",
-    err_name: "ご注文のお名前（姓名）を入力してください。",
+    err_name: "お見積りのお宛名（姓名）をご記入ください。",
     err_order: "ご注文を保存できませんでした。少し時間をおいてもう一度お試しください。",
     err_pages: "ドキュメントのページ数を入力してください。",
     err_pages_max: "{n} ページを超える場合は、直接ご相談ください。",
@@ -3653,8 +3731,8 @@ const T = {
     h_analysis: "ファイル解析",
     h_billing: "請求情報",
     h_details: "案件情報",
-    h_done: "ご注文を受け付けました",
-    h_summary: "ご注文内容",
+    h_done: "ご依頼を受け付けました",
+    h_summary: "お見積りの概要",
     h_threeways: "3つの進め方",
     hint_deadline: "日付を空欄にすると、定価で最短納期になります。",
     lbl_delivered: "納品予定",
@@ -3662,7 +3740,7 @@ const T = {
     lbl_later: "ご希望日より後",
     lbl_layout: "レイアウト",
     lbl_lowest: "最安値",
-    lbl_order: "注文：",
+    lbl_order: "選択",
     lbl_pages: "ページ",
     lbl_perword: "／語",
     lbl_tootight: "納期が短すぎます",
@@ -3686,11 +3764,11 @@ const T = {
     st_language: "言語",
     st_languages: "言語",
     files_sending: "ファイルを送信しています… {total} 件中 {done} 件。",
-    files_sent: "ファイルが届きました：ご注文とあわせて {n} 件を送信しました。",
+    files_sent: "ファイルを受け取りました。ご依頼とともに {n} 件送信されました。",
     files_failed: "{n} 件のファイルを送信できませんでした。確認メールに返信し、添付してお送りください。",
     files_none: "ファイルが添付されていません。確認メールに返信し、翻訳する書類を添付してください。",
     pay_how: "お支払いは、確認書に記載の IBAN に合計額をお振り込みのうえ、摘要に {ref} をご記入ください。入金確認後に作業を開始します。",
-    done_track: "このご注文はいつでもご確認いただけます：",
+    done_track: "このご依頼はいつでもご確認いただけます：",
     done_mail_desk: "ご注文を登録しました。確認書と注文書を {email} にお送りします。",
     st_words: "語",
     standfirst: "1件の案件に3つの価格：AI Translator、AI Translator を Senior AI Reviewer がチェック、Senior AI Reviewer をネイティブ専門家が承認。",
@@ -3733,6 +3811,335 @@ const T = {
     who_individual: "個人",
   }
 };
+
+/* Words added after the dictionaries were written. Seven keys existed only in
+   English and Italian, so thirteen languages fell back to English in the middle
+   of a sentence. Merged rather than edited in place: delete this block and the
+   dictionaries above are exactly as they were. */
+const T_EXTRA = {
+  "en": {
+    "btn_copied": "Copied"
+  },
+  "it": {
+    "btn_copied": "Copiato"
+  },
+  "fr": {
+    "btn_copied": "Copié",
+    "pay_private": "Payez maintenant, par carte ou virement, en indiquant {ref}. Nous confirmons la commande dès réception du paiement.",
+    "pay_company": "Payez par carte ou virement instantané, en indiquant {ref}. Pour d’autres conditions, écrivez à {email} ou appelez le {phone}.",
+    "pay_invoice": "La facture est émise à la livraison.",
+    "f_taxcode": "Code fiscal",
+    "opt_taxcode": "(Italie)",
+    "err_taxcode": "Indiquez le code fiscal au nom duquel la facture est établie.",
+    "err_vat_company": "Indiquez le numéro de TVA de l’entreprise."
+  },
+  "es": {
+    "btn_copied": "Copiado",
+    "pay_private": "Paga ahora, con tarjeta o transferencia, indicando {ref}. Confirmamos el pedido en cuanto llegue el pago.",
+    "pay_company": "Paga con tarjeta o transferencia inmediata, indicando {ref}. Para otras condiciones, escribe a {email} o llama al {phone}.",
+    "pay_invoice": "La factura se emite en la entrega.",
+    "f_taxcode": "Código fiscal",
+    "opt_taxcode": "(Italia)",
+    "err_taxcode": "Indica el código fiscal a nombre del cual se emite la factura.",
+    "err_vat_company": "Indica el número de IVA de la empresa."
+  },
+  "de": {
+    "btn_copied": "Kopiert",
+    "pay_private": "Zahlen Sie jetzt per Karte oder Überweisung unter Angabe von {ref}. Wir bestätigen den Auftrag, sobald die Zahlung eingegangen ist.",
+    "pay_company": "Zahlen Sie per Karte oder Echtzeitüberweisung unter Angabe von {ref}. Für andere Konditionen schreiben Sie an {email} oder rufen Sie {phone} an.",
+    "pay_invoice": "Die Rechnung wird bei Lieferung ausgestellt.",
+    "f_taxcode": "Steuernummer",
+    "opt_taxcode": "(Italien)",
+    "err_taxcode": "Geben Sie die Steuernummer an, auf die die Rechnung ausgestellt wird.",
+    "err_vat_company": "Geben Sie die USt-IdNr. des Unternehmens an."
+  },
+  "pt": {
+    "btn_copied": "Copiado",
+    "pay_private": "Pague agora, com cartão ou transferência, indicando {ref}. Confirmamos a encomenda assim que o pagamento chegar.",
+    "pay_company": "Pague com cartão ou transferência imediata, indicando {ref}. Para outras condições, escreva para {email} ou ligue para {phone}.",
+    "pay_invoice": "A fatura é emitida na entrega.",
+    "f_taxcode": "Código fiscal",
+    "opt_taxcode": "(Itália)",
+    "err_taxcode": "Indique o código fiscal em nome do qual a fatura é emitida.",
+    "err_vat_company": "Indique o número de IVA da empresa."
+  },
+  "nl": {
+    "btn_copied": "Gekopieerd",
+    "pay_private": "Betaal nu, met kaart of overboeking, onder vermelding van {ref}. We bevestigen de bestelling zodra de betaling binnen is.",
+    "pay_company": "Betaal met kaart of directe overboeking, onder vermelding van {ref}. Voor andere voorwaarden, mail naar {email} of bel {phone}.",
+    "pay_invoice": "De factuur wordt bij levering opgemaakt.",
+    "f_taxcode": "Fiscaal nummer",
+    "opt_taxcode": "(Italië)",
+    "err_taxcode": "Vul het fiscale nummer in waarop de factuur wordt gezet.",
+    "err_vat_company": "Vul het btw-nummer van het bedrijf in."
+  },
+  "no": {
+    "btn_copied": "Kopiert",
+    "pay_private": "Betal nå, med kort eller bankoverføring, og oppgi {ref}. Vi bekrefter bestillingen så snart betalingen er registrert.",
+    "pay_company": "Betal med kort eller straksoverføring, og oppgi {ref}. For andre betingelser, skriv til {email} eller ring {phone}.",
+    "pay_invoice": "Fakturaen utstedes ved levering.",
+    "f_taxcode": "Skattenummer",
+    "opt_taxcode": "(Italia)",
+    "err_taxcode": "Oppgi skattenummeret fakturaen skal utstedes til.",
+    "err_vat_company": "Oppgi selskapets MVA-nummer."
+  },
+  "fi": {
+    "btn_copied": "Kopioitu",
+    "pay_private": "Maksa nyt kortilla tai tilisiirrolla ja mainitse {ref}. Vahvistamme tilauksen heti, kun maksu on saapunut.",
+    "pay_company": "Maksa kortilla tai pikasiirrolla ja mainitse {ref}. Muista ehdoista kirjoita osoitteeseen {email} tai soita {phone}.",
+    "pay_invoice": "Lasku lähetetään toimituksen yhteydessä.",
+    "f_taxcode": "Verotunnus",
+    "opt_taxcode": "(Italia)",
+    "err_taxcode": "Anna verotunnus, jolle lasku osoitetaan.",
+    "err_vat_company": "Anna yrityksen ALV-numero."
+  },
+  "sv": {
+    "btn_copied": "Kopierat",
+    "pay_private": "Betala nu, med kort eller banköverföring, och ange {ref}. Vi bekräftar beställningen så snart betalningen kommit in.",
+    "pay_company": "Betala med kort eller direktöverföring, och ange {ref}. För andra villkor, skriv till {email} eller ring {phone}.",
+    "pay_invoice": "Fakturan utfärdas vid leverans.",
+    "f_taxcode": "Skattenummer",
+    "opt_taxcode": "(Italien)",
+    "err_taxcode": "Ange skattenumret som fakturan ställs till.",
+    "err_vat_company": "Ange företagets momsregistreringsnummer."
+  },
+  "zh": {
+    "btn_copied": "已复制",
+    "pay_private": "请立即以银行卡或转账付款，并注明 {ref}。款项到账后我们即确认订单。",
+    "pay_company": "请以银行卡或即时转账付款，并注明 {ref}。如需其他条件，请写信至 {email} 或致电 {phone}。",
+    "pay_invoice": "发票于交付时开具。",
+    "f_taxcode": "税号",
+    "opt_taxcode": "（意大利）",
+    "err_taxcode": "请填写发票抬头的税号。",
+    "err_vat_company": "请填写公司的增值税号。"
+  },
+  "da": {
+    "btn_copied": "Kopieret",
+    "pay_private": "Betal nu, med kort eller bankoverførsel, og angiv {ref}. Vi bekræfter ordren, så snart betalingen er registreret.",
+    "pay_company": "Betal med kort eller straksoverførsel, og angiv {ref}. For andre betingelser, skriv til {email} eller ring til {phone}.",
+    "pay_invoice": "Fakturaen udstedes ved levering.",
+    "f_taxcode": "Skattenummer",
+    "opt_taxcode": "(Italien)",
+    "err_taxcode": "Angiv det skattenummer, fakturaen udstedes til.",
+    "err_vat_company": "Angiv virksomhedens momsnummer."
+  },
+  "tr": {
+    "btn_copied": "Kopyalandı",
+    "pay_private": "{ref} numarasını belirterek kart veya havale ile şimdi ödeyin. Ödeme ulaştığında siparişi onaylarız.",
+    "pay_company": "{ref} numarasını belirterek kart veya anlık havale ile ödeyin. Farklı koşullar için {email} adresine yazın ya da {phone} numarasını arayın.",
+    "pay_invoice": "Fatura teslimatta düzenlenir.",
+    "f_taxcode": "Vergi kimlik numarası",
+    "opt_taxcode": "(İtalya)",
+    "err_taxcode": "Faturanın düzenleneceği vergi kimlik numarasını girin.",
+    "err_vat_company": "Şirketin KDV numarasını girin."
+  },
+  "ru": {
+    "btn_copied": "Скопировано",
+    "pay_private": "Оплатите сейчас картой или банковским переводом, указав {ref}. Мы подтвердим заказ, как только поступит платёж.",
+    "pay_company": "Оплатите картой или мгновенным переводом, указав {ref}. По другим условиям напишите на {email} или позвоните {phone}.",
+    "pay_invoice": "Счёт выставляется при доставке.",
+    "f_taxcode": "Налоговый код",
+    "opt_taxcode": "(Италия)",
+    "err_taxcode": "Укажите налоговый код, на который выписывается счёт.",
+    "err_vat_company": "Укажите номер НДС компании."
+  },
+  "ja": {
+    "btn_copied": "コピーしました",
+    "pay_private": "カードまたは銀行振込で、{ref} を明記してお支払いください。入金を確認しだいご注文を確定します。",
+    "pay_company": "カードまたは即時振込で、{ref} を明記してお支払いください。その他の条件については {email} までご連絡いただくか、{phone} までお電話ください。",
+    "pay_invoice": "請求書は納品時に発行します。",
+    "f_taxcode": "納税者番号",
+    "opt_taxcode": "（イタリア）",
+    "err_taxcode": "請求書の宛先となる納税者番号を入力してください。",
+    "err_vat_company": "会社の VAT 番号を入力してください。"
+  }
+};
+Object.keys(T_EXTRA).forEach((l) => { if (T[l]) Object.assign(T[l], T_EXTRA[l]); });
+
+/* The subject areas, and the word the remove button says. */
+const T_NAMES = {
+  "en": {
+    "aria_remove_target": "Remove",
+    "subj_general": "General / Standard",
+    "subj_mechanical": "Mechanical / Manufacturing",
+    "subj_legal": "Legal / Contracts",
+    "subj_medical": "Medical / Life sciences",
+    "subj_marketing": "Marketing / Advertising",
+    "subj_software": "IT / Software",
+    "subj_finance": "Finance / Banking",
+    "subj_tourism": "Tourism / Hospitality",
+    "subj_patent": "Patents / IP"
+  },
+  "it": {
+    "aria_remove_target": "Rimuovi",
+    "subj_general": "Generale / Standard",
+    "subj_mechanical": "Meccanica / Produzione",
+    "subj_legal": "Legale / Contratti",
+    "subj_medical": "Medicina / Scienze della vita",
+    "subj_marketing": "Marketing / Pubblicità",
+    "subj_software": "IT / Software",
+    "subj_finance": "Finanza / Banche",
+    "subj_tourism": "Turismo / Ospitalità",
+    "subj_patent": "Brevetti / Proprietà intellettuale"
+  },
+  "fr": {
+    "aria_remove_target": "Retirer",
+    "subj_general": "Général / Standard",
+    "subj_mechanical": "Mécanique / Fabrication",
+    "subj_legal": "Juridique / Contrats",
+    "subj_medical": "Médical / Sciences de la vie",
+    "subj_marketing": "Marketing / Publicité",
+    "subj_software": "Informatique / Logiciels",
+    "subj_finance": "Finance / Banque",
+    "subj_tourism": "Tourisme / Hôtellerie",
+    "subj_patent": "Brevets / Propriété intellectuelle"
+  },
+  "es": {
+    "aria_remove_target": "Quitar",
+    "subj_general": "General / Estándar",
+    "subj_mechanical": "Mecánica / Fabricación",
+    "subj_legal": "Jurídico / Contratos",
+    "subj_medical": "Medicina / Ciencias de la vida",
+    "subj_marketing": "Marketing / Publicidad",
+    "subj_software": "TI / Software",
+    "subj_finance": "Finanzas / Banca",
+    "subj_tourism": "Turismo / Hostelería",
+    "subj_patent": "Patentes / Propiedad intelectual"
+  },
+  "de": {
+    "aria_remove_target": "Entfernen",
+    "subj_general": "Allgemein / Standard",
+    "subj_mechanical": "Maschinenbau / Fertigung",
+    "subj_legal": "Recht / Verträge",
+    "subj_medical": "Medizin / Life Sciences",
+    "subj_marketing": "Marketing / Werbung",
+    "subj_software": "IT / Software",
+    "subj_finance": "Finanzen / Banken",
+    "subj_tourism": "Tourismus / Gastgewerbe",
+    "subj_patent": "Patente / Gewerbliche Schutzrechte"
+  },
+  "pt": {
+    "aria_remove_target": "Remover",
+    "subj_general": "Geral / Padrão",
+    "subj_mechanical": "Mecânica / Produção",
+    "subj_legal": "Jurídico / Contratos",
+    "subj_medical": "Medicina / Ciências da vida",
+    "subj_marketing": "Marketing / Publicidade",
+    "subj_software": "TI / Software",
+    "subj_finance": "Finanças / Banca",
+    "subj_tourism": "Turismo / Hotelaria",
+    "subj_patent": "Patentes / Propriedade intelectual"
+  },
+  "nl": {
+    "aria_remove_target": "Verwijderen",
+    "subj_general": "Algemeen / Standaard",
+    "subj_mechanical": "Werktuigbouw / Productie",
+    "subj_legal": "Juridisch / Contracten",
+    "subj_medical": "Medisch / Life sciences",
+    "subj_marketing": "Marketing / Reclame",
+    "subj_software": "IT / Software",
+    "subj_finance": "Financiën / Bankwezen",
+    "subj_tourism": "Toerisme / Horeca",
+    "subj_patent": "Octrooien / Intellectueel eigendom"
+  },
+  "no": {
+    "aria_remove_target": "Fjern",
+    "subj_general": "Generelt / Standard",
+    "subj_mechanical": "Mekanikk / Produksjon",
+    "subj_legal": "Juridisk / Kontrakter",
+    "subj_medical": "Medisin / Biovitenskap",
+    "subj_marketing": "Markedsføring / Reklame",
+    "subj_software": "IT / Programvare",
+    "subj_finance": "Finans / Bank",
+    "subj_tourism": "Reiseliv / Servering",
+    "subj_patent": "Patenter / Immaterielle rettigheter"
+  },
+  "fi": {
+    "aria_remove_target": "Poista",
+    "subj_general": "Yleinen / Vakio",
+    "subj_mechanical": "Konetekniikka / Valmistus",
+    "subj_legal": "Juridiikka / Sopimukset",
+    "subj_medical": "Lääketiede / Biotieteet",
+    "subj_marketing": "Markkinointi / Mainonta",
+    "subj_software": "IT / Ohjelmistot",
+    "subj_finance": "Rahoitus / Pankki",
+    "subj_tourism": "Matkailu / Ravintola-ala",
+    "subj_patent": "Patentit / Immateriaalioikeudet"
+  },
+  "sv": {
+    "aria_remove_target": "Ta bort",
+    "subj_general": "Allmänt / Standard",
+    "subj_mechanical": "Maskinteknik / Tillverkning",
+    "subj_legal": "Juridik / Avtal",
+    "subj_medical": "Medicin / Life science",
+    "subj_marketing": "Marknadsföring / Reklam",
+    "subj_software": "IT / Programvara",
+    "subj_finance": "Finans / Bank",
+    "subj_tourism": "Turism / Hotell och restaurang",
+    "subj_patent": "Patent / Immaterialrätt"
+  },
+  "zh": {
+    "aria_remove_target": "移除",
+    "subj_general": "通用 / 标准",
+    "subj_mechanical": "机械 / 制造",
+    "subj_legal": "法律 / 合同",
+    "subj_medical": "医学 / 生命科学",
+    "subj_marketing": "市场营销 / 广告",
+    "subj_software": "IT / 软件",
+    "subj_finance": "金融 / 银行",
+    "subj_tourism": "旅游 / 酒店",
+    "subj_patent": "专利 / 知识产权"
+  },
+  "da": {
+    "aria_remove_target": "Fjern",
+    "subj_general": "Generelt / Standard",
+    "subj_mechanical": "Mekanik / Produktion",
+    "subj_legal": "Juridisk / Kontrakter",
+    "subj_medical": "Medicin / Life science",
+    "subj_marketing": "Markedsføring / Reklame",
+    "subj_software": "IT / Software",
+    "subj_finance": "Finans / Bank",
+    "subj_tourism": "Turisme / Hotel og restauration",
+    "subj_patent": "Patenter / Immaterielle rettigheder"
+  },
+  "tr": {
+    "aria_remove_target": "Kaldır",
+    "subj_general": "Genel / Standart",
+    "subj_mechanical": "Makine / Üretim",
+    "subj_legal": "Hukuk / Sözleşmeler",
+    "subj_medical": "Tıp / Yaşam bilimleri",
+    "subj_marketing": "Pazarlama / Reklam",
+    "subj_software": "BT / Yazılım",
+    "subj_finance": "Finans / Bankacılık",
+    "subj_tourism": "Turizm / Konaklama",
+    "subj_patent": "Patent / Fikri mülkiyet"
+  },
+  "ru": {
+    "aria_remove_target": "Убрать",
+    "subj_general": "Общее / Стандарт",
+    "subj_mechanical": "Механика / Производство",
+    "subj_legal": "Юридическое / Договоры",
+    "subj_medical": "Медицина / Науки о жизни",
+    "subj_marketing": "Маркетинг / Реклама",
+    "subj_software": "ИТ / ПО",
+    "subj_finance": "Финансы / Банки",
+    "subj_tourism": "Туризм / Гостеприимство",
+    "subj_patent": "Патенты / Интеллектуальная собственность"
+  },
+  "ja": {
+    "aria_remove_target": "削除",
+    "subj_general": "一般 / 標準",
+    "subj_mechanical": "機械 / 製造",
+    "subj_legal": "法務 / 契約",
+    "subj_medical": "医療 / ライフサイエンス",
+    "subj_marketing": "マーケティング / 広告",
+    "subj_software": "IT / ソフトウェア",
+    "subj_finance": "金融 / 銀行",
+    "subj_tourism": "観光 / ホスピタリティ",
+    "subj_patent": "特許 / 知的財産"
+  }
+};
+Object.keys(T_NAMES).forEach((l) => { if (T[l]) Object.assign(T[l], T_NAMES[l]); });
 
 const LANGS = [
   ['en', 'EN'], ['it', 'IT'], ['fr', 'FR'], ['es', 'ES'], ['de', 'DE'], ['pt', 'PT'],
@@ -3783,6 +4190,9 @@ function applyTranslation(lang) {
   if (dateField) {
     dateField.placeholder = datePattern();
     if (keptDate) dateField.value = formatTypedDate(keptDate);
+    /* The calendar's own words do not change - they are English in every
+       language - but the day it marks is read back out of the field. */
+    if (calendarOpen()) renderCalendar();
   }
 
   /* Everything the engine drew in the old language has to be drawn again. The
@@ -3792,12 +4202,15 @@ function applyTranslation(lang) {
 }
 
 function rememberedLang() {
+  /* English is where everyone starts. The browser's own language is not read:
+     a visitor who wants another language presses its button, and that choice
+     is remembered for the next visit. Guessing from the browser sent people
+     who had not asked for it into Italian. */
   try {
     const kept = localStorage.getItem('quote-desk-lang');
     if (kept && T[kept]) return kept;
   } catch (err) {}
-  const guess = (navigator.language || 'en').slice(0, 2).toLowerCase();
-  return T[guess] ? guess : 'en';
+  return 'en';
 }
 const THEME_KEY = 'quote-desk-theme';
 
@@ -3855,12 +4268,12 @@ const ORDERS_INBOX = 'g.gambuto@dema-solutions.com';
  */
 function fillSelects() {
   const options = LANGUAGES.map((l) =>
-    '<option value="' + l.code + '">' + escapeHtml(l.name) + '</option>').join('');
+    '<option value="' + l.code + '">' + escapeHtml(langLabel(l.code)) + '</option>').join('');
   $('source').innerHTML = options;
   $('target').innerHTML = options;
   $('source').value = 'en-GB';
   $('target').value = 'fr-FR';
-  $('subject').innerHTML = SUBJECTS.map((s) => '<option value="' + s.code + '">' + s.name + '</option>').join('');
+  $('subject').innerHTML = SUBJECTS.map((s) => '<option value="' + s.code + '">' + escapeHtml(subjectLabel(s.code)) + '</option>').join('');
   $('subject').value = 'mechanical';
   $('currency').innerHTML = CURRENCIES.map((c) => '<option value="' + c.code + '">' + c.code + ' (' + c.symbol + ')</option>').join('');
   $('currency').value = guessCurrency();
@@ -3930,6 +4343,139 @@ function formatTypedDate(iso) {
   return shape.order.map((part) => pad[part]).join(shape.separator);
 }
 
+/* ---- The page's own calendar ---------------------------------------------
+   A native <input type="date"> draws its own calendar from the BROWSER's
+   interface language and offers no way to change it, so it had to go when the
+   page took over the format of the field. This is the calendar it gave up,
+   written here instead - and its months and weekdays are English in every
+   language, by the client's instruction, like the language pair, the subject
+   and the country menus.
+
+   Dates are ISO everywhere inside; only the field itself is written the way
+   the chosen language writes it, by formatTypedDate. Choosing a day does NOT
+   re-price: it goes through briefChanged, like any other edit to the brief. */
+
+const CAL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+/* Monday first: the desk sells in Europe, and the week starts where its
+   customers start it. The names are English, the layout is not American. */
+const CAL_DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/** The month on show, as {y, m} with m counted from 0. */
+let calMonth = null;
+
+/** The first month worth showing: the one holding the earliest date taken. */
+function calFloor() {
+  const bits = earliestDate().split('-');
+  return { y: Number(bits[0]), m: Number(bits[1]) - 1 };
+}
+
+function calendarOpen() {
+  const panel = $('calendar');
+  return !!panel && !panel.hidden;
+}
+
+function openCalendar() {
+  const chosen = parseTypedDate($('deadline').value);
+  if (chosen) {
+    const bits = chosen.split('-');
+    calMonth = { y: Number(bits[0]), m: Number(bits[1]) - 1 };
+  } else {
+    calMonth = calFloor();
+  }
+  $('calendar').hidden = false;
+  $('calendarButton').setAttribute('aria-expanded', 'true');
+  renderCalendar();
+  const landing = $('calendar').querySelector('.cal-day.chosen') ||
+    $('calendar').querySelector('.cal-day:not(:disabled)');
+  if (landing) landing.focus();
+}
+
+function closeCalendar(toButton) {
+  if (!calendarOpen()) return;
+  $('calendar').hidden = true;
+  $('calendarButton').setAttribute('aria-expanded', 'false');
+  if (toButton) $('calendarButton').focus();
+}
+
+function renderCalendar() {
+  if (!calMonth) calMonth = calFloor();
+  const floor = calFloor();
+  const earliest = earliestDate();
+  const chosen = parseTypedDate($('deadline').value);
+  const atFloor = calMonth.y === floor.y && calMonth.m === floor.m;
+
+  /* getUTCDay() is 0 on Sunday, so Sunday is pushed to the seventh column. */
+  const lead = (new Date(Date.UTC(calMonth.y, calMonth.m, 1)).getUTCDay() + 6) % 7;
+  const days = new Date(Date.UTC(calMonth.y, calMonth.m + 1, 0)).getUTCDate();
+
+  let cells = '';
+  for (let i = 0; i < lead; i += 1) cells += '<div class="cal-empty"></div>';
+  for (let day = 1; day <= days; day += 1) {
+    const iso = String(calMonth.y).padStart(4, '0') + '-' +
+      String(calMonth.m + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    const taken = iso === chosen;
+    cells += '<button type="button" class="cal-day' + (taken ? ' chosen' : '') +
+      '" data-day="' + iso + '"' + (iso < earliest ? ' disabled' : '') +
+      (taken ? ' aria-current="date"' : '') + '>' + day + '</button>';
+  }
+
+  $('calendar').innerHTML =
+    '<div class="cal-head">' +
+      '<button type="button" class="cal-nav" id="calPrev" aria-label="Previous month"' +
+        (atFloor ? ' disabled' : '') + '>&lsaquo;</button>' +
+      '<span class="cal-title">' + CAL_MONTHS[calMonth.m] + ' ' + calMonth.y + '</span>' +
+      '<button type="button" class="cal-nav" id="calNext" aria-label="Next month">&rsaquo;</button>' +
+    '</div>' +
+    '<div class="cal-grid">' +
+      CAL_DOW.map((d) => '<div class="cal-dow">' + d + '</div>').join('') +
+      cells +
+    '</div>';
+}
+
+/** A month forward or back, never behind the earliest date the desk takes. */
+function moveCalendarMonth(step) {
+  const floor = calFloor();
+  const moved = new Date(Date.UTC(calMonth.y, calMonth.m + step, 1));
+  const want = { y: moved.getUTCFullYear(), m: moved.getUTCMonth() };
+  if (want.y < floor.y || (want.y === floor.y && want.m < floor.m)) return;
+  calMonth = want;
+  renderCalendar();
+  /* The old buttons went with the redraw: focus the new one of the same name,
+     so the months can be turned again without reaching for the mouse. */
+  const nav = $(step < 0 ? 'calPrev' : 'calNext');
+  if (nav && !nav.disabled) { nav.focus(); return; }
+  const fallback = $('calendar').querySelector('.cal-day:not(:disabled)');
+  if (fallback) fallback.focus();
+}
+
+/** Put the keyboard on a day, turning the page of the calendar if it must. */
+function focusCalendarDay(iso) {
+  if (iso < earliestDate()) return;
+  const bits = iso.split('-');
+  const want = { y: Number(bits[0]), m: Number(bits[1]) - 1 };
+  if (want.y !== calMonth.y || want.m !== calMonth.m) {
+    calMonth = want;
+    renderCalendar();
+  }
+  const cell = $('calendar').querySelector('[data-day="' + iso + '"]');
+  if (cell) cell.focus();
+}
+
+/** The day a cell stands for, moved by so many days. */
+function calendarStep(iso, days) {
+  const when = new Date(iso + 'T00:00:00Z');
+  when.setUTCDate(when.getUTCDate() + days);
+  return when.toISOString().slice(0, 10);
+}
+
+function chooseCalendarDay(iso) {
+  $('deadline').value = formatTypedDate(iso);
+  closeCalendar(true);
+  briefChanged();
+}
+
 /** The earliest date the desk will take: tomorrow. */
 function earliestDate() {
   return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
@@ -3957,11 +4503,11 @@ function renderExtraTargets() {
   $('extraTargets').innerHTML = state.extraTargets.map((code, i) => {
     const options = LANGUAGES
       .filter((l) => l.code === code || (taken.indexOf(l.code) === -1 && state.extraTargets.indexOf(l.code) === -1))
-      .map((l) => '<option value="' + l.code + '"' + (l.code === code ? ' selected' : '') + '>' + l.name + '</option>')
+      .map((l) => '<option value="' + l.code + '"' + (l.code === code ? ' selected' : '') + '>' + escapeHtml(langLabel(l.code)) + '</option>')
       .join('');
     return '<span class="chip">' +
       '<select data-extra="' + i + '" aria-label="Extra target language">' + options + '</select>' +
-      '<button type="button" data-remove="' + i + '" aria-label="Remove ' + lang(code).name + '">&times;</button>' +
+      '<button type="button" data-remove="' + i + '" aria-label="' + escapeHtml(t('aria_remove_target') + ' ' + langLabel(code)) + '">&times;</button>' +
       '</span>';
   }).join('');
 }
@@ -4117,7 +4663,10 @@ const EU = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'G
   'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
   'SI', 'ES', 'SE'];
 const REVERSE_CHARGE = 'Oper. non soggetta a IVA art. 7-ter DPR 633/72 - REVERSE CHARGE';
-const NOT_A_COUNTRY = ['AQ', 'BV', 'HM', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ'];
+const NOT_A_COUNTRY = ['AQ', 'BV', 'HM', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ',
+  // ICU names FX "France" too - metropolitan France, a second France in the list
+  // that is not in the EU array and so billed no VAT. One France, and it is FR.
+  'FX'];
 
 /** Every country the browser knows a name for, so the list cannot drift. */
 function countries() {
@@ -4139,7 +4688,7 @@ function countries() {
 function fillCountries() {
   const chosen = $('billCountry').value;
   $('billCountry').innerHTML = '<option value="">Choose a country</option>' +
-    countries().map((c) => '<option value="' + c.code + '">' + escapeHtml(c.name) + '</option>').join('');
+    countries().map((c) => '<option value="' + c.code + '">' + escapeHtml(countryLabel(c.code, c.name)) + '</option>').join('');
   if (chosen) $('billCountry').value = chosen;
 }
 
@@ -4223,9 +4772,9 @@ function renderSummary() {
   const input = state.pending.input;
 
   $('summaryRows').innerHTML =
-    summaryRow(t('sum_from'), lang(input.source).name) +
-    summaryRow(t('sum_into'), input.targets.map((c) => lang(c).name).join(', ')) +
-    summaryRow(t('sum_subject'), subjectOf(input.subject).name) +
+    summaryRow(t('sum_from'), langLabel(input.source)) +
+    summaryRow(t('sum_into'), input.targets.map(langLabel).join(', ')) +
+    summaryRow(t('sum_subject'), subjectLabel(input.subject)) +
     summaryRow(t('sum_words'), (input.words * input.targets.length).toLocaleString(locale()) + ' ' + t('st_words')) +
     summaryRow(t('sum_solution'), s.name) +
     summaryRow(t('lbl_perword'), money(s.perWord, s.currency, 3)) +
@@ -4352,6 +4901,11 @@ async function submitOrder(event) {
     stages: priced.stages,
     source: lang(state.pending.input.source).name,
     targets: state.pending.input.targets.map((c) => lang(c).name),
+    // The names are for people, the codes for the CAT tool. Both are kept: a
+    // name read back out of a spreadsheet cell cannot be trusted to still be
+    // the name that was written, because sooner or later somebody tidies it.
+    sourceCode: state.pending.input.source,
+    targetCodes: state.pending.input.targets.slice(),
     words: state.pending.input.words,
     subject: subjectOf(state.pending.input.subject).name,
     layout: state.pending.input.layout
@@ -4380,14 +4934,16 @@ async function submitOrder(event) {
   $('placingNote').hidden = false;
 
   try {
-    const answer = await sendOrder(id, record);
+    const answer = await sendQuote(id, record);
     showReceipt(id, record, answer);
-    /* The order exists now, so the documents have somewhere to go. Until this
-       was written the desk received a word count and nothing to translate. */
-    await sendFiles(id);
+    /* The request exists now, so the documents have somewhere to go. Until this
+       was written the desk received a word count and nothing to translate.
+       The desk says whether there is a folder: with none, twelve uploads would
+       fail one after another, and the receipt would say so twelve times. */
+    await sendFiles(id, record.customer.email, answer.files !== false);
   } catch (err) {
-    // The desk could not be reached: hand the order to the customer's mail client
-    // rather than lose it, and say plainly that is what happened.
+    // The desk could not be reached: hand the request to the customer's mail
+    // client rather than lose it, and say plainly that is what happened.
     mailOrder(id, record);
     showReceipt(id, record, { delivered: false });
   } finally {
@@ -4397,17 +4953,35 @@ async function submitOrder(event) {
   }
 }
 
-/** POST the order to the Apps Script desk. Throws when there is nowhere to send it. */
-async function sendOrder(id, record) {
+/**
+ * POST the request to the Apps Script desk. Throws when there is nowhere to
+ * send it.
+ *
+ * What comes back is a quote, not an order: the desk emails a price with an
+ * accept link and a decline link, and nothing is agreed until the customer
+ * answers one of them. The language the visitor is reading in travels with the
+ * request, because that is the language they will be written to in.
+ */
+async function sendQuote(id, record) {
   if (!ORDERS_WEBHOOK) throw new Error('no desk configured');
   const res = await fetch(ORDERS_WEBHOOK, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(Object.assign({ id: id }, record))
+    body: JSON.stringify(Object.assign({
+      action: 'quote',
+      id: id,
+      language: LANG,
+      /* What the browser is about to upload, so the desk's copy can say
+         whether the folder should hold more than it does. */
+      fileCount: (state.files || []).length
+    }, record))
   });
   const answer = await res.json();
   if (!answer || answer.ok !== true) throw new Error(answer && answer.error ? answer.error : 'refused');
-  return { delivered: true };
+  /* `files` is false when the desk could not make the folder. The request is
+     recorded and the quote is on its way either way - only the documents have
+     nowhere to land, and the customer is told that rather than left guessing. */
+  return { delivered: true, quote: answer.quote || '', files: answer.files !== false };
 }
 
 /**
@@ -4420,13 +4994,19 @@ async function sendOrder(id, record) {
  * the receipt rather than hidden: the customer can still reply to the
  * confirmation and attach it.
  */
-async function sendFiles(id) {
+async function sendFiles(id, email, canUpload) {
   const files = state.files || [];
   const note = $('doneFiles');
   if (!note) return;
 
   if (!files.length) {
     note.textContent = t('files_none');
+    return;
+  }
+
+  if (canUpload === false) {
+    note.hidden = false;
+    note.textContent = t('files_failed').replace('{n}', files.length);
     return;
   }
 
@@ -4438,36 +5018,121 @@ async function sendFiles(id) {
     note.textContent = t('files_sending')
       .replace('{done}', done).replace('{total}', files.length);
     try {
-      const data = await asBase64(file);
-      const res = await fetch(ORDERS_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'upload', id: id, name: file.name, mime: file.type, data: data })
+      await sendOneFile(id, email, file, (percent) => {
+        note.textContent = t('files_sending')
+          .replace('{done}', done).replace('{total}', files.length) +
+          (file.size > CHUNK ? ' ' + t('files_percent').replace('{n}', percent) : '');
       });
-      const answer = await res.json();
-      if (answer && answer.ok) done++; else failed++;
+      done++;
     } catch (err) {
       failed++;
     }
   }
+
+  await fetch(ORDERS_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'uploadDone', id: id, email: email })
+  }).catch(() => {});
 
   note.textContent = failed
     ? t('files_failed').replace('{n}', failed)
     : t('files_sent').replace('{n}', done);
 }
 
-/** A file as base64, without the data: prefix the reader puts in front. */
-function asBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result);
-      const comma = result.indexOf(',');
-      resolve(comma === -1 ? result : result.slice(comma + 1));
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
+/* 10 MiB, a multiple of the 320 KiB Microsoft asks for. The desk says which
+   size it wants and this is only the fallback, so the two cannot disagree for
+   long. */
+const CHUNK = 10 * 1024 * 1024;
+
+/**
+ * One file, straight onto the desk's OneDrive, in blocks.
+ *
+ * The desk hands back an upload URL for this one file: the bytes never pass
+ * through the desk itself, which is what lets a 2 GB archive through at all.
+ *
+ * Two hundred blocks is a long time on a domestic line, so a block that fails
+ * is not the end of the file: it is tried three times, and if it still will not
+ * go, the session itself is asked where it got to and the upload carries on
+ * from there. Starting a 2 GB file again because one block was unlucky is the
+ * failure this avoids.
+ *
+ * A 404 or a 410 means the session is gone rather than unlucky, and there is
+ * nothing to resume - that one is given up.
+ */
+async function sendOneFile(id, email, file, onProgress) {
+  const res = await fetch(ORDERS_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'uploadUrl', id: id, email: email,
+      name: file.name, size: file.size, mime: file.type
+    })
   });
+  const ticket = await res.json();
+  if (!ticket || ticket.ok !== true) {
+    throw new Error(ticket && ticket.error ? ticket.error : 'refused');
+  }
+
+  const chunk = Number(ticket.chunk) || CHUNK;
+  let at = 0;
+  let resumed = 0;
+  while (at < file.size) {
+    const end = Math.min(at + chunk, file.size);
+    const piece = file.slice(at, end);
+    let sent = null;
+    for (let attempt = 0; attempt < 3 && !sent; attempt++) {
+      const put = await fetch(ticket.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Range': 'bytes ' + at + '-' + (end - 1) + '/' + file.size },
+        body: piece
+      }).catch(() => null);
+      if (put && (put.status === 404 || put.status === 410)) {
+        throw new Error('upload session gone');
+      }
+      if (put && put.ok) sent = put;
+    }
+    if (!sent) {
+      /* Three tries gone. Ask the session what it is still waiting for and go
+         on from there - it may well have taken this block and lost only the
+         answer. Twice is enough: a session that cannot say where it is has
+         nothing left to resume. */
+      if (resumed >= 2) throw new Error('block at ' + at + ' refused');
+      resumed++;
+      const next = await askWhereItGotTo(ticket.uploadUrl);
+      if (next === null) throw new Error('block at ' + at + ' refused');
+      at = next;
+      continue;
+    }
+    at = end;
+    if (onProgress) onProgress(Math.round((at / file.size) * 100));
+
+    /* The last block answers with the file as OneDrive now holds it. Its size
+       is the only honest proof the upload is whole: a short file that nobody
+       checked is a job that fails later, at the translator's desk. */
+    if (at >= file.size) {
+      const stored = await sent.json().catch(() => null);
+      if (stored && stored.size !== undefined && Number(stored.size) !== file.size) {
+        throw new Error('stored ' + stored.size + ' of ' + file.size + ' bytes');
+      }
+    }
+  }
+}
+
+/**
+ * Where an upload session got to, in bytes, or null if it cannot say.
+ *
+ * Microsoft answers with the ranges it is still missing, as "12345-" or
+ * "12345-67890". The first number of the first range is where to carry on from.
+ */
+async function askWhereItGotTo(uploadUrl) {
+  const res = await fetch(uploadUrl).catch(() => null);
+  if (!res || !res.ok) return null;
+  const body = await res.json().catch(() => null);
+  const ranges = body && body.nextExpectedRanges;
+  if (!ranges || !ranges.length) return null;
+  const from = Number(String(ranges[0]).split('-')[0]);
+  return Number.isFinite(from) ? from : null;
 }
 
 /** The fallback: the whole order, written into the visitor's own mail client. */
@@ -4508,19 +5173,16 @@ function mailOrder(id, record) {
 }
 
 function showReceipt(id, record, answer) {
+  /* Remembered so a change of language can draw the receipt again. */
+  state.receipt = { id: id, record: record, answer: answer };
   $('doneRef').textContent = id;
   $('doneText').textContent = record.solution + ' ' + t('done_into') + ' ' +
-    record.targets.join(', ') + '. ' + t('done_deliver') + ' ' + when(record.eta) +
+    record.targets.map(langLabel).join(', ') + '. ' + t('done_deliver') + ' ' + when(record.eta) +
     ' ' + t('done_send') + ' ' + record.customer.email + '.';
-  /* A person pays before the order is confirmed; a company may also agree
-     other terms with the desk. Either way the invoice follows the delivery,
-     not the payment. */
-  var isCompany = record.billing && record.billing.company;
-  $('donePay').textContent = (isCompany
-    ? t('pay_company').replace('{ref}', id)
-        .replace('{email}', 'g.gambuto@dema-solutions.com')
-        .replace('{phone}', '+39 039 9467678')
-    : t('pay_private').replace('{ref}', id)) + ' ' + t('pay_invoice');
+  /* Nothing has been agreed at this point: what arrives is a quote with an
+     accept link and a decline link. Saying so here is the whole difference
+     between a page that takes orders and a page that quotes for them. */
+  $('donePay').textContent = t('done_quote_next');
   /* The customer can look the order up later without an account: the reference
      and the email they placed it with are the key. */
   var track = $('doneTrack');
@@ -4533,7 +5195,7 @@ function showReceipt(id, record, answer) {
       '">ai-dema-solutions.com/quote/status/</a>';
   }
   $('doneMail').textContent = answer.delivered
-    ? t('done_mail_sent').replace('{email}', record.customer.email)
+    ? t('done_quote_sent').replace('{email}', record.customer.email)
     : t('done_mail_client').replace('{inbox}', ORDERS_INBOX);
   goToStep('done');
 }
@@ -4654,8 +5316,54 @@ function wire() {
     briefChanged();
   });
 
-  $('clearDeadline').addEventListener('click', () => { $('deadline').value = ''; briefChanged(); });
-  $('fileInput').accept = FileAnalysis.supportedExtensions().join(',');
+  $('clearDeadline').addEventListener('click', () => {
+    $('deadline').value = '';
+    if (calendarOpen()) renderCalendar();
+    briefChanged();
+  });
+
+  $('calendarButton').addEventListener('click', () => {
+    if (calendarOpen()) closeCalendar(true); else openCalendar();
+  });
+
+  $('calendar').addEventListener('click', (event) => {
+    const nav = event.target.closest ? event.target.closest('.cal-nav') : null;
+    if (nav) { moveCalendarMonth(nav.id === 'calPrev' ? -1 : 1); return; }
+    const day = event.target.closest ? event.target.closest('.cal-day') : null;
+    if (!day || day.disabled) return;
+    chooseCalendarDay(day.getAttribute('data-day'));
+  });
+
+  $('calendar').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') { closeCalendar(true); return; }
+    const day = event.target.closest ? event.target.closest('.cal-day') : null;
+    if (!day) return;
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    focusCalendarDay(calendarStep(day.getAttribute('data-day'), step));
+  });
+
+  /* Typing the date by hand still works, and the calendar follows what is typed. */
+  $('deadline').addEventListener('input', () => { if (calendarOpen()) renderCalendar(); });
+  $('deadline').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeCalendar(false);
+  });
+
+  /* A press anywhere else closes it. pointerdown, not click: the panel must be
+     gone before whatever was pressed takes the focus. */
+  document.addEventListener('pointerdown', (event) => {
+    if (!calendarOpen()) return;
+    const inside = event.target.closest ? event.target.closest('.date-field') : null;
+    if (!inside) closeCalendar(false);
+  });
+
+  /* No `accept` list, deliberately.
+     It used to be the extensions the counter can open, which made the picker
+     refuse the file most customers actually send: a ZIP of the whole job. What
+     a file is worth counting and what a file is worth sending are two different
+     questions - anything can be sent, and anything the counter cannot open is
+     listed as uncounted with its size, for the desk to count properly. */
   $('uploadButton').addEventListener('click', () => $('fileInput').click());
   $('fileInput').addEventListener('change', (event) => {
     const files = Array.prototype.slice.call(event.target.files);
@@ -4700,8 +5408,8 @@ function wire() {
     const text = $('doneRef').textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
-        button.textContent = 'Copied';
-        setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+        button.textContent = t('btn_copied');
+        setTimeout(() => { button.textContent = t('btn_copy'); }, 1600);
       }, selectRef);
     } else {
       selectRef();
@@ -4750,6 +5458,47 @@ function retranslateRendered() {
      leaves them exactly as they are. */
   if (state.analysis) renderAnalysis(state.analysis);
   if (state.pending) renderSummary();
+  redrawReceipt();
+
+  /* The lists carry names now, not codes, so they are written again in the new
+     language. The visitor's choices are codes and survive untouched. */
+  const picked = {
+    source: $('source').value, target: $('target').value,
+    subject: $('subject').value, currency: $('currency').value
+  };
+  /* The id is billCountry. Written billingCountry - as it was for months -
+     $() answers null, the guard never fires, and a visitor who switches
+     language halfway through the checkout quietly loses the country they
+     picked, because fillCountries() rebuilds the list underneath them. */
+  const country = $('billCountry');
+  const pickedCountry = country ? country.value : null;
+  fillSelects();
+  fillCountries();
+  $('source').value = picked.source;
+  $('target').value = picked.target;
+  $('subject').value = picked.subject;
+  $('currency').value = picked.currency;
+  if (country && pickedCountry) country.value = pickedCountry;
+  renderExtraTargets();
+}
+
+/**
+ * The receipt is written once, in the language the order was placed in. Without
+ * this the page ends up half in one language and half in another: the headings
+ * follow the new language because they carry data-i18n, while the sentence
+ * underneath keeps the old one. Nothing is re-sent and no order is touched;
+ * only the words are written again.
+ */
+function redrawReceipt() {
+  const r = state.receipt;
+  if (!r) return;
+  if (typeof showReceipt === 'function') { showReceipt(r.id, r.record, r.answer); return; }
+  /* The artifact draws a simpler receipt of its own. */
+  $('doneRef').textContent = r.id;
+  $('doneText').textContent = r.record.solution + ' ' + t('done_into') + ' ' +
+    r.record.targets.map(langLabel).join(', ') + '. ' + t('done_deliver') + ' ' + when(r.record.eta) +
+    ' ' + t('done_send') + ' ' + r.record.customer.email + '.';
+  $('doneMail').textContent = t('done_mail_desk').replace('{email}', r.record.customer.email);
 }
 
 /* -------------------------------------------------------------------- boot */

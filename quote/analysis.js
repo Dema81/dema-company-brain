@@ -418,6 +418,25 @@
     throw new Error('no readable bytes');
   }
 
+  /*
+   * How big a file this will open at all.
+   *
+   * Counting reads the whole file into memory - a ZIP container has to be, to be
+   * unzipped - and the customer's browser is where that memory comes from. A
+   * 2 GB archive would take the tab down with it, and `arrayBuffer()` refuses
+   * outright above 2 GiB in V8, so the attempt fails either way.
+   *
+   * Above this the file is reported uncounted, with its size, and is uploaded
+   * exactly as it is: the desk counts it on a machine built for the job. 64 MB
+   * covers every document anyone quotes from and no archive worth opening here.
+   */
+  const READABLE_MAX_BYTES = 64 * 1024 * 1024;
+
+  const tooBig = (file) => (Number(file.size) || 0) > READABLE_MAX_BYTES;
+
+  const megabytes = (bytes) => (bytes / (1024 * 1024)).toFixed(
+    bytes >= 100 * 1024 * 1024 ? 0 : 1) + ' MB';
+
   async function textContentOf(file) {
     if (typeof file.text === 'function') return file.text();
     return decode(await bytesOf(file));
@@ -448,6 +467,14 @@
     const ext = extensionOf(file.name);
     const type = typeFor(ext);
     const base = { file: file.name, extension: ext, size: file.size || 0 };
+
+    /* Checked before anything is read, and before the type is even consulted:
+       the point is not to touch the bytes of a file this size. */
+    if (tooBig(file)) {
+      return unreadable(base, ext ? ext.toUpperCase() : 'Large file',
+        'This file is ' + megabytes(base.size) + ', too large to open in a browser. ' +
+        'It is uploaded as it is; enter the word count, or leave it to us.');
+    }
 
     if (!type) {
       const known = await pageCount(ext, await bytesOf(file).catch(() => new Uint8Array()));
